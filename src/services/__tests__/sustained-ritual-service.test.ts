@@ -73,6 +73,8 @@ describe('contrato servidor de sustentação', () => {
     await expect(confirmSustainedAction(request)).rejects.toThrow('ainda não confirmou');
   });
   it('distingue rollback SQL explícito de resposta incerta', async () => {
+    fake.rpc.mockResolvedValueOnce({ data: null, error: { code: '55002' } });
+    await expect(confirmSustainedAction(request)).rejects.toMatchObject({ serverRejected: true, message: expect.stringContaining('Nenhum PE ou SAN') });
     fake.rpc.mockResolvedValueOnce({ data: null, error: { code: '40001' } });
     await expect(confirmSustainedAction(request)).rejects.toMatchObject({ serverRejected: true });
     fake.rpc.mockResolvedValueOnce({ data: null, error: { code: '' } });

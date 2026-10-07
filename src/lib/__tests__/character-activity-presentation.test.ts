@@ -8,6 +8,12 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('mostra orçamento confirmado e pausa sem inventar dados em recibos antigos', () => {
+    expect(describeCharacterActivity(event({ kind: 'manual_turn_pause', turnNumber: 2 }))).toContain('Saldo e efeitos preservados');
+    const receipt = { ...event({ ritualName: 'Arma Atroz', peBudget: { tracked: true, mode: 'manual', number: 2, spentAfter: 4, minimumCostException: true } }), category: 'ritual' as const };
+    expect(describeCharacterActivity(receipt)).toContain('Turno manual 2: 4 PE gastos · Exceção do custo mínimo');
+    expect(describeCharacterActivity({ ...receipt, payload: { ritualName: 'Arma Atroz' } })).not.toContain('PE gastos');
+  });
   it('mostra turno manual sem cobrança e identifica a manutenção correspondente', () => {
     expect(describeCharacterActivity(event({ kind: 'manual_turn', turnBefore: 3, turnAfter: 4, peCost: 0 })))
       .toBe('Turno manual confirmado: 3 → 4 · Sem gasto de PE');

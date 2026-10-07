@@ -1,3 +1,5 @@
+import { PETurnBudgetPanel } from './PETurnBudgetPanel';
+import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
 import { DEFAULT_CASTING_CONCENTRATION, getCastingWillConfig, rollCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
 import { rollParanormalCost } from '@/lib/rituals/paranormal-cost';
 import { getConcentrationFailureMessage } from '@/lib/rituals/casting-concentration-result';
@@ -292,6 +294,7 @@ export function MobileCharacterSheet({
   campaignId,
 }: MobileCharacterSheetProps) {
   const temporaryResources = useTemporaryResources(character.id);
+  const peBudget = usePETurnBudget(character.id);
   const [activeTab, setActiveTab] = useState<MobileTab>('overview');
   const [powerModalOpen, setPowerModalOpen] = useState(false);
   const [selectedPower, setSelectedPower] = useState<PowerDetailData | null>(null);
@@ -1895,6 +1898,7 @@ export function MobileCharacterSheet({
             {/* Painel de Rituais Sustentados */}
               <SustainedRitualControl key={character.id} characterId={character.id}
                 state={sustainedState} peCurrent={character.pe_current} onRefetch={onRefetch} mobile />
+              <PETurnBudgetPanel characterId={character.id} />
               <TemporaryResourcesPanel characterId={character.id} />
 
               {/* Painel de Efeitos Ativos (SUE) */}
@@ -2616,6 +2620,9 @@ export function MobileCharacterSheet({
           ritual={selectedRitual}
           peCurrent={character.pe_current}
           temporaryPE={temporaryResources.pe}
+          peBudget={peBudget.data}
+          peBudgetLoading={peBudget.isLoading}
+          peBudgetError={peBudget.error instanceof Error ? peBudget.error.message : undefined}
           peMax={character.pe_max}
           nex={character.nex}
           elementalAffinity={character.elemental_affinity}

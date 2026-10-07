@@ -1,3 +1,5 @@
+import { PETurnBudgetPanel } from '@/components/character/PETurnBudgetPanel';
+import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
 import { DEFAULT_CASTING_CONCENTRATION, getCastingWillConfig, rollCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
 import { rollParanormalCost } from '@/lib/rituals/paranormal-cost';
 import { TemporaryResourcesPanel } from '@/components/character/TemporaryResourcesPanel';
@@ -1211,6 +1213,7 @@ export default function CharacterSheet() {
   // Handler para abrir modal de conjuração de ritual
   const ritualApplication = useRitualApplication(id || '', refetchCharacter);
   const temporaryResources = useTemporaryResources(id || '');
+  const peBudget = usePETurnBudget(id || '');
   const { beginCast: beginRitualCast, cast: confirmRitualCast } = ritualApplication;
   const [ritualTargetId, setRitualTargetId] = useState<string | null>(null);
   const ritualTargets = useRitualApplicationTargets(id || '');
@@ -4106,6 +4109,9 @@ export default function CharacterSheet() {
         ritual={ritualToCast}
         peCurrent={peCurrent}
         temporaryPE={temporaryResources.pe}
+        peBudget={peBudget.data}
+        peBudgetLoading={peBudget.isLoading}
+        peBudgetError={peBudget.error instanceof Error ? peBudget.error.message : undefined}
         peMax={character.pe_max}
         isNonOccultist={character.class !== 'Ocultista'}
         nex={character.nex}
@@ -4245,7 +4251,7 @@ export default function CharacterSheet() {
       />
 
       {/* Wizard de efeitos integrado (Fase 7) */}
-      {!isMobile && <TemporaryResourcesPanel characterId={character.id} />}
+      {!isMobile && <><PETurnBudgetPanel characterId={character.id} /><TemporaryResourcesPanel characterId={character.id} /></>}
       <RitualEffectWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}

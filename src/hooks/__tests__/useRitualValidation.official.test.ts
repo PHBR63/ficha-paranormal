@@ -4,6 +4,36 @@ import { describe, expect, it } from 'vitest';
 import { useRitualValidation } from '../useRitualValidation';
 
 describe('Conjuração: capacidade e custo oficiais', () => {
+  it('permite o custo mínimo como primeiro gasto acima do limite (p.23)', () => {
+    const { result } = renderHook(() => useRitualValidation(5, null, 10, 10, { peSpentThisTurn: 0, turnNumber: 1 }));
+    expect(result.current.validatePECost(2, [])).toMatchObject({ isValid: true, peRemaining: 8 });
+  });
+
+  it('não estende a exceção do custo mínimo a aprimoramentos ou outro gasto', () => {
+    const first = renderHook(() => useRitualValidation(5, null, 10, 10, { peSpentThisTurn: 0, turnNumber: 1 }));
+    expect(first.result.current.validatePECost(1, [{ name: 'Discente', cost: 2 }])).toMatchObject({ isValid: false, exceedsLimit: true });
+    const next = renderHook(() => useRitualValidation(5, null, 10, 10, { peSpentThisTurn: 1, turnNumber: 1 }));
+    expect(next.result.current.validatePECost(2, [])).toMatchObject({ isValid: false, exceedsLimit: true });
+  });
+
+  it('sem relógio ativo registra o custo sem presumir turno e ainda exige saldo', () => {
+    const { result } = renderHook(() => useRitualValidation(5, null, 10, 10, { peSpentThisTurn: 0, turnNumber: 0, tracked: false }));
+    expect(result.current.validatePECost(1, [{ name: 'Discente', cost: 2 }]).isValid).toBe(true);
+    expect(result.current.validatePECost(1, [{ name: 'Discente', cost: 10 }]).isValid).toBe(false);
+  });
+
+  it('custo zero pode ser usado após a exceção e orçamento inválido é bloqueado', () => {
+    const zero = renderHook(() => useRitualValidation(5, null, 10, 10, { peSpentThisTurn: 3, turnNumber: 1 }));
+    expect(zero.result.current.validatePECost(0, []).isValid).toBe(true);
+    const invalid = renderHook(() => useRitualValidation(5, null, 10, 10, { peSpentThisTurn: -1, turnNumber: 1 }));
+    expect(invalid.result.current.validatePECost(1, []).isValid).toBe(false);
+  });
+
+  it('a exceção não fornece PE que a ficha não possui', () => {
+    const { result } = renderHook(() => useRitualValidation(5, null, 1, 10));
+    expect(result.current.validatePECost(2, [])).toMatchObject({ isValid: false, reason: 'PE insuficiente (1/2 PE)' });
+  });
+
   it.each([-1, Number.NaN, Number.POSITIVE_INFINITY])('rejeita custo-base inválido %s sem débito negativo', cost => {
     const { result } = renderHook(() => useRitualValidation(99, null, 10, 10));
     expect(result.current.validatePECost(cost, [])).toMatchObject({

@@ -1,3 +1,4 @@
+import type { PETurnBudget } from '@/services/pe-turn-budget-service';
 import { CastingConcentrationForm } from '@/components/character/CastingConcentrationForm';
 import { DEFAULT_CASTING_CONCENTRATION, validateCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
 import type { RitualResolutionRoll } from '@/lib/ritual-roll-history';
@@ -93,6 +94,9 @@ interface MobileRitualCastModalProps {
   ritual: RitualInput | null;
   peCurrent: number;
   temporaryPE?: number;
+  peBudget?: PETurnBudget;
+  peBudgetLoading?: boolean;
+  peBudgetError?: string;
   peMax: number;
   isNonOccultist?: boolean;
   nex?: number;
@@ -127,6 +131,9 @@ export function MobileRitualCastModal({
   ritual,
   peCurrent,
   temporaryPE = 0,
+  peBudget,
+  peBudgetLoading = false,
+  peBudgetError,
   peMax,
   isNonOccultist = false,
   nex = 5,
@@ -174,7 +181,7 @@ export function MobileRitualCastModal({
     peLimitPerTurn,
     validatePECost,
     getAvailableEnhancements,
-  } = useRitualValidation(nex, elementalAffinity, peCurrent + temporaryPE, peMax + temporaryPE, turnPEState, peLimitBonus, isNonOccultist);
+  } = useRitualValidation(nex, elementalAffinity, peCurrent + temporaryPE, peMax + temporaryPE, peBudget ? { peSpentThisTurn: peBudget.tracked ? peBudget.spent : 0, turnNumber: peBudget.number ?? peBudget.round ?? 0, confirmedLimit: peBudget.ritualLimit, tracked: peBudget.tracked } : turnPEState, peLimitBonus, isNonOccultist);
 
   const enhancementsWithValidation = useMemo(() => {
     if (!ritual) return [];
@@ -249,9 +256,9 @@ export function MobileRitualCastModal({
   const totalCost = baseCost + enhancementsCost + modifiersCost;
 
   // Valida exatamente o débito confirmado, incluindo descontos e modificadores.
-  const peValidation = validatePECost(totalCost, []);
+  const peValidation = validatePECost(totalCost, [], false, selectedEnhancements.length === 0 && totalCost <= baseCost);
 
-  const canCast = peValidation.isValid && ritual.circle <= maxCircle;
+  const canCast = !peBudgetLoading && !peBudgetError && peValidation.isValid && ritual.circle <= maxCircle;
 
   const toggleEnhancement = (enhName: string) => {
     const enh = enhancementsWithValidation.find(e => e.name === enhName);
@@ -719,6 +726,9 @@ export function MobileRitualCastModal({
                   <span>PE Atual</span>
                   <span>{peCurrent} / {peMax}</span>
                 </div>
+                {peBudgetLoading && <p role="status">Conferindo orçamento no servidor…</p>}
+                {peBudgetError && <p role="alert">{peBudgetError}</p>}
+                {peBudget && <p role="status" className="text-xs text-muted-foreground">{peBudget.tracked ? `Gasto confirmado neste turno: ${peBudget.spent} PE · limite para rituais: ${peBudget.ritualLimit} PE.` : 'Sem controle de turnos ativo; o gasto será registrado sem criar turno.'}</p>}
                 {temporaryPE > 0 && <p role="status" className="text-xs text-muted-foreground">PE temporários: {temporaryPE} · Disponível: {peCurrent + temporaryPE} PE. Temporários serão consumidos primeiro.</p>}
                 <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                   <div 
