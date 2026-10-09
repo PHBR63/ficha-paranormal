@@ -378,7 +378,7 @@ export const TRACK_EFFECT_IDS = {
   // Operações Especiais
   INICIATIVA_APRIMORADA: 'track-iniciativa-aprimorada',
   ATAQUE_EXTRA: 'track-ataque-extra',
-  SURTO_ADRENALINA: 'track-surto-adrenalina',
+  SURTO_ADRENALINA: 'track-surto-de-adrenalina',
   SEMPRE_ALERTA: 'track-sempre-alerta',
   
   // Tropa de Choque

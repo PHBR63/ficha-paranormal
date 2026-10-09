@@ -1439,7 +1439,9 @@ export function getTrackEffects(
       sourceName: `Trilha ${track.name}: ${ability.name}`,
       mechanics,
       isActive: needsActivation
-        ? activatedEffects.includes(`track-${ability.id}`)
+        // Reconhece o ID antigo de Surto sem reescrever efeitos já registrados.
+        ? activatedEffects.includes(`track-${ability.id}`) ||
+          (ability.id === 'surto-de-adrenalina' && activatedEffects.includes('track-surto-adrenalina'))
         : true,
       isToggleable: needsActivation,
       conditions: {
