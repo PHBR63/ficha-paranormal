@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ELEMENT_SYMBOLS } from '../element-symbols';
 import { Heart, X } from '../ordem-icons';
+import { getElementIcon, getItemIcon } from '@/components/character/mobile/utils';
 import { getElementConfig } from '@/lib/element-config';
 
 describe('Contrato dos ícones nas telas existentes', () => {
@@ -35,5 +36,26 @@ describe('Contrato dos ícones nas telas existentes', () => {
   it('mantém o nome do botão de fechar sem anunciar ícones decorativos', () => {
     render(<button aria-label="Fechar"><X /></button>);
     expect(screen.getByRole('button', { name: 'Fechar' })).toBeVisible();
+  });
+});
+
+describe('Ícones dos helpers mobile', () => {
+  it.each(['sangue', 'morte', 'conhecimento', 'energia', 'medo'])('renderiza símbolo oficial de %s sem emoji', element => {
+    const { container } = render(getElementIcon(element));
+    expect(container.querySelector('svg')).toHaveAttribute('data-element-symbol', element);
+    expect(container.textContent).toBe('');
+  });
+  it.each(['weapon', 'armor', 'medical', 'investigation', 'communication', 'field', 'paranormal', 'document', 'survival', '0', 'I', 'II', 'III', 'IV', '__proto__'])('renderiza SVG para item %s sem alterar o tipo', type => {
+    const { container } = render(getItemIcon(type));
+    expect(container.querySelector('svg')).toBeInTheDocument();
+    expect(container.textContent).toBe('');
+    if (type === 'II') {
+      expect(container.querySelector('svg')).toHaveClass('text-blue-400');
+      expect(container.querySelector('svg')).toHaveAttribute('fill', 'currentColor');
+    }
+  });
+  it('usa fallback neutro para elemento desconhecido', () => {
+    const { container } = render(getElementIcon('custom'));
+    expect(container.querySelector('svg')).not.toHaveAttribute('data-element-symbol');
   });
 });
