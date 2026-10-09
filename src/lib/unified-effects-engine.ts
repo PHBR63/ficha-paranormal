@@ -659,7 +659,7 @@ export interface ComputedEffects {
     ranged: number;
     firearm: number;              // Bônus específico para armas de fogo (Balística Avançada)
     extraDice: string[];
-    breakdown: Array<{ source: string; value: number | string; conditional?: string }>;
+    breakdown: Array<{ source: string; value: number | string; conditional?: string; effectId?: string }>;
   };
   critical: {
     marginBonus: number;
@@ -1657,7 +1657,7 @@ export function consolidateEffects(
     }
     if (m.rangedDamageBonus) {
       result.damage.ranged += m.rangedDamageBonus;
-      result.damage.breakdown.push({ source, value: m.rangedDamageBonus, conditional: 'distância' });
+      result.damage.breakdown.push({ source, value: m.rangedDamageBonus, conditional: 'distância', effectId: effect.id });
     }
     if (m.firearmDamageBonus) {
       result.damage.firearm += m.firearmDamageBonus;

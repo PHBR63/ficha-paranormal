@@ -42,6 +42,7 @@ import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 // com integração completa ao SUE para bônus automáticos
 import { useCombatRollWithSUE, type WeaponEntryCompat } from '@/hooks/use-combat-roll-with-sue';
 import { ComputedEffects } from '@/lib/unified-effects-engine';
+import { getWeaponDamageEffects, hasLongFirearmDamage } from '@/lib/effects/weapon-damage-effects';
 import { getSkillBonus } from '@/lib/character-data';
 import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput, WeaponBuff, ELEMENT_BUFF_COLORS, useCombatFeedback } from '@/hooks';
 import { formatDamageFormula as formatBuffDamage } from '@/lib/rituals/legacy-exports';
@@ -255,7 +256,7 @@ export function CombatRollModal({
   nex,
   isFavoriteWeapon = false,
   classPowerBonuses, // Bônus pré-calculados do sistema de poderes
-  unifiedEffects, // NOVO: Efeitos do SUE (origem, trilha, condições)
+  unifiedEffects: sheetEffects,
   advancedBonuses = {},
   weaponBuffs = [], // Buffs de arma ativos
   activeConditions = [], // Condições ativas para exibição
@@ -266,6 +267,7 @@ export function CombatRollModal({
   originBoundWeaponId, // Arma vinculada pela origem (Operário)
   onRollComplete,
 }: CombatRollModalProps) {
+  const unifiedEffects = useMemo(() => getWeaponDamageEffects(sheetEffects, weapon), [sheetEffects, weapon]);
   // === HOOK DE COMBATE INTEGRADO COM SUE ===
   // Provê funções executeAttackRoll e executeDamageRoll que automaticamente
   // aplicam todos os bônus do SUE (origem, trilha, poderes, rituais, condições).
@@ -337,9 +339,13 @@ export function CombatRollModal({
       nex,
       attributesForTrack,
       attackType,
-      combinedActivatedEffects
+      combinedActivatedEffects,
+      {
+        representedEffectIds: unifiedEffects?.damage.breakdown.flatMap(entry => entry.effectId ? [entry.effectId] : []) ?? [],
+        isLongFirearm: hasLongFirearmDamage(weapon),
+      },
     );
-  }, [classTrack, nex, attributesForTrack, attackType, combinedActivatedEffects]);
+  }, [classTrack, nex, attributesForTrack, attackType, combinedActivatedEffects, unifiedEffects, weapon]);
   
   // === PROCESSAR WEAPON BUFFS (Amaldiçoar Arma, etc.) ===
   // REGRA OFICIAL: Rituais NÃO acumulam entre si - usa o MAIOR de cada tipo
