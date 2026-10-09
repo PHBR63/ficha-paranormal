@@ -21,7 +21,7 @@ import {
   Zap,
   ChevronDown,
   ChevronRight
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';

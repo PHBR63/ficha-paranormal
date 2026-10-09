@@ -30,7 +30,7 @@ import {
   GraduationCap,
   Settings2,
   Ban
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { 
   ALL_TRANSCENDER_IDS, 

@@ -12,7 +12,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Lock, ArrowUp } from 'lucide-react';
+import { Check, Lock, ArrowUp } from '@/components/icons/ordem-icons';
 import { motion } from 'framer-motion';
 import {
   AttributeKey,

@@ -7,7 +7,7 @@
  * @module tracks/combatente/GuerreiroPanel
  */
 
-import { ArrowDownToLine, MoveHorizontal, ChevronDown, Check, Loader2, Zap, Sword } from 'lucide-react';
+import { ArrowDownToLine, MoveHorizontal, ChevronDown, Check, Loader2, Zap, Sword } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

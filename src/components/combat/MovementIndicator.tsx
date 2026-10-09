@@ -15,7 +15,7 @@ import {
   X,
   AlertTriangle,
   RotateCcw,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import type { PendingMovement } from '@/hooks/campaign/useCombatBoardSync';
 
 interface MovementIndicatorProps {

@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Check, User, Dices, MapPin, Sword, BookOpen, FileCheck, 
   BarChart3, Route, Sparkles, Crosshair, Medal, Stamp
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,

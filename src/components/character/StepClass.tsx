@@ -8,11 +8,11 @@
 import { CLASSES, calculateDerivedStats } from '@/lib/character-data';
 import { CLASS_IDS, isValidClassId, type ClassId } from '@/lib/constants/game-ids';
 import { cn } from '@/lib/utils';
-import { Sword, Wrench, Sparkles, Shield, BookOpen, Heart, Zap, Brain, Footprints } from 'lucide-react';
+import { Sword, Wrench, Sparkles, Shield, BookOpen, Heart, Zap, Brain, Footprints } from '@/components/icons/ordem-icons';
 import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES, getClassSkillRules } from '@/lib/character-builder-engine';
 import { motion } from 'framer-motion';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from '@/components/icons/ordem-icons';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
 

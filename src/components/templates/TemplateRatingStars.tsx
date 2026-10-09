@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Star } from 'lucide-react';
+import { Star } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 

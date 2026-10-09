@@ -53,7 +53,7 @@ import {
   Maximize2,
   FastForward,
   ShieldX,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Input } from '@/components/ui/input';
 
 // Ícones para tipos de modificadores de trilha

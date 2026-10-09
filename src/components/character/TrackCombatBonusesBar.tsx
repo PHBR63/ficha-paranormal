@@ -8,7 +8,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crosshair, Swords, Target, Zap, Shield, Brain, Sparkles, Dices } from 'lucide-react';
+import { Crosshair, Swords, Target, Zap, Shield, Brain, Sparkles, Dices } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { 
   Tooltip,

@@ -21,7 +21,7 @@ import {
   Skull,
   Heart,
   Activity
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { getCombatStats, resetCombatStats, CombatStats } from '@/lib/ritual-hooks-engine';
 
 interface CombatStatsPanelProps {

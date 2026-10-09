@@ -5,7 +5,7 @@
 
 import { useState, useRef, useCallback, ReactNode } from 'react';
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
-import { RefreshCw, Loader2 } from 'lucide-react';
+import { RefreshCw, Loader2 } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 
 interface PullToRefreshProps {

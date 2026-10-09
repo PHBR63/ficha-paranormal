@@ -5,7 +5,7 @@
 
 import { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, LucideIcon, Zap } from 'lucide-react';
+import { ChevronDown, LucideIcon, Zap } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import {
   Collapsible,

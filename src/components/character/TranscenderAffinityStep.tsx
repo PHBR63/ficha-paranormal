@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * TranscenderAffinityStep - Passo de seleção de afinidade elemental no fluxo de Transcender
  * 
@@ -24,16 +25,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CustomScroll } from '@/components/ui/custom-scroll';
-import { 
-  Sparkles, 
-  Droplet, 
-  Skull, 
-  BookOpen, 
-  Zap, 
-  Check,
-  ChevronRight,
-  Info,
-} from 'lucide-react';
+import { Sparkles, Check, ChevronRight, Info } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import {
   ParanormalElement,
@@ -46,10 +38,10 @@ import {
 
 // Ícones por elemento
 const AFFINITY_ICONS: Record<ParanormalElement, React.ComponentType<{ className?: string }>> = {
-  sangue: Droplet,
-  morte: Skull,
-  conhecimento: BookOpen,
-  energia: Zap,
+  sangue: SangueSymbol,
+  morte: MorteSymbol,
+  conhecimento: ConhecimentoSymbol,
+  energia: EnergiaSymbol,
 };
 
 // Descrições detalhadas dos benefícios de afinidade

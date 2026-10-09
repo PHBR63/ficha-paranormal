@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 import { 
   Eye, Zap, Users, Crown, Swords, Brain, Skull, Shield,
   BookOpen, Sparkles, Backpack
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';

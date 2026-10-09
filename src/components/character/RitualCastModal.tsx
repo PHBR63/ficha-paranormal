@@ -39,7 +39,7 @@ import {
   Maximize2,
   FastForward,
   ShieldX,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

@@ -16,7 +16,7 @@ import {
   Wifi,
   WifiOff,
   X,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { getElementConfig } from '@/lib/element-config';
 import { CampaignRitualCast } from '@/hooks/useCampaignRitualSync';

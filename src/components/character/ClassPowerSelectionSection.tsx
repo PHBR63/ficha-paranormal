@@ -15,7 +15,7 @@ import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sword, Lock, Check, AlertCircle, Plus, Info, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { Sword, Lock, Check, AlertCircle, Plus, Info, ChevronDown, ChevronUp, Sparkles } from '@/components/icons/ordem-icons';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';

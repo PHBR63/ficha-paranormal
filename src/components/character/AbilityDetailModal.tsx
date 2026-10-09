@@ -24,7 +24,7 @@ import {
   BookOpen,
   Target,
   Users
-} from "lucide-react";
+} from '@/components/icons/ordem-icons';
 import { cn } from "@/lib/utils";
 import { getBasePowerReference } from '@/lib/class-powers/base-power-reference';
 import type { ClassId } from '@/lib/class-powers/types';

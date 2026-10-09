@@ -6,7 +6,7 @@
 
 import { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Crosshair, Skull, ChevronDown, Swords, Sparkles } from 'lucide-react';
+import { Star, Crosshair, Skull, ChevronDown, Swords, Sparkles } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {

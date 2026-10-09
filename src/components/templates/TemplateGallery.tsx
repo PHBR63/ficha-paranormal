@@ -8,7 +8,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Package, Crown, User, Search, RefreshCw, Plus, LayoutGrid, List } from 'lucide-react';
+import { Loader2, Package, Crown, User, Search, RefreshCw, Plus, LayoutGrid, List } from '@/components/icons/ordem-icons';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';

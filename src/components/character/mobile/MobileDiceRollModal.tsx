@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dices, RotateCcw, X, Sparkles, Info, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { Dices, RotateCcw, X, Sparkles, Info, Zap, ChevronDown, ChevronUp } from '@/components/icons/ordem-icons';
 import { 
   MobileDrawer,
   MobileDrawerContent,

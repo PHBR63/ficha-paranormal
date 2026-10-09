@@ -58,7 +58,7 @@ import {
   EyeOff,
   Loader2,
   Save,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { useToast } from '@/hooks/use-toast';
 import { NPCCard } from './NPCCard';
 

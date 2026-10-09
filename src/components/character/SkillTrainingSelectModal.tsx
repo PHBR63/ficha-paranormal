@@ -31,7 +31,7 @@ import {
   ChevronRight,
   Star,
   Ban
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { SKILLS } from '@/lib/character-data';
 

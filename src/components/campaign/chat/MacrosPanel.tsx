@@ -50,7 +50,7 @@ import {
   Sparkles,
   Zap,
   Play,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { useMacros } from '@/hooks/campaign/useMacros';
 import { MacroEditor, type RollMacro, type MacroType } from '@/components/combat/MacroEditor';
 import { useToast } from '@/hooks/use-toast';

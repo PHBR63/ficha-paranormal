@@ -6,7 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Crown, Star, Users, Play, Eye } from 'lucide-react';
+import { Crown, Star, Users, Play, Eye } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';

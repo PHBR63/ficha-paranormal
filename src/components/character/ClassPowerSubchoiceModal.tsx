@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Check, Swords, GraduationCap, AlertTriangle, Target } from 'lucide-react';
+import { Check, Swords, GraduationCap, AlertTriangle, Target } from '@/components/icons/ordem-icons';
 import { WEAPON_GROUPS, type WeaponGroup } from '@/lib/constants/weapon-groups';
 import { SKILL_IDS, SKILLS_BY_ATTRIBUTE } from '@/lib/constants/game-ids';
 import type { UnifiedClassPower } from '@/lib/class-powers/types';

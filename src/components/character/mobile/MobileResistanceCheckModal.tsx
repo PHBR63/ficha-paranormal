@@ -27,7 +27,7 @@ import {
   Wind,
   ChevronRight,
   Sparkles,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { ResistanceType, ResistanceEffect } from '@/lib/rituals/legacy-exports';
 import { getElementConfig } from '@/lib/element-config';

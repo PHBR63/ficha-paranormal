@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Camera, X, Loader2, Upload, AlertCircle } from 'lucide-react';
+import { Camera, X, Loader2, Upload, AlertCircle } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks';

@@ -19,7 +19,7 @@ import {
   Trash2,
   Eye,
   EyeOff,
-} from "lucide-react";
+} from '@/components/icons/ordem-icons';
 import {
   type HookExecutionLogEntry,
   getTriggerLabel,

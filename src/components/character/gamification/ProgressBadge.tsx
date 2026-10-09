@@ -6,7 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { FileText, Stamp } from 'lucide-react';
+import { FileText, Stamp } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 
 interface ProgressBadgeProps {

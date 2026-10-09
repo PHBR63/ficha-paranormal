@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * Modal para Remoção de Poderes Paranormais Excedentes
  * Permite ao usuário selecionar quais poderes remover quando está acima do limite
@@ -16,16 +17,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Droplet, Skull, BookOpen, Zap, Star, Trash2, Check } from 'lucide-react';
+import { AlertTriangle, Star, Trash2, Check } from '@/components/icons/ordem-icons';
 import { SavedParanormalPower, ParanormalElement, ELEMENT_LABELS, ELEMENT_COLORS } from '@/lib/paranormal-powers';
 import { toast } from '@/hooks/use-toast';
 
 // Ícones por elemento
 const ELEMENT_ICONS: Record<ParanormalElement | 'generic', React.ComponentType<{ className?: string }>> = {
-  sangue: Droplet,
-  morte: Skull,
-  conhecimento: BookOpen,
-  energia: Zap,
+  sangue: SangueSymbol,
+  morte: MorteSymbol,
+  conhecimento: ConhecimentoSymbol,
+  energia: EnergiaSymbol,
   generic: Star,
 };
 

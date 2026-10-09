@@ -9,7 +9,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
-import { Upload, Link, Loader2, X, Image, AlertCircle, Check } from 'lucide-react';
+import { Upload, Link, Loader2, X, Image, AlertCircle, Check } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

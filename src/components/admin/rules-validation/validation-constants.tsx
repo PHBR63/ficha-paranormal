@@ -16,7 +16,7 @@ import {
   Swords,
   AlertTriangle,
   BookOpen,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 
 /**
  * Ícones por categoria de validação

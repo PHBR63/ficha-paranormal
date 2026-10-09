@@ -13,7 +13,7 @@ import {
   Users,
   MessageCircle,
   QrCode
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { useToast } from '@/hooks/use-toast';
 import type { CampaignFormData } from '@/pages/CampaignCreate';
 

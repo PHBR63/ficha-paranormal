@@ -5,7 +5,7 @@ import { EffectDurationNotice } from './EffectDurationNotice';
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, Skull, Brain, Zap, Ghost, X, Sparkles, Wrench, CheckCircle } from 'lucide-react';
+import { Flame, Skull, Brain, Zap, Ghost, X, Sparkles, Wrench, CheckCircle } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks/useWeaponBuffs';
 import { formatDamageFormula } from '@/lib/rituals/legacy-exports';

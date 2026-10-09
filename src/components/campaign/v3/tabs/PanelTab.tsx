@@ -13,7 +13,7 @@
 
 import { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Brain, Zap, AlertTriangle, Shield, Users, Wifi, Clock } from 'lucide-react';
+import { Heart, Brain, Zap, AlertTriangle, Shield, Users, Wifi, Clock } from '@/components/icons/ordem-icons';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';

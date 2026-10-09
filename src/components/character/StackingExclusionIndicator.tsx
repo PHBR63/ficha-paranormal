@@ -9,7 +9,7 @@
 
 import { memo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Layers, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Layers, AlertTriangle } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,

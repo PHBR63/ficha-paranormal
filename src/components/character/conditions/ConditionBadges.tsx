@@ -46,7 +46,7 @@ import {
   Timer,
   Infinity,
   Clock,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import type { ActiveCondition } from '@/hooks/character/useConditions';
 
 // Mapeamento de ícones

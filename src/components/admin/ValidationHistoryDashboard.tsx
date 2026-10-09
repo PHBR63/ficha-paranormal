@@ -37,7 +37,7 @@ import {
   Trash2,
   BarChart3,
   Clock,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { useValidationHistory, type ValidationHistoryEntry } from '@/hooks';
 

@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { History, ArrowRight, User, Dices, BookOpen, FileText, Heart, Zap, Brain, Trash2, Sparkles } from 'lucide-react';
+import { History, ArrowRight, User, Dices, BookOpen, FileText, Heart, Zap, Brain, Trash2, Sparkles } from '@/components/icons/ordem-icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 

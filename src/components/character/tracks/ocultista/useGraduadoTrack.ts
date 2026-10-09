@@ -9,8 +9,8 @@
  */
 
 import { useMemo } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import { BookOpen, Sparkles, BookMarked } from 'lucide-react';
+import type { LucideIcon } from '@/components/icons/ordem-icons';
+import { BookOpen, Sparkles, BookMarked } from '@/components/icons/ordem-icons';
 
 // =====================================================
 // TIPOS E CONSTANTES

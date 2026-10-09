@@ -81,7 +81,7 @@ import {
   Undo2,
   Redo2,
   FolderOpen,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 
 interface TacticalBoardProps {
   campaignId: string;

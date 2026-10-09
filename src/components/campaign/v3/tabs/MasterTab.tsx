@@ -14,7 +14,7 @@ import {
   FileText,
   Terminal,
   Gift,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import {
   Sword as SwordIcon,
 } from '@phosphor-icons/react';

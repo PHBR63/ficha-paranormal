@@ -18,7 +18,7 @@ import {
   Crosshair,
   CircleDot,
   Lock
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { InventoryItem } from '@/lib/inventory-system';
 import { ItemType } from './InventoryPanel';

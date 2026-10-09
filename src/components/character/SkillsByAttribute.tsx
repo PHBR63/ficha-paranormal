@@ -6,8 +6,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Filter, Info } from 'lucide-react';
-import { ChevronDown, Search, X } from 'lucide-react';
+import { Filter, Info } from '@/components/icons/ordem-icons';
+import { ChevronDown, Search, X } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { SKILLS, TRAINING_BONUS_MAP, TRAINING_LABELS } from '@/lib/character-data';
 import { Input } from '@/components/ui/input';

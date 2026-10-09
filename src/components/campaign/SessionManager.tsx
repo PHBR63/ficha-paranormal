@@ -25,7 +25,7 @@ import {
   Loader2,
   CalendarDays,
   History,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 
 // Tipo para sessão da campanha
 interface CampaignSession {

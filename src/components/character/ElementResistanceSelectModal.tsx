@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * Modal para selecionar elemento de resistência
  * Usado pelo poder paranormal "Resistir a Elemento"
@@ -16,15 +17,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Check, Droplet, Skull, BookOpen, Zap } from 'lucide-react';
+import { Shield, Check } from '@/components/icons/ordem-icons';
 import { ParanormalElement, ELEMENT_LABELS, ELEMENT_COLORS, ELEMENT_BG_COLORS } from '@/lib/paranormal-powers';
 
 // Ícones por elemento
 const ELEMENT_ICONS: Record<ParanormalElement, React.ComponentType<{ className?: string }>> = {
-  sangue: Droplet,
-  morte: Skull,
-  conhecimento: BookOpen,
-  energia: Zap,
+  sangue: SangueSymbol,
+  morte: MorteSymbol,
+  conhecimento: ConhecimentoSymbol,
+  energia: EnergiaSymbol,
 };
 
 // Descrições dos tipos de dano por elemento

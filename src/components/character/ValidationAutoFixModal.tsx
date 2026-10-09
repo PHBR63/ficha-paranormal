@@ -20,7 +20,7 @@ import {
   Swords,
   Zap,
   RefreshCw,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import {
   Dialog,
   DialogContent,

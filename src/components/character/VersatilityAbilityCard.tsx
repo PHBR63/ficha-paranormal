@@ -18,7 +18,7 @@ import {
   Brain,
   Info,
   Zap,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { getTrackById, getInitialAbility } from '@/lib/class-powers/track-registry';
 

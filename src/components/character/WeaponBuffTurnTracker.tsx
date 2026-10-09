@@ -19,7 +19,7 @@ import {
   X,
   Wrench,
   CheckCircle
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { WeaponBuff, ELEMENT_BUFF_COLORS } from '@/hooks/useWeaponBuffs';
 import { Button } from '@/components/ui/button';

@@ -21,7 +21,7 @@ import {
   Lock,
   Trash2,
   Edit,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHandouts, type Handout } from '@/hooks/campaign/useHandouts';

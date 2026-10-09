@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Check, Cloud, CloudOff, Loader2, AlertCircle } from 'lucide-react';
+import { Check, Cloud, CloudOff, Loader2, AlertCircle } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,

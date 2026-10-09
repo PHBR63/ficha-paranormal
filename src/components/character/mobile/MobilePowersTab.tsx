@@ -11,7 +11,7 @@ import {
   User,
   Scroll,
   ChevronRight,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { MobileCollapsibleSection } from './MobileCollapsibleSection';

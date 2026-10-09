@@ -5,7 +5,7 @@
 
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Sword, Target, Zap, Shield } from 'lucide-react';
+import { Check, Sword, Target, Zap, Shield } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { getWeaponGroupName, getWeaponGroupForWeapon, WEAPON_GROUPS } from '@/lib/constants/weapon-groups';
 import {

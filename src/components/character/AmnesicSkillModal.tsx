@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SKILLS } from '@/lib/character-data';
 import { cn } from '@/lib/utils';
-import { Check, Search } from 'lucide-react';
+import { Check, Search } from '@/components/icons/ordem-icons';
 import { ATTRIBUTE_ABBR } from '@/lib/constants/attributes';
 
 interface AmnesicSkillModalProps {

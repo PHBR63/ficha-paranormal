@@ -40,7 +40,7 @@ import {
   Sword,
   Heart,
   Sparkles,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 
 // Tipos de macro
 export type MacroType = 'skill' | 'attack' | 'damage' | 'save' | 'custom';

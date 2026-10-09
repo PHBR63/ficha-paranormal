@@ -15,7 +15,7 @@ import { NexBenefitsPanel } from './NexBenefitsPanel';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from '@/components/icons/ordem-icons';
 
 interface StepNexProps {
   formData: CharacterFormData;

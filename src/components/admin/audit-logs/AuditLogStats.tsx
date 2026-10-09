@@ -14,7 +14,7 @@ import {
   Calendar, 
   CalendarDays, 
   TrendingUp 
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import type { AuditStats } from './audit-log-types';
 import { getActionConfig } from './audit-log-constants';
 

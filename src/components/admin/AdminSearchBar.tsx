@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Search, X, Filter } from 'lucide-react';
+import { Search, X, Filter } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 
 export interface FilterOption {

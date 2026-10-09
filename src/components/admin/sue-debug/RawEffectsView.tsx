@@ -7,7 +7,7 @@
  * @module Ordem Paranormal RPG v1.3
  */
 
-import { Zap } from 'lucide-react';
+import { Zap } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { UnifiedEffect } from '@/hooks';

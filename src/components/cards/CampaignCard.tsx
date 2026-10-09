@@ -18,7 +18,7 @@ import {
   CheckCircle,
   Archive,
   Play
-} from "lucide-react";
+} from '@/components/icons/ordem-icons';
 import { format, isAfter, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 

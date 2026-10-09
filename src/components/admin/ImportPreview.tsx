@@ -5,7 +5,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CheckCircle, XCircle, AlertTriangle, FileSearch } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, FileSearch } from '@/components/icons/ordem-icons';
 import type { ValidatedItem } from '@/lib/import-validators';
 
 interface ImportPreviewProps<T> {

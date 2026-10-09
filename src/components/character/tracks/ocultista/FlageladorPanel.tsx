@@ -14,7 +14,7 @@
  */
 
 import { useState, memo } from 'react';
-import { Flame, Zap, Heart, ShieldHalf, Check, Loader2, ChevronDown } from 'lucide-react';
+import { Flame, Zap, Heart, ShieldHalf, Check, Loader2, ChevronDown } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

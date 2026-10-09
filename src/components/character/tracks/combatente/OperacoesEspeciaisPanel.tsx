@@ -7,7 +7,7 @@
  * @module tracks/combatente/OperacoesEspeciaisPanel
  */
 
-import { Zap, Swords, Wind, ChevronDown, Hand, Footprints } from 'lucide-react';
+import { Zap, Swords, Wind, ChevronDown, Hand, Footprints } from '@/components/icons/ordem-icons';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

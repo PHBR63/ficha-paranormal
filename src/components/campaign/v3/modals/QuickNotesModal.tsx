@@ -8,7 +8,7 @@
  */
 
 import { memo, useState, useEffect, useCallback } from 'react';
-import { FileText, Trash2, Save } from 'lucide-react';
+import { FileText, Trash2, Save } from '@/components/icons/ordem-icons';
 import {
   Dialog,
   DialogContent,

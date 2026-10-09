@@ -3,7 +3,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { ChevronDown, User } from 'lucide-react';
+import { ChevronDown, User } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import {
   Collapsible,

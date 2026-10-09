@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { Shield, ArrowUp, ArrowDown, Check, Wrench, Bomb, ShieldPlus, EyeOff, ShieldCheck } from 'lucide-react';
+import { Shield, ArrowUp, ArrowDown, Check, Wrench, Bomb, ShieldPlus, EyeOff, ShieldCheck } from '@/components/icons/ordem-icons';
 import {
   type CatalogArmor,
   type ArmorModification,

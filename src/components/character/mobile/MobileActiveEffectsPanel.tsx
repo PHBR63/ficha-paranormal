@@ -19,7 +19,7 @@ import {
   BookOpen,
   Flame,
   Info,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { UnifiedEffectsResult, UnifiedEffect } from '@/hooks';

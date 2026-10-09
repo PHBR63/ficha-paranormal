@@ -9,7 +9,7 @@
 
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MessageSquare } from 'lucide-react';
+import { X, MessageSquare } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { ChatTab } from '@/components/campaign/v3/tabs/ChatTab';
 import type { CampaignMessage } from '@/hooks/campaign/useCampaignRealtime';

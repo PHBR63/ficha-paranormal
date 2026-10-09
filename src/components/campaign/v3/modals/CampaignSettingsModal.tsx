@@ -39,7 +39,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Copy, RefreshCw, UserMinus, Settings, Users, Link2 } from 'lucide-react';
+import { Copy, RefreshCw, UserMinus, Settings, Users, Link2 } from '@/components/icons/ordem-icons';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 
 interface CampaignSettingsModalProps {

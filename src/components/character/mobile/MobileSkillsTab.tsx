@@ -12,7 +12,7 @@ import {
   SortAsc, 
   Filter,
   Dices,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { SKILLS, getSkillBonus, TRAINING_LABELS } from '@/lib/character-data';

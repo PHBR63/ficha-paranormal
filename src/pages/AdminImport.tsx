@@ -21,7 +21,7 @@ import {
   Loader2,
   Download,
   AlertTriangle
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { AdminNav } from '@/components/admin';
 import { JsonExamples, ImportType, TYPE_LABELS } from '@/components/admin/JsonExamples';
 import { ImportPreview } from '@/components/admin/ImportPreview';

@@ -22,7 +22,7 @@ import {
   CheckCircle2,
   Info,
   ArrowUp,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { VALID_SKILL_IDS } from '@/lib/constants/game-ids';
 

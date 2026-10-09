@@ -23,7 +23,7 @@ import {
   Square,
   FileEdit,
   Activity
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import type { ActionTypeConfig } from './audit-log-types';
 
 /** Configuração visual por tipo de ação */

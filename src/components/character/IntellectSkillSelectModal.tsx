@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Brain, Check, AlertCircle } from 'lucide-react';
+import { Brain, Check, AlertCircle } from '@/components/icons/ordem-icons';
 import { INTELLECT_SKILL_IDS, SKILL_IDS } from '@/lib/constants/game-ids';
 
 // Perícias baseadas em Intelecto (usando IDs centralizados)

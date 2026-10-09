@@ -9,7 +9,7 @@
  */
 
 import { memo, useState } from 'react';
-import { Dice6, FileText, Play, Square } from 'lucide-react';
+import { Dice6, FileText, Play, Square } from '@/components/icons/ordem-icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

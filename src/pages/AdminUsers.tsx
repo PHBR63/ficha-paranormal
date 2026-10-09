@@ -44,7 +44,7 @@ import {
   ChevronDown,
   ChevronUp,
   Shield
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';

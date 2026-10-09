@@ -9,7 +9,7 @@ import { useConfirmedDiceRoll, type ConfirmDicePE } from '@/hooks/useConfirmedDi
 import { getCombatPowerDicePenalty } from '@/lib/class-powers/combat-test-dice';
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity as InfinityIcon, Droplets, Crosshair, AlertCircle } from 'lucide-react';
+import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity as InfinityIcon, Droplets, Crosshair, AlertCircle } from '@/components/icons/ordem-icons';
 import { SpecialAttackSelector, useSpecialAttackState } from './SpecialAttackSelector';
 import {
   getSpecialAttackOptions,

@@ -25,7 +25,7 @@ import {
   X,
   Sword,
   Zap,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import type { CombatantState } from '@/lib/game-engine';
 import type { AttackRange } from '@/hooks/campaign/useCombatBoardSync';
 

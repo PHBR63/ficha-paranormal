@@ -38,7 +38,7 @@ import {
   Zap,
   ChevronDown,
   ChevronUp,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import type { RollMacro, MacroType } from './MacroEditor';
 
 // Mapeamento de ícones

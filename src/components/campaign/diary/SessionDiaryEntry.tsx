@@ -26,7 +26,7 @@ import {
   Scroll,
   Users,
   Download,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { SessionExporter } from './SessionExporter';
 import { cn } from '@/lib/utils';
 

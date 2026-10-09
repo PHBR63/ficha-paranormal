@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { History, RefreshCw } from 'lucide-react';
+import { History, RefreshCw } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useCharacterActivity } from '@/hooks/character/useCharacterActivity';

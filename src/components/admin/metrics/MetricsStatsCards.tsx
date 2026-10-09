@@ -9,7 +9,7 @@ import {
   Swords, 
   Calendar,
   Shield
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import type { SystemStats } from './AdminMetricsDashboard';
 
 interface MetricsStatsCardsProps {

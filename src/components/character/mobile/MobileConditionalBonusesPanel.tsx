@@ -19,7 +19,7 @@ import {
   Swords, 
   Zap, 
   Eye 
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { ConditionalBonus } from '@/hooks/useCharacterBonusSummary';
 import { StackingExclusionIndicator, type ExcludedEffectInfo } from '../StackingExclusionIndicator';

@@ -20,7 +20,7 @@ import {
   Activity,
   Footprints,
   Brain,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 
 import type { SourceType } from './sue-debug-types';
 

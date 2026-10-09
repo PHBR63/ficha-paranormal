@@ -5,7 +5,7 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Dices, X } from 'lucide-react';
+import { Dices, X } from '@/components/icons/ordem-icons';
 import { rollSkillTest, DiceRollResult } from '@/lib/dice-roller';
 
 interface DiceRollerProps {

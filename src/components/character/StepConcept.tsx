@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Dices, User, Sparkles, AlertCircle, Package } from 'lucide-react';
+import { Dices, User, Sparkles, AlertCircle, Package } from '@/components/icons/ordem-icons';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';

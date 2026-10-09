@@ -32,7 +32,7 @@ import {
   Wind,
   ChevronRight,
   Info,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { Ritual, ResistanceType, ResistanceEffect, RitualEffect } from '@/lib/rituals/legacy-exports';
 import { getElementConfig } from '@/lib/element-config';

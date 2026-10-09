@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MedoSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 // Componente de revisão final do personagem antes de salvar
 // Mostra todos os dados: conceito, atributos, origem, classe, trilha, rituais, perícias, etc.
 // Inclui painel educativo do livro de regras e validação final Zod
@@ -7,7 +8,7 @@ import { ORIGINS, CLASSES, SKILLS, getPatentByNex, getTrackById, TRAINING_LABELS
 import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES, validateAttributes } from '@/lib/character-builder-engine';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { validateCharacterForm, type FinalValidationResult } from '@/lib/validation-schemas';
-import { Shield, Footprints, Swords, Edit2, Route, Sparkles, Droplets, Skull, BookOpen, Zap, Ghost, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Shield, Footprints, Swords, Edit2, Route, Sparkles, Droplets, AlertCircle } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
@@ -31,29 +32,29 @@ const ELEMENT_CONFIG: Record<string, {
   bg: string;
 }> = {
   sangue: {
-    icon: Droplets,
+    icon: SangueSymbol,
     color: 'text-red-400',
     bg: 'bg-red-500/20'
   },
   morte: {
-    icon: Skull,
+    icon: MorteSymbol,
     color: 'text-purple-400',
     bg: 'bg-purple-500/20'
   },
   conhecimento: {
-    icon: BookOpen,
+    icon: ConhecimentoSymbol,
     color: 'text-blue-400',
     bg: 'bg-blue-500/20'
   },
   energia: {
-    icon: Zap,
+    icon: EnergiaSymbol,
     color: 'text-yellow-400',
     bg: 'bg-yellow-500/20'
   },
   medo: {
-    icon: Ghost,
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-500/20'
+    icon: MedoSymbol,
+    color: 'text-zinc-400',
+    bg: 'bg-zinc-500/20'
   }
 };
 export function StepReview({

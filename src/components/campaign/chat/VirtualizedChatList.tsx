@@ -16,7 +16,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from './ChatMessage';
 import type { CampaignMessage } from '@/hooks/campaign/useCampaignRealtime';

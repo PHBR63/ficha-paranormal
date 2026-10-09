@@ -41,7 +41,7 @@ import {
   Ghost,
   Minus,
   Plus,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import type { CampaignNPC } from './NPCManager';
 
 // Configuração de categorias

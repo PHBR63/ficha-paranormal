@@ -5,7 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { Check } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 
 interface StepStampProps {

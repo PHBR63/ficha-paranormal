@@ -21,7 +21,7 @@ import {
   Target, Skull, EyeOff, AlertTriangle, Wrench,
   Maximize2, CircleDot, Crosshair, Focus,
   Swords, ArrowUp, ArrowDown, Shield, Sparkles, Star, Check
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import {
   type CatalogWeapon,
   type WeaponModification,

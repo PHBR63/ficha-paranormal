@@ -9,7 +9,7 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { GraduationCap, Check, ArrowRight, Settings, AlertTriangle } from 'lucide-react';
+import { GraduationCap, Check, ArrowRight, Settings, AlertTriangle } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

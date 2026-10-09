@@ -3,7 +3,7 @@
  */
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus } from '@/components/icons/ordem-icons';
 import { IdentificationBadge } from '@phosphor-icons/react';
 import { LogoBox } from '@/components/ui/logo';
 import { DecryptedText } from '@/components/ui/decrypted-text';

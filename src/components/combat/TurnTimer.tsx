@@ -40,7 +40,7 @@ import {
   VolumeX,
   FastForward,
   Clock,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import type { TurnTimerConfig, TurnTimerState } from '@/hooks/combat/useTurnTimer';
 
 interface TurnTimerProps {

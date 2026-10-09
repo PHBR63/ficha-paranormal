@@ -8,7 +8,7 @@
  */
 
 import { lazy, Suspense, memo, type ComponentType } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/components/icons/ordem-icons';
 
 // ========================================
 // FALLBACK DE LOADING

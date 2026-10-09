@@ -10,7 +10,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crosshair, Target, Zap, Skull, CheckCircle2, Loader2, Clock } from 'lucide-react';
+import { Crosshair, Target, Zap, Skull, CheckCircle2, Loader2, Clock } from '@/components/icons/ordem-icons';
 import { TRACK_EFFECT_IDS } from '@/hooks';
 import { DrawerClose } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';

@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MedoSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 import type { RitualResolutionRoll } from '@/lib/ritual-roll-history';
 /**
  * MobileRitualEffectWizard - Wizard de efeitos de rituais para mobile
@@ -22,27 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { MobileButtonGroup } from '@/components/ui/mobile-button-group';
-import {
-  Dices,
-  Skull,
-  Heart,
-  Shield,
-  Zap,
-  Flame,
-  Droplet,
-  Brain,
-  Ghost,
-  Snowflake,
-  Sparkles,
-  RefreshCw,
-  Check,
-  ChevronRight,
-  Target,
-  AlertTriangle,
-  Swords,
-  Timer,
-  X,
-} from 'lucide-react';
+import { Dices, Skull, Heart, Shield, Zap, Flame, Droplet, Brain, Snowflake, Sparkles, RefreshCw, Check, ChevronRight, Target, AlertTriangle, Swords, Timer, X } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { getElementConfig } from '@/lib/element-config';
 import { 
@@ -115,11 +96,11 @@ export interface MobileRitualEffectWizardProps {
 
 // Ícones de tipo de dano
 const DAMAGE_TYPE_ICONS: Record<string, typeof Skull> = {
-  'morte': Skull,
-  'sangue': Droplet,
-  'energia': Zap,
-  'conhecimento': Brain,
-  'medo': Ghost,
+  'morte': MorteSymbol,
+  'sangue': SangueSymbol,
+  'energia': EnergiaSymbol,
+  'conhecimento': ConhecimentoSymbol,
+  'medo': MedoSymbol,
   'elétrico': Zap,
   'fogo': Flame,
   'frio': Snowflake,

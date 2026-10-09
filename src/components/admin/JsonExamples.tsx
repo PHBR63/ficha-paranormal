@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Copy, CheckCheck, FileJson, Package } from 'lucide-react';
+import { Copy, CheckCheck, FileJson, Package } from '@/components/icons/ordem-icons';
 import { toast } from 'sonner';
 
 // Tipo de dado para importação

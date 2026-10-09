@@ -65,7 +65,7 @@ import {
   Dices,
   Palette,
   ShieldCheck,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import {
   DropdownMenu,
   DropdownMenuContent,

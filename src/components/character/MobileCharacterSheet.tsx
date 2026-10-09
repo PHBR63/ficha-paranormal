@@ -44,7 +44,7 @@ import {
   Edit2,
   Trash2,
   History,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { useCampaignRitualSync } from '@/hooks/useCampaignRitualSync';
 import type { RitualCastRecord } from './mobile/MobileRitualCastHistory';
 import { MobileInventorySheet } from '@/components/inventory/MobileInventorySheet';

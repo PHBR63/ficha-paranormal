@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { HelpCircle, BookOpen, Calculator, Search, X } from 'lucide-react';
+import { HelpCircle, BookOpen, Calculator, Search, X } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';

@@ -18,7 +18,7 @@ import {
   Sparkles, 
   Mic2,
   Info
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileCollapsibleSection } from '../../mobile/MobileCollapsibleSection';

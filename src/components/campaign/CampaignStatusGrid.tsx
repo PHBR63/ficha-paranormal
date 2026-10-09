@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 import { MagicCard } from '@/components/ui/magic-card';
 import { AnimatedProgress } from '@/components/ui/animated-progress';
 import { ConditionList } from '@/components/ui/condition-badge';
-import { Shield, User, Skull, FileText, ExternalLink } from 'lucide-react';
+import { Shield, User, Skull, FileText, ExternalLink } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 

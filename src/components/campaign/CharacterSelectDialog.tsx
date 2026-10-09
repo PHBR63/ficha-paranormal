@@ -25,7 +25,7 @@ import {
   Plus,
   AlertTriangle,
   Copy
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCharacterClone } from '@/hooks/useCharacterClone';

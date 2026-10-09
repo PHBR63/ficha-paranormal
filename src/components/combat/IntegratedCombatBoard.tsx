@@ -35,7 +35,7 @@ import {
   Crosshair,
   MapPin,
   Zap,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 
 interface IntegratedCombatBoardProps {
   board: TacticalBoardReturn | null;

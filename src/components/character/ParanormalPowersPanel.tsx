@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * Painel de Poderes Paranormais
  * Exibe os poderes paranormais do personagem com indicadores de afinidade elemental
@@ -9,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sparkles, Droplet, Skull, BookOpen, Zap, Star, TrendingUp, Shield, GraduationCap, AlertTriangle, Trash2 } from 'lucide-react';
+import { Sparkles, BookOpen, Star, TrendingUp, Shield, GraduationCap, AlertTriangle, Trash2 } from '@/components/icons/ordem-icons';
 import {
   ParanormalPower,
   ParanormalElement,
@@ -29,10 +30,10 @@ import { ExcessPowersRemovalModal } from './ExcessPowersRemovalModal';
 
 // Ícones por elemento
 const ELEMENT_ICONS: Record<ParanormalElement | 'generic', React.ComponentType<{ className?: string }>> = {
-  sangue: Droplet,
-  morte: Skull,
-  conhecimento: BookOpen,
-  energia: Zap,
+  sangue: SangueSymbol,
+  morte: MorteSymbol,
+  conhecimento: ConhecimentoSymbol,
+  energia: EnergiaSymbol,
   generic: Star,
 };
 

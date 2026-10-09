@@ -5,7 +5,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, RefreshCw, WifiOff } from 'lucide-react';
+import { AlertTriangle, RefreshCw, WifiOff } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 
 interface IncompleteDataBannerProps {

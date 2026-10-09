@@ -6,7 +6,7 @@
 
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, X, Download, Sparkles } from 'lucide-react';
+import { RefreshCw, X, Download, Sparkles } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { usePWAUpdate } from '@/hooks';
 

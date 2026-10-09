@@ -4,7 +4,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, RotateCcw, AlertTriangle, Flame, Swords, Sparkles } from 'lucide-react';
+import { Zap, RotateCcw, AlertTriangle, Flame, Swords, Sparkles } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getPELimitByNex } from '@/lib/dice-roller';

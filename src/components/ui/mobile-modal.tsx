@@ -7,7 +7,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import { X } from '@/components/icons/ordem-icons';
 import { cn } from "@/lib/utils";
 import { CustomScroll } from "@/components/ui/custom-scroll";
 

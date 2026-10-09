@@ -15,7 +15,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Shield, Star, Award, Crown, Gem, Check, Info } from 'lucide-react';
+import { Shield, Star, Award, Crown, Gem, Check, Info } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { PATENT_IDS, VALID_PATENT_IDS, isValidPatentId, getPatentIdByName, type PatentId } from '@/lib/constants/game-ids';
 import {

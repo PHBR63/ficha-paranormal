@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Shield, Search, Plus, X, Lock, CheckCircle2, XCircle,
   ChevronDown, ChevronUp, AlertTriangle, Info
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import {
   Dialog,
   DialogContent,

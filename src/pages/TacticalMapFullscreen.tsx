@@ -28,7 +28,7 @@ import { ChatSidePanel } from '@/components/campaign/v3/map/ChatSidePanel';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Users, PanelRightOpen, PanelRightClose, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Users, PanelRightOpen, PanelRightClose, MessageSquare } from '@/components/icons/ordem-icons';
 import type { DrawToolType } from '@/components/campaign/v3/map/MapToolbar';
 import {
   Shield as ShieldIcon,

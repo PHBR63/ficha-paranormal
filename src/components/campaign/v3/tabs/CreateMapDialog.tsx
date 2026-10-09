@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Loader2, Plus, AlertTriangle, Info } from 'lucide-react';
+import { Loader2, Plus, AlertTriangle, Info } from '@/components/icons/ordem-icons';
 import {
   Dialog,
   DialogContent,

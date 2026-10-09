@@ -7,7 +7,7 @@
  * @module Ordem Paranormal RPG v1.3
  */
 
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from '@/components/icons/ordem-icons';
 
 /** Tipos de ação de auditoria */
 export type AuditActionType = 

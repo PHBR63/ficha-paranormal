@@ -4,7 +4,7 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crosshair, Swords, Target, Sparkles, Zap, Skull } from 'lucide-react';
+import { Crosshair, Swords, Target, Sparkles, Zap, Skull } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 

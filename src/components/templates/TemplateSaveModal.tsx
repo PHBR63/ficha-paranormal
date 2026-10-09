@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Package, Save, Loader2, X, Shield, Sword, Sparkles, Brain, AlertTriangle } from 'lucide-react';
+import { Package, Save, Loader2, X, Shield, Sword, Sparkles, Brain, AlertTriangle } from '@/components/icons/ordem-icons';
 import { useCreateTemplate } from '@/hooks/useTemplates';
 import { useToast } from '@/hooks/use-toast';
 import type { CharacterTemplateData, TemplateDifficulty, TemplateClassPower, TemplateEquipment } from '@/types/templates';

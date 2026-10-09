@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * Seletor de Afinidade Elemental
  * Exibido para personagens NEX 50%+ que ainda não escolheram afinidade
@@ -15,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Sparkles, Droplet, Skull, BookOpen, Zap, Check, Loader2, Info, Star, Search, ChevronRight } from 'lucide-react';
+import { Sparkles, Check, Loader2, Info, Star, Search, ChevronRight } from '@/components/icons/ordem-icons';
 import {
   ParanormalElement,
   ELEMENT_LABELS,
@@ -30,10 +31,10 @@ import { PowerDetailModal, PowerDetailData } from './PowerDetailModal';
 
 // Ícones por elemento
 const AFFINITY_ICONS: Record<ParanormalElement, React.ComponentType<{ className?: string }>> = {
-  sangue: Droplet,
-  morte: Skull,
-  conhecimento: BookOpen,
-  energia: Zap,
+  sangue: SangueSymbol,
+  morte: MorteSymbol,
+  conhecimento: ConhecimentoSymbol,
+  energia: EnergiaSymbol,
 };
 
 // Descrições detalhadas das afinidades

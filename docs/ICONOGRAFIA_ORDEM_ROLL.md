@@ -1,0 +1,422 @@
+# Iconografia do Ordem Roll
+
+## Resumo
+Cinco símbolos do Livro Base v1.3 substituem os desenhos genéricos dos elementos. Ações e recursos de jogo usam 28 ícones duotone da biblioteca Phosphor já instalada. Controles de navegação mantêm a semântica Lucide. Não houve mudança de regras, payloads, autenticação ou banco.
+
+## Arquivos centrais
+- `src/components/icons/ordem-icons.tsx`: adaptador de ícones. Recebe propriedades Lucide, tamanho, classes, cor, rótulos e ref; retorna SVG compatível. Importa somente os glifos Phosphor utilizados e reexporta controles Lucide. Os consumidores abaixo dependem dele.
+- `src/components/icons/element-symbols.tsx`: cinco componentes SVG com imagens locais e enquadramento circular. Recebe tamanho, classes, ref e atributos acessíveis. Exporta `ELEMENT_SYMBOLS` para seletores e cartões.
+- `src/lib/element-config.ts`: relaciona IDs existentes aos símbolos; conserva os contratos de configuração. Medo passa a branco/prateado.
+- `src/components/ui/paranormal-element-icon.tsx`: mantém tamanhos e variantes públicas. Importa a configuração e o mapa de símbolos. Retorna um símbolo nomeado e respeita movimento reduzido.
+- `src/index.css`: tokens visuais de Medo.
+- `src/components/character/PowerDetailModal.tsx`: troca o emoji do poder pelo símbolo configurado.
+- `src/pages/Index.tsx`: remove emojis fixos dos avisos de acesso, confidencialidade e recrutamento.
+- `public/icons/elements/{sangue,morte,conhecimento,energia,medo}.png`: arte extraída do livro. Origem em `public/icons/elements/README.md`.
+- `src/components/icons/__tests__/icon-contract.test.tsx`: oito cenários para refs, nomes acessíveis, tamanho, cor e seleção case-insensitive.
+
+## Fluxo
+Tela/componente → biblioteca de ícones → SVG Phosphor/Lucide.
+
+Elemento → configuração ou mapa de símbolos → SVG com imagem local em `/icons/elements/`.
+
+Não há chamadas de API no novo fluxo. Os dados e eventos dos componentes existentes permanecem iguais. Ícones genéricos de morte, fogo e eletricidade continuam representando ações/condições; somente referências explícitas aos elementos usam seus símbolos oficiais. Emojis criados pelos usuários em mapas e conteúdos são preservados.
+
+## Patch principal
+```tsx
+const config = getElementConfig(element);
+const Icon = config?.icon;
+// Os consumidores existentes continuam passando className, size e ref.
+```
+
+## Validação
+Regressão existente: 3.367 testes passaram em 154 arquivos. Testes do contrato visual: oito passaram. Tipos e compilação são conferidos separadamente. Revisão visual: tamanhos 16/24/32/64, fundos claro/escuro e página inicial em 320 pixels. Cinco snapshots locais antigos foram preservados em backup antes de atualizar a comparação dos novos SVGs; os snapshots que já estavam fora do Git não são incluídos neste lote.
+
+## Integrações explícitas dos elementos
+- `src/components/character/AffinitySelectorCard.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/CharacterSheetHeader.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/ElementResistanceSelectModal.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/ExcessPowersRemovalModal.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/ExcessRitualsRemovalModal.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/NexProgressionModal.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/NonOccultistRitualModal.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/ParanormalPowerSelectModal.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/ParanormalPowersPanel.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/RemovedPowersHistory.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/RitualDamageModal.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/RitualEffectWizard.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/StepReview.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/StepRituals.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/SustainedRitualsPanel.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/TranscenderAffinityStep.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/mobile/MobileAffinitySelectorCard.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/mobile/MobileParanormalPowerSelectModal.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/mobile/MobileRitualEffectWizard.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/character/mobile/MobileSustainedRitualsPanel.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/combat/CombatWeaponBuffsPanel.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/components/ui/paranormal-element-icon.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+- `src/lib/element-config.ts`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
+
+## Todos os consumidores alterados
+Cada arquivo abaixo passa a importar a biblioteca central; fora dos itens descritos acima, a alteração é somente de origem do import. A responsabilidade funcional, propriedades recebidas e retornos permanecem os já definidos no arquivo.
+
+- `src/components/DataErrorBoundary.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ErrorBoundary.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/OfflineIndicator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/AdminNav.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/AdminPagination.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/AdminSearchBar.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/ClassPowerBonusTests.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/ImportPreview.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/JsonExamples.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/SUETestCoverageDashboard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/ValidationHistoryDashboard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/audit-logs/AuditLogEntry.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/audit-logs/AuditLogFilters.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/audit-logs/AuditLogStats.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/audit-logs/AuditLogTimeline.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/audit-logs/audit-log-constants.ts` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/audit-logs/audit-log-types.ts` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/metrics/AdminMetricsDashboard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/metrics/MetricsStatsCards.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/rules-validation/CategorySection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/rules-validation/RulesValidationPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/rules-validation/validation-constants.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/sue-debug/BreakdownView.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/sue-debug/ComputedEffectsView.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/sue-debug/EffectCategorySection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/sue-debug/RawEffectsView.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/sue-debug/SUEDebugPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/sue-debug/sections/CombatAdvancedSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/sue-debug/sections/FlagsSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/sue-debug/sections/HealingSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/sue-debug/sections/OccultistSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/sue-debug/sections/SkillsSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/sue-debug/sections/SneakAttackSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/admin/sue-debug/sue-debug-constants.ts` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/auth/AdminRoute.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/auth/PasswordStrengthIndicator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/ActiveSessionBanner.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/CampaignRitualFeed.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/CampaignStatusGrid.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/CharacterConditions.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/CharacterSelectDialog.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/MemberBonusesPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/MemberConditionsPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/NoteEditor.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/NotesPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/PlayersSidebar.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/SessionCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/SessionManager.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/audio/AudioMasterPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/audio/AudioPlayerBar.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/audio/SoundSceneManager.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/chat/ChatMessage.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/chat/IntegratedDiceRoller.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/chat/MacrosPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/chat/SessionActivityLog.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/chat/VirtualizedChatList.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/chat/WhisperDialog.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/diary/CampaignTimeline.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/diary/SessionDiary.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/diary/SessionDiaryEntry.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/diary/SessionExporter.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/handouts/PlayerHandoutsViewer.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/layout/CampaignLayout.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/layout/NavigationTabs.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/master/HandoutsManager.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/master/MasterSheetViewer.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/master/NPCCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/master/NPCManager.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/tabs/CampaignChatTab.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/tactical/AreaEffectControls.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/tactical/MapAssetsPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/tactical/MapImageUploader.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/tactical/MapPinDialog.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/tactical/TacticalBoard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/CampaignHeader.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/CampaignNavigation.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/CampaignStatusBar.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/map/ChatSidePanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/map/MapSidePanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/map/MapToolbar.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/master/AudioControlPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/master/ConditionSelector.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/modals/CampaignSettingsModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/modals/DiceRollModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/modals/QuickNotesModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/tabs/ChatTab.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/tabs/CreateMapDialog.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/tabs/MapListTab.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/tabs/MapTab.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/tabs/MasterTab.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/tabs/PanelTab.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/v3/tabs/ResourcesTab.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/wizard/StepCampaignInfo.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/wizard/StepCampaignReview.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/wizard/StepCampaignSettings.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/wizard/StepInitialSession.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/campaign/wizard/StepInvitePlayers.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/cards/CampaignCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/cards/CharacterCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/AbilityDetailModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ActiveAdvancedBonusesBar.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ActiveBonusSummaryWidget.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ActiveBonusesPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ActiveEffectsPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/AffinitySelectorCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/AmnesicSkillModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/AniquiladorPassivesIndicator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/AniquiladorTechniqueModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/AttributeIncreaseSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/AttributeWithDice.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/AutomationDebugWidget.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/BonusSummaryCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CharacterActivityPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CharacterAuditBanner.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CharacterCombatTracker.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CharacterCreationStepper.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CharacterEditModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CharacterHistoryPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CharacterSheetAdapter.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CharacterSheetHeader.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CharacterSheetHelp.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ClassPowerBonusesPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ClassPowerSelectionSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ClassPowerSubchoiceModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ClassPowersActivationPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CombatRollModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CombatStatsCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CombatWeaponsTable.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ConditionManager.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ConditionalBonusesPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/CreationHelpModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/DisparoLetalSelector.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/EffectiveStatsWidget.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ElementResistanceSelectModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/EspecialistaArmaIndicator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ExcessPowersRemovalModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ExcessRitualsRemovalModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/GeneralPowersPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/HealingRollModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/HeartbeatIcon.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/IdentityCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/IncompleteDataBanner.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/IntellectSkillSelectModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/MaquinaDeMatarIndicator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/MissingSkillsFixModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/MobileAuditBanner.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/MobileCharacterSheet.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/NexBenefitsPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/NexProgressionModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/NonOccultistRitualModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/OriginWeaponBindingModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ParanormalPowerSelectModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ParanormalPowersActivationPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ParanormalPowersPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/PatentSelector.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/PeritoIndicator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/PersonalDataAccordion.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/PowerDetailModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/PowerSubchoiceModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/RemovedPowersHistory.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ResistanceCheckModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/RestModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/RitualCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/RitualCastHistory.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/RitualCastModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/RitualConditionApplicator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/RitualDamageModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/RitualEffectWizard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/RitualSelectionModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/RoundControlPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/RuleBookTip.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/SheetAccordionSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/SkillChoiceModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/SkillTrainingSelectModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/SkillsByAttribute.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/SkillsGrid.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/SneakAttackSelector.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/SpecialAttackSelector.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StackingExclusionBadge.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StackingExclusionIndicator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StatsPreviewWidget.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StepAbilities.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StepAttributes.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StepClass.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StepConcept.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StepNex.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StepOrigin.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StepReview.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StepRituals.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StepSkills.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/StepTrack.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/SustainedRitualsPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/TrackCombatBonusesBar.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/TrackPassiveEffectsWidget.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/TrainingGradeIndicator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/TrainingGradeSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/TrainingGradeSelectModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/TranscenderAffinityStep.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/TranscenderHistoryPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/TurnPETracker.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/ValidationAutoFixModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/VersatilityAbilityCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/VersatilitySection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/WeaponBuffIndicator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/WeaponBuffTurnTracker.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/conditions/ConditionBadges.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/conditions/ConditionManager.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/gamification/CreationCelebration.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/gamification/LiveDossierPreview.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/gamification/ProgressBadge.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/gamification/StepStamp.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileActiveEffectsPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileAffinitySelectorCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileClassPowersPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileCollapsibleSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileCombatDrawer.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileCombatPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileCombatRollModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileConditionManager.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileConditionalBonusesPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileDiceRollModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileOriginCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileOverviewTab.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileParanormalPowerSelectModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileParanormalPowersActivationPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobilePowersTab.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileQuickActions.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileResistanceCheckModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileRitualCastHistory.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileRitualCastModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileRitualEffectWizard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileRollHistory.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileSUEDebugPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileSkillsTab.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileSustainedRitualsPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileTabNavigation.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileTrackPassiveEffectsWidget.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/mobile/MobileVirtualizedPowersList.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/sheet/LazyModals.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/combatente/AniquiladorPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/combatente/ComandanteCampoPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/combatente/GuerreiroPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/combatente/OperacoesEspeciaisPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/combatente/TropaDeChoquePanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/especialista/AtiradorDeElitePanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/especialista/EquipeTraumaModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/especialista/ImprovisarItemSelector.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/especialista/InfiltradorPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/especialista/MedicoDeCampoPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/especialista/NegociadorPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/especialista/PreparadoParaTudoItemSelector.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/especialista/RemendaoItemSelector.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/especialista/TecnicoPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/especialista/TruqueMestreModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/ocultista/ConduitePanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/ocultista/FlageladorPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/ocultista/GraduadoPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/ocultista/IntuitivoPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/ocultista/LaminaParanormalPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/ocultista/useGraduadoTrack.ts` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/character/tracks/ocultista/useIntuitivoTrack.ts` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/ActiveRitualsPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/CombatBoardLinker.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/CombatStatsPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/CombatTracker.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/CombatWeaponBuffsPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/HookExecutionLog.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/IntegratedCombatBoard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/MacroBar.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/MacroEditor.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/MobileCombatTracker.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/MovementIndicator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/OpportunityAttackAlert.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/PreparedActionBadge.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/RangeCalculator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/TacticalPauseModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/TurnActionsPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/combat/TurnTimer.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/dashboard/DashboardAgentsSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/dashboard/DashboardCampaignsSection.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/dev/SUEDevToolsPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/dice/DiceRollHistory.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/dice/DiceRollModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/dice/DiceRoller.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/dice/DiceRoller3D.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/dice/PowerActivationPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/AccessoryModificationModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/AmmoModificationModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/ArmorCatalogModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/ArmorModificationModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/EquipmentSlots.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/InventoryItemDetailModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/InventoryPanel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/ItemCatalogModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/MobileInventoryCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/MobileInventorySheet.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/ProtectionWidget.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/WeaponCatalogModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/inventory/WeaponModificationModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/pwa/InstallPromptBanner.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/pwa/PWAUpdateBanner.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/pwa/PushNotificationToggle.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/templates/ProgressionRoadmap.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/templates/TemplateApplyWizard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/templates/TemplateCard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/templates/TemplateCreationWizard.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/templates/TemplateEditModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/templates/TemplateFilters.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/templates/TemplateGallery.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/templates/TemplateGalleryModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/templates/TemplateListItem.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/templates/TemplatePreviewModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/templates/TemplateRatingStars.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/templates/TemplateSaveModal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/KeyboardShortcutsHelp.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/OfflineBanner.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/SaveStatusIndicator.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/accordion.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/breadcrumb.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/calendar.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/carousel.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/checkbox.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/command.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/context-menu.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/dialog.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/dropdown-menu.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/image-uploader.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/input-otp.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/menubar.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/mobile-action-sheet.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/mobile-drawer.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/mobile-modal.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/navigation-menu.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/pagination.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/paranormal-element-icon.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/pull-to-refresh.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/radio-group.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/resizable.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/select.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/sheet.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/sidebar.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/theme-selector.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/components/ui/toast.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/hooks/useAuditAlerts.ts` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/index.css` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/lib/constants/weapon-groups.ts` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/lib/element-config.ts` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/AdminCampaigns.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/AdminDataIntegrity.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/AdminImport.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/AdminUsers.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/Auth.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/CampaignCreate.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/CampaignView.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/Campaigns.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/CharacterCreate.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/CharacterSheet.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/Index.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/Install.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/MyTemplates.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+- `src/pages/TacticalMapFullscreen.tsx` — integração da biblioteca de ícones na responsabilidade existente.

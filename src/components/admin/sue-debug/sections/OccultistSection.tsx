@@ -6,7 +6,7 @@
  * @module Ordem Paranormal RPG v1.3
  */
 
-import { Brain, Check } from 'lucide-react';
+import { Brain, Check } from '@/components/icons/ordem-icons';
 import type { ComputedEffects } from '@/hooks';
 
 interface OccultistSectionProps {

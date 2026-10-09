@@ -9,8 +9,8 @@
  */
 
 import { useMemo } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import { Brain, Shield, Sparkles } from 'lucide-react';
+import type { LucideIcon } from '@/components/icons/ordem-icons';
+import { Brain, Shield, Sparkles } from '@/components/icons/ordem-icons';
 
 // =====================================================
 // TIPOS E CONSTANTES

@@ -50,7 +50,7 @@ import {
   Trash2,
   Loader2,
   Save,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

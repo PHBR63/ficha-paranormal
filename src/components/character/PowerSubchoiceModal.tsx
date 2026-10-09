@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Check, BookOpen, Droplet, Skull, Zap, Brain, AlertTriangle } from 'lucide-react';
+import { Check, BookOpen, Droplet, Skull, Zap, Brain, AlertTriangle } from '@/components/icons/ordem-icons';
 import { ParanormalPower, ParanormalElement, PowerChoiceType, ELEMENT_LABELS, ELEMENT_COLORS, ELEMENT_BG_COLORS } from '@/lib/paranormal-powers';
 import { SKILL_IDS, VALID_ELEMENT_IDS, isValidElementId } from '@/lib/constants/game-ids';
 import { getElementConfigSafe, getElementKeys, ParanormalElementType } from '@/lib/element-config';

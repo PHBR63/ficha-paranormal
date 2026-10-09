@@ -8,7 +8,7 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Zap, Brain, Shield, Footprints, ChevronDown, ChevronUp } from 'lucide-react';
+import { Heart, Zap, Brain, Shield, Footprints, ChevronDown, ChevronUp } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { CLASSES } from '@/lib/character-data';

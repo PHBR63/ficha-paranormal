@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * Modal de Seleção de Poderes Paranormais
  * 
@@ -22,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Check, Lock, Sparkles, Droplet, Skull, BookOpen, Zap, Star, AlertCircle, Info } from 'lucide-react';
+import { Check, Lock, Sparkles, Droplet, Skull, BookOpen, Zap, Star, AlertCircle, Info } from '@/components/icons/ordem-icons';
 import {
   ParanormalPower,
   ParanormalElement,
@@ -37,10 +38,10 @@ import {
 
 // Ícones por elemento
 const ELEMENT_ICONS: Record<ParanormalElement | 'generic', React.ComponentType<{ className?: string }>> = {
-  sangue: Droplet,
-  morte: Skull,
-  conhecimento: BookOpen,
-  energia: Zap,
+  sangue: SangueSymbol,
+  morte: MorteSymbol,
+  conhecimento: ConhecimentoSymbol,
+  energia: EnergiaSymbol,
   generic: Star,
 };
 

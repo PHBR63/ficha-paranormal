@@ -9,7 +9,7 @@ import type { ConfirmCombatAttack } from '@/services/combat-attack-service';
 import { useState } from 'react';
 import type { ConfirmDicePE } from '@/hooks/useConfirmedDiceRoll';
 import { motion } from 'framer-motion';
-import { Sword, Target, Crosshair, Dices, Sparkles } from 'lucide-react';
+import { Sword, Target, Crosshair, Dices, Sparkles } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import {
   Table,
