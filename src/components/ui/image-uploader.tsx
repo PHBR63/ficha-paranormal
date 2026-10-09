@@ -72,8 +72,8 @@ export function ImageUploader({
       onChange(url, file);
       setIsLoading(false);
       toast({
-        title: 'Foto adicionada',
-        description: 'A imagem foi carregada com sucesso.',
+        title: 'Prévia da foto pronta',
+        description: 'Arquivo selecionado neste dispositivo. Confirme o formulário para enviar e salvar.',
       });
     };
     reader.onerror = () => {

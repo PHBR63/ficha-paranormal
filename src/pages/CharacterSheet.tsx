@@ -2076,7 +2076,7 @@ export default function CharacterSheet() {
     defense: number;
     photo_url: string | null;
   }) => {
-    if (!character || !user) return;
+    if (!character || !user) throw new Error('Entre novamente na sua conta para salvar a ficha.');
 
     const transcender = countTranscender(character.abilities as string[]);
     const newStats = calculateDerivedStats(
@@ -2137,7 +2137,9 @@ export default function CharacterSheet() {
         pe_current: Math.min(peCurrent, newStats.pe),
         san_current: Math.min(sanCurrent, newStats.san),
       })
-      .eq('id', character.id);
+      .eq('id', character.id)
+      .select('id')
+      .single();
 
     if (error) {
       toast({

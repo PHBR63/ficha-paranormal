@@ -2,8 +2,11 @@
 BEGIN;
 SELECT set_config('test.avatar_owner', user_id::text, true)
 FROM public.characters WHERE id = 'ecde39f9-2d41-4d39-ad20-c8d013e11ee7';
+SELECT set_config('test.avatar_other', id::text, true)
+FROM auth.users WHERE id <> current_setting('test.avatar_owner')::uuid LIMIT 1;
 DO $$ BEGIN
-  IF nullif(current_setting('test.avatar_owner', true), '') IS NULL THEN
+  IF nullif(current_setting('test.avatar_owner', true), '') IS NULL
+    OR nullif(current_setting('test.avatar_other', true), '') IS NULL THEN
     RAISE EXCEPTION 'Identidade QA ausente';
   END IF;
   IF NOT (SELECT public FROM storage.buckets WHERE id = 'character-avatars') THEN
@@ -36,6 +39,14 @@ SELECT set_config('request.jwt.claims', json_build_object('sub', current_setting
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM storage.objects WHERE id = '93aa0000-0000-4000-8000-000000000001') THEN
     RAISE EXCEPTION 'Conta autenticada perdeu leitura de avatar';
+  END IF;
+END $$;
+SELECT set_config('request.jwt.claim.sub', current_setting('test.avatar_other'), true);
+SELECT set_config('request.jwt.claims', json_build_object('sub', current_setting('test.avatar_other'),
+  'role', 'authenticated', 'is_anonymous', false)::text, true);
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM storage.objects WHERE id = '93aa0000-0000-4000-8000-000000000001') THEN
+    RAISE EXCEPTION 'Outra conta conseguiu listar metadados do dono';
   END IF;
 END $$;
 ROLLBACK;
