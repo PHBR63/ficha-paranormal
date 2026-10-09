@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Shield, Stamp, Star } from 'lucide-react';
+import { Check, Shield, Stamp, Star } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
 

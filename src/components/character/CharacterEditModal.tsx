@@ -64,7 +64,7 @@ import {
   HelpCircle,
   Lock,
   ShieldAlert,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { ORIGINS, SKILLS, CLASSES, calculateDerivedStats, countTranscender } from '@/lib/character-data';
 import { ImageUploader } from '@/components/ui/image-uploader';
 import { uploadCharacterPhoto } from '@/services/character-photo-service';

@@ -7,7 +7,7 @@
  * @module Ordem Paranormal RPG v1.3
  */
 
-import { ChevronDown, Check, X, Zap } from 'lucide-react';
+import { ChevronDown, Check, X, Zap } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import {
   Collapsible,

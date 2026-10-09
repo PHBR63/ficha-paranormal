@@ -21,7 +21,7 @@ import {
   ListOrdered,
   ChevronDown,
   ChevronUp,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import {
   DropdownMenu,
   DropdownMenuContent,

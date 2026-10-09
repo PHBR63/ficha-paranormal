@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MedoSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * Modal para Remoção de Rituais Excedentes
  * Permite ao usuário selecionar quais rituais remover quando está acima do limite
@@ -16,17 +17,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Droplet, Skull, BookOpen, Zap, Ghost, Scroll, Trash2, Check } from 'lucide-react';
+import { AlertTriangle, Scroll, Trash2, Check } from '@/components/icons/ordem-icons';
 import { toast } from '@/hooks/use-toast';
 import { ALL_RITUALS, Ritual, RitualElement } from '@/lib/rituals/legacy-exports';
 
 // Ícones por elemento de ritual
 const ELEMENT_ICONS: Record<RitualElement, React.ComponentType<{ className?: string }>> = {
-  sangue: Droplet,
-  morte: Skull,
-  conhecimento: BookOpen,
-  energia: Zap,
-  medo: Ghost,
+  sangue: SangueSymbol,
+  morte: MorteSymbol,
+  conhecimento: ConhecimentoSymbol,
+  energia: EnergiaSymbol,
+  medo: MedoSymbol,
 };
 
 // Cores por elemento

@@ -6,7 +6,7 @@
  * @module Ordem Paranormal RPG v1.3
  */
 
-import { Heart } from 'lucide-react';
+import { Heart } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import type { ComputedEffects } from '@/hooks';
 

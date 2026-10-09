@@ -6,7 +6,7 @@
 
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Footprints, XCircle, Ban, AlertTriangle, ShieldCheck, ArrowDown, Swords, Target, HandMetal } from 'lucide-react';
+import { Shield, Footprints, XCircle, Ban, AlertTriangle, ShieldCheck, ArrowDown, Swords, Target, HandMetal } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import {
   getEffectiveDefense,

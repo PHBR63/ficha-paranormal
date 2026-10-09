@@ -3,7 +3,7 @@
  * Suporta texto, rolagens, eventos do sistema e formatação markdown básica
  */
 import { useMemo } from 'react';
-import { Crown, Dices, AlertTriangle, Sparkles, Skull, Heart, Shield, Zap, ScrollText, Target } from 'lucide-react';
+import { Crown, Dices, AlertTriangle, Sparkles, Skull, Heart, Shield, Zap, ScrollText, Target } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 
 // Tipos de mensagem suportados

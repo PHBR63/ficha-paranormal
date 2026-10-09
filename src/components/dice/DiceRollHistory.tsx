@@ -5,7 +5,7 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { History, Sparkles, AlertTriangle, X, Trash2 } from 'lucide-react';
+import { History, Sparkles, AlertTriangle, X, Trash2 } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';

@@ -19,7 +19,7 @@ import {
   Maximize2,
   ExternalLink,
   Map as MapIcon
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {

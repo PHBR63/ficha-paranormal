@@ -7,7 +7,7 @@
  * usam os hooks SUE integrados (useSkillRollWithSUE, useCombatRollWithSUE).
  */
 import { useState, useCallback } from 'react';
-import { Dices, ChevronDown, ChevronUp, Minus, Plus, Target, Shield } from 'lucide-react';
+import { Dices, ChevronDown, ChevronUp, Minus, Plus, Target, Shield } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

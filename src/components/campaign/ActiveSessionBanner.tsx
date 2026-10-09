@@ -10,7 +10,7 @@ import {
   Clock,
   Users,
   Pause,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 
 interface ActiveSessionBannerProps {
   sessionNumber: number;

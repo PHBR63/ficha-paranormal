@@ -16,7 +16,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crosshair, Skull, Zap, Info, AlertCircle } from 'lucide-react';
+import { Crosshair, Skull, Zap, Info, AlertCircle } from '@/components/icons/ordem-icons';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';

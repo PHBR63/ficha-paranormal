@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronDown, ChevronUp, User } from 'lucide-react';
+import { ChevronDown, ChevronUp, User } from '@/components/icons/ordem-icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

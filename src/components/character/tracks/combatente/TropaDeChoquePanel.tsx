@@ -8,7 +8,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Shield, ShieldAlert, Heart, Skull, ChevronDown, ChevronUp, Info, AlertTriangle, Zap } from 'lucide-react';
+import { Shield, ShieldAlert, Heart, Skull, ChevronDown, ChevronUp, Info, AlertTriangle, Zap } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

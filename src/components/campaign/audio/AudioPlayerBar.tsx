@@ -5,7 +5,7 @@
 
 import React, { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Music, Volume2, VolumeX } from 'lucide-react';
+import { Music, Volume2, VolumeX } from '@/components/icons/ordem-icons';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { useCampaignAudio } from '@/hooks/campaign/useCampaignAudio';

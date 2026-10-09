@@ -11,7 +11,7 @@ import {
   User, Shield, Heart, Zap, Brain, Footprints, 
   MapPin, Sword, Route, Sparkles, Lock, Check,
   Eye
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import { ORIGINS, CLASSES, getTrackById, calculateDerivedStats, calculateDefense } from '@/lib/character-data';

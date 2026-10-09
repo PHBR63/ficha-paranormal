@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { Target, Wrench, Check, Skull, AlertTriangle } from 'lucide-react';
+import { Target, Wrench, Check, Skull, AlertTriangle } from '@/components/icons/ordem-icons';
 import { type AmmoModification, AMMO_MODIFICATIONS } from '@/lib/catalogs';
 
 // Ícones por modificação de munição

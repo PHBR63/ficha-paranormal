@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { Wrench, Sword, Check, AlertCircle, Crosshair, Package } from 'lucide-react';
+import { Wrench, Sword, Check, AlertCircle, Crosshair, Package } from '@/components/icons/ordem-icons';
 
 // Tipo de arma compatível com o binding
 export interface BindableWeapon {

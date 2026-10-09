@@ -52,7 +52,7 @@ import {
   Check,
   Loader2,
   Layers,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { useToast } from '@/hooks/use-toast';
 import { useCampaignAudio, SoundScene, CampaignAudio } from '@/hooks/campaign/useCampaignAudio';
 

@@ -13,7 +13,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
-import { PanelRightOpen, PanelRightClose, Users } from 'lucide-react';
+import { PanelRightOpen, PanelRightClose, Users } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 
 interface CampaignLayoutProps {

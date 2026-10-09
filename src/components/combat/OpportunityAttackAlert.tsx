@@ -25,7 +25,7 @@ import {
   Target,
   SkipForward,
   Zap,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import type { OpportunityAttack } from '@/hooks/campaign/useOpportunityAttacks';
 
 interface OpportunityAttackAlertProps {

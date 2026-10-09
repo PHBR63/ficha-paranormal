@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { Briefcase, Wrench, Check, Star, EyeOff, PlusCircle, BookOpen } from 'lucide-react';
+import { Briefcase, Wrench, Check, Star, EyeOff, PlusCircle, BookOpen } from '@/components/icons/ordem-icons';
 
 // Tipos de modificação para acessórios
 export type AccessoryModification = 'aprimorado' | 'discreto' | 'funcao_adicional' | 'instrumental';

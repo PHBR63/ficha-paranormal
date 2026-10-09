@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Keyboard } from 'lucide-react';
+import { Keyboard } from '@/components/icons/ordem-icons';
 import {
   Dialog,
   DialogContent,

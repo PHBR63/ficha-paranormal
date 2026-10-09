@@ -6,8 +6,8 @@
  * e outros poderes que requerem escolha de grupo de armas.
  */
 
-import { Sword, Target, Zap, Crosshair, HandMetal, Bomb, Shield, Pickaxe, Hammer, Sparkles } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Sword, Target, Zap, Crosshair, HandMetal, Bomb, Shield, Pickaxe, Hammer, Sparkles } from '@/components/icons/ordem-icons';
+import type { LucideIcon } from '@/components/icons/ordem-icons';
 
 /**
  * Interface de um grupo de armas para seleção

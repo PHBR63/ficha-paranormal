@@ -32,7 +32,7 @@ import {
   EyeOff,
   Copy,
   Check
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';

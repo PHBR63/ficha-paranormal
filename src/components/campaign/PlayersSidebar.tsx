@@ -8,7 +8,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, User, X, Eye, UserMinus, Shield, Zap, Brain, ChevronRight, ChevronLeft, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Crown, User, X, Eye, UserMinus, Shield, Zap, Brain, ChevronRight, ChevronLeft, PanelRightClose, PanelRightOpen } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { MobileActionSheet } from '@/components/ui/mobile-action-sheet';
 import { cn } from '@/lib/utils';

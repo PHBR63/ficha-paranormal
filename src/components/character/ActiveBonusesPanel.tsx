@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { 
   Shield, Swords, Heart, Zap, Brain, Star, Sparkles, 
   Target, Crosshair, Activity, Flame, ToggleLeft, ToggleRight, Stethoscope
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { 
   Sheet,

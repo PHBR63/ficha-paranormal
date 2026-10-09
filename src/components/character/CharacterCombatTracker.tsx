@@ -32,7 +32,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { getEffectiveDefense, canAct, canMove, getTestModifier } from '@/lib/game-engine';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';

@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * Componente de Histórico de Poderes Paranormais Removidos
  * Permite visualizar e restaurar poderes que foram removidos anteriormente
@@ -10,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { History, RotateCcw, Trash2, Droplet, Skull, BookOpen, Zap, Star, Clock, AlertTriangle } from 'lucide-react';
+import { History, RotateCcw, Trash2, Star, Clock, AlertTriangle } from '@/components/icons/ordem-icons';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -19,10 +20,10 @@ import { ParanormalElement, ELEMENT_LABELS, ELEMENT_COLORS, SavedParanormalPower
 
 // Ícones por elemento
 const ELEMENT_ICONS: Record<ParanormalElement | 'generic', React.ComponentType<{ className?: string }>> = {
-  sangue: Droplet,
-  morte: Skull,
-  conhecimento: BookOpen,
-  energia: Zap,
+  sangue: SangueSymbol,
+  morte: MorteSymbol,
+  conhecimento: ConhecimentoSymbol,
+  energia: EnergiaSymbol,
   generic: Star,
 };
 

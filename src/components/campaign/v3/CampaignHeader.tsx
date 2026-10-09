@@ -9,7 +9,7 @@
 
 import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Settings, Wifi, WifiOff, Users } from 'lucide-react';
+import { ArrowLeft, Settings, Wifi, WifiOff, Users } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {

@@ -5,7 +5,7 @@
 
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Shield, Zap, Target, Skull, Heart, Brain, Swords, Eye, Timer } from 'lucide-react';
+import { Sparkles, Shield, Zap, Target, Skull, Heart, Brain, Swords, Eye, Timer } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getTrackBonusSummary, getTrackCombatBonuses } from '@/lib/effects/track-effects-adapter';

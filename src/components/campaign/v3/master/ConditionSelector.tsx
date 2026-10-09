@@ -8,7 +8,7 @@
  */
 
 import { memo, useState, useCallback } from 'react';
-import { Check, Plus, X, AlertCircle } from 'lucide-react';
+import { Check, Plus, X, AlertCircle } from '@/components/icons/ordem-icons';
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -5,7 +5,7 @@
 
 import { memo, useRef, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ChevronRight, Scroll } from 'lucide-react';
+import { ChevronRight, Scroll } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { getElementIcon, getElementColor } from './utils';
 

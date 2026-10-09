@@ -37,7 +37,7 @@ import {
   CheckCircle2,
   XCircle,
   RefreshCw,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { useClassPowerBonuses, ClassPowerBonusConfig } from '@/hooks/useClassPowerBonuses';
 import { ALL_CLASS_POWERS } from '@/lib/class-powers/power-registry';

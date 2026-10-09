@@ -15,7 +15,7 @@ import {
   RotateCcw,
   ChevronDown,
   ChevronUp
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';

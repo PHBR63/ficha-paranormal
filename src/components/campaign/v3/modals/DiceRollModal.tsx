@@ -15,7 +15,7 @@
 
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dices, Eye, EyeOff, History, X, ChevronUp, ChevronDown, Sparkles } from 'lucide-react';
+import { Dices, Eye, EyeOff, History, X, ChevronUp, ChevronDown, Sparkles } from '@/components/icons/ordem-icons';
 import {
   Dialog,
   DialogContent,

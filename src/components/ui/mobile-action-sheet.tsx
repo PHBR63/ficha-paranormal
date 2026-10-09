@@ -1,5 +1,5 @@
 import * as React from "react";
-import { LucideIcon } from "lucide-react";
+import { LucideIcon } from '@/components/icons/ordem-icons';
 import { cn } from "@/lib/utils";
 import {
   MobileDrawer,

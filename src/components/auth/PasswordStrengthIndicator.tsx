@@ -4,7 +4,7 @@
  */
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { Check, X } from 'lucide-react';
+import { Check, X } from '@/components/icons/ordem-icons';
 
 interface PasswordStrengthIndicatorProps {
   password: string;

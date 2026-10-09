@@ -32,7 +32,7 @@ import {
   AlertTriangle,
   Recycle,
   Star,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import type { ExtendedInventoryItem, ItemType } from './InventoryPanel';
 import { MODIFICATION_LABELS, type WeaponModification } from '@/lib/catalogs';

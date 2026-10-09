@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { ImagePlus, X, Sparkles, Upload, Loader2 } from 'lucide-react';
+import { ImagePlus, X, Sparkles, Upload, Loader2 } from '@/components/icons/ordem-icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { CampaignFormData } from '@/pages/CampaignCreate';

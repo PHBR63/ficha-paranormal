@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MedoSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * Element Config - Configuração centralizada para elementos paranormais
  * Usado em rituais, poderes paranormais e outros sistemas
@@ -7,14 +8,7 @@
  * enquanto aqui usamos minúsculas para compatibilidade com código existente.
  */
 
-import { 
-  Droplets, 
-  Skull, 
-  BookOpen, 
-  Zap, 
-  Ghost,
-  type LucideIcon 
-} from 'lucide-react';
+import type { LucideIcon } from '@/components/icons/ordem-icons';
 import { ELEMENT_IDS, isValidElementIdIgnoreCase, normalizeElementId } from './constants/game-ids';
 
 // Tipos de elementos disponíveis (em minúsculo para compatibilidade)
@@ -50,7 +44,7 @@ export interface ElementConfig {
 export const ELEMENT_CONFIG: Record<ParanormalElementType, ElementConfig> = {
   sangue: {
     // 🩸 Carne, instinto, dor, sacrifício - visceral, orgânica, brutal
-    icon: Droplets,
+    icon: SangueSymbol,
     emoji: '🩸',
     label: 'Sangue',
     color: 'from-[hsl(var(--element-sangue))]/20 to-[hsl(var(--element-sangue-dark))]/30',
@@ -64,7 +58,7 @@ export const ELEMENT_CONFIG: Record<ParanormalElementType, ElementConfig> = {
   },
   morte: {
     // ☠️ Cinzas, decadência, fim inevitável - fria, silenciosa, opressiva
-    icon: Skull,
+    icon: MorteSymbol,
     emoji: '💀',
     label: 'Morte',
     color: 'from-[hsl(var(--element-morte))]/20 to-[hsl(var(--element-morte-dark))]/30',
@@ -78,7 +72,7 @@ export const ELEMENT_CONFIG: Record<ParanormalElementType, ElementConfig> = {
   },
   conhecimento: {
     // 🧠 Verdade, lógica distorcida, ouro antigo - místico-intelectual, ritualístico
-    icon: BookOpen,
+    icon: ConhecimentoSymbol,
     emoji: '📖',
     label: 'Conhecimento',
     color: 'from-[hsl(var(--element-conhecimento))]/20 to-[hsl(var(--element-conhecimento-dark))]/30',
@@ -92,7 +86,7 @@ export const ELEMENT_CONFIG: Record<ParanormalElementType, ElementConfig> = {
   },
   energia: {
     // ⚡ Caos, tecnologia, distorção, eletricidade - instável, agressiva, vibrante
-    icon: Zap,
+    icon: EnergiaSymbol,
     emoji: '⚡',
     label: 'Energia',
     color: 'from-[hsl(var(--element-energia))]/20 to-[hsl(var(--element-energia))]/10',
@@ -106,7 +100,7 @@ export const ELEMENT_CONFIG: Record<ParanormalElementType, ElementConfig> = {
   },
   medo: {
     // 👁️ O invisível, o indefinido, o que observa - antinatural, ambígua, perturbadora
-    icon: Ghost,
+    icon: MedoSymbol,
     emoji: '👻',
     label: 'Medo',
     color: 'from-[hsl(var(--element-medo))]/20 to-[hsl(var(--element-medo-dark))]/30',
@@ -115,8 +109,8 @@ export const ELEMENT_CONFIG: Record<ParanormalElementType, ElementConfig> = {
     bg: 'bg-[hsl(var(--element-medo))]/15',
     badgeBg: 'bg-[hsl(var(--element-medo))]/25 text-[hsl(var(--element-medo-light))]',
     glow: 'shadow-[hsl(var(--element-medo-glow))]/40',
-    hex: '#0F3D2E',
-    hexLight: '#6FFFD2',
+    hex: '#D4D4D8',
+    hexLight: '#F4F4F5',
   },
 };
 

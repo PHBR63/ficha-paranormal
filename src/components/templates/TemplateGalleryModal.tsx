@@ -8,7 +8,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TemplateGallery } from './TemplateGallery';
 import type { CharacterTemplate, TemplateWithAuthor } from '@/types/templates';
-import { Package } from 'lucide-react';
+import { Package } from '@/components/icons/ordem-icons';
 
 interface TemplateGalleryModalProps {
   /** Se o modal está aberto */

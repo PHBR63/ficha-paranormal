@@ -33,7 +33,7 @@ import {
   Users,
   Loader2,
   AlertCircle
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { useThemeColors } from '@/hooks';
 import { DIFFICULTY_LABELS, DIFFICULTY_COLORS, type CharacterTemplate } from '@/types/templates';

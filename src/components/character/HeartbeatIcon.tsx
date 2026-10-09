@@ -4,7 +4,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Heart } from 'lucide-react';
+import { Heart } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 
 interface HeartbeatIconProps {

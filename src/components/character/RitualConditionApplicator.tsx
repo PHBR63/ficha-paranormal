@@ -5,7 +5,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, Check, X, Timer, Target, Shield } from 'lucide-react';
+import { AlertTriangle, Check, X, Timer, Target, Shield } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

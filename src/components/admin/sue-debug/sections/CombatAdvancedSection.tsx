@@ -8,7 +8,7 @@
  */
 
 import { useState } from 'react';
-import { Activity, ChevronDown, ChevronRight, Check } from 'lucide-react';
+import { Activity, ChevronDown, ChevronRight, Check } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import {
   Collapsible,

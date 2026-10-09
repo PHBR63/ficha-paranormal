@@ -19,7 +19,7 @@ import {
   Lock,
   Search,
   Trash2,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 
 // Tipo para nota

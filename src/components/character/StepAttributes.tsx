@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Minus, Plus, AlertTriangle, Info, Heart, Zap, Brain } from 'lucide-react';
+import { Minus, Plus, AlertTriangle, Info, Heart, Zap, Brain } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { calculateDerivedStats, calculateDefense, getExtraAttributePoints } from '@/lib/character-data';

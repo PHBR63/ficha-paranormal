@@ -15,7 +15,7 @@ import {
   Lock,
   Users,
   Check,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 
 interface CampaignNote {
   id: string;

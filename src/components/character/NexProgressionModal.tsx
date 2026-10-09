@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * Modal de Progressão de NEX
  * Permite subir de nível, recalcular stats, desbloquear habilidades/rituais,
@@ -27,26 +28,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  ArrowUp,
-  Sparkles,
-  Heart,
-  Zap,
-  Brain,
-  Shield,
-  ChevronRight,
-  Lock,
-  Unlock,
-  BookOpen,
-  Route,
-  Check,
-  Loader2,
-  Droplet,
-  Skull,
-  Star,
-  AlertTriangle,
-  Info,
-} from 'lucide-react';
+import { ArrowUp, Sparkles, Heart, Zap, Brain, ChevronRight, Lock, Unlock, BookOpen, Route, Check, Loader2, Star, AlertTriangle, Info } from '@/components/icons/ordem-icons';
 import { 
   CLASSES, 
   getPatentByNex, 
@@ -95,10 +77,10 @@ const NEX_VALUES: number[] = [...VALID_NEX_VALUES];
 
 // Ícones por elemento para seleção de afinidade
 const AFFINITY_ICONS: Record<ParanormalElement, React.ComponentType<{ className?: string }>> = {
-  sangue: Droplet,
-  morte: Skull,
-  conhecimento: BookOpen,
-  energia: Zap,
+  sangue: SangueSymbol,
+  morte: MorteSymbol,
+  conhecimento: ConhecimentoSymbol,
+  energia: EnergiaSymbol,
 };
 
 /**

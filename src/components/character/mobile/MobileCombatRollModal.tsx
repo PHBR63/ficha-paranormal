@@ -44,7 +44,7 @@ import {
   Timer,
   Infinity as InfinityIcon,
   AlertCircle,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { 
   MobileDrawer, 
   MobileDrawerContent, 

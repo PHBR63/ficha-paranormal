@@ -5,7 +5,7 @@
 
 import { useState, memo, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 
 interface MobileCollapsibleSectionProps {

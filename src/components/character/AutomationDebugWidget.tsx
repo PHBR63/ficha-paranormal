@@ -22,7 +22,7 @@ import {
   CheckCircle2,
   XCircle,
   EyeOff
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';

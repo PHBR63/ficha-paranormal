@@ -11,7 +11,7 @@
  */
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 
 interface Props {

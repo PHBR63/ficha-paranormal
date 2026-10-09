@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package, Save, Loader2, X, Globe, Lock, Info, Tag } from 'lucide-react';
+import { Package, Save, Loader2, X, Globe, Lock, Info, Tag } from '@/components/icons/ordem-icons';
 import { useUpdateTemplate } from '@/hooks/useTemplates';
 import type { CharacterTemplate, TemplateDifficulty, UpdateTemplateDto } from '@/types/templates';
 import { ROLE_TAGS, STYLE_TAGS, THEME_TAGS, DIFFICULTY_LABELS, DIFFICULTY_COLORS } from '@/types/templates';

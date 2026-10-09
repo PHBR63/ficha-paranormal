@@ -40,7 +40,7 @@ import {
   Star,
   Clock,
   Trash,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';

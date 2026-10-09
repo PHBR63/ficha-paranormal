@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MedoSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * SustainedRitualsPanel - Painel para gerenciar rituais sustentados ativos
  * Exibe lista de rituais ativos com opções para encerrar e ver efeitos
@@ -26,32 +27,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  Sparkles,
-  X,
-  Timer,
-  Brain,
-  Shield,
-  Swords,
-  Zap,
-  Flame,
-  Droplet,
-  Ghost,
-  Skull,
-  Heart,
-  Trash2,
-} from 'lucide-react';
+import { Sparkles, X, Brain, Shield, Swords, Zap, Flame, Heart, Trash2 } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { SustainedRitual } from '@/hooks';
 import { getElementConfig } from '@/lib/element-config';
 
 // Ícones por elemento
 const ELEMENT_ICONS: Record<string, typeof Sparkles> = {
-  'Sangue': Droplet,
-  'Morte': Skull,
-  'Energia': Zap,
-  'Conhecimento': Brain,
-  'Medo': Ghost,
+  'Sangue': SangueSymbol,
+  'Morte': MorteSymbol,
+  'Energia': EnergiaSymbol,
+  'Conhecimento': ConhecimentoSymbol,
+  'Medo': MedoSymbol,
   'Fogo': Flame,
   'default': Sparkles,
 };

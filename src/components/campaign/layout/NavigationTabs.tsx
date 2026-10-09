@@ -24,7 +24,7 @@ import {
   CalendarDays,
   BookOpen,
   Crown,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 
 // Configuração das abas

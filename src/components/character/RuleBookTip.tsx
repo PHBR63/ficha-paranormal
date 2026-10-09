@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, ChevronDown, ChevronUp, Quote, Lightbulb } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, Quote, Lightbulb } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';

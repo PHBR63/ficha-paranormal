@@ -23,7 +23,7 @@ import {
   PartyPopper,
   RefreshCw,
   Loader2
-} from "lucide-react";
+} from '@/components/icons/ordem-icons';
 // useThemeColors já importado acima
 import confetti from "canvas-confetti";
 

@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MedoSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * CombatWeaponBuffsPanel - Painel de buffs de arma no CombatTracker
  * 
@@ -23,22 +24,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import {
-  Sword,
-  Flame,
-  Skull,
-  Zap,
-  Brain,
-  Ghost,
-  ChevronDown,
-  ChevronUp,
-  Timer,
-  Sparkles,
-  X,
-  Clock,
-  Minus,
-  Plus,
-} from 'lucide-react';
+import { Sword, Flame, ChevronDown, ChevronUp, Timer, Sparkles, X, Clock, Minus, Plus } from '@/components/icons/ordem-icons';
 import type { CombatantWeaponBuffs } from '@/hooks/combat/useCombatWeaponBuffs';
 import type { WeaponBuff } from '@/hooks/useWeaponBuffs';
 import { formatDamageFormula } from '@/lib/rituals/legacy-exports';
@@ -58,11 +44,11 @@ interface CombatWeaponBuffsPanelProps {
 
 // Ícones por elemento
 const ELEMENT_ICONS: Record<string, typeof Flame> = {
-  Sangue: Flame,
-  Morte: Skull,
-  Energia: Zap,
-  Conhecimento: Brain,
-  Medo: Ghost,
+  Sangue: SangueSymbol,
+  Morte: MorteSymbol,
+  Energia: EnergiaSymbol,
+  Conhecimento: ConhecimentoSymbol,
+  Medo: MedoSymbol,
 };
 
 // Cores por elemento

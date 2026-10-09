@@ -64,7 +64,7 @@ import {
   Target,
   Box,
   Filter,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import {
   useCampaignAssets,
   type CampaignAsset,

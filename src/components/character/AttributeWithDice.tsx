@@ -4,7 +4,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Dices } from 'lucide-react';
+import { Dices } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { 
   ATTRIBUTE_ORDER,

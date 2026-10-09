@@ -69,7 +69,7 @@ import {
   Clock,
   AlertTriangle,
   Timer,
-} from "lucide-react";
+} from '@/components/icons/ordem-icons';
 import confetti from "canvas-confetti";
 
 // Interface para props com buffs de personagem

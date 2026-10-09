@@ -11,7 +11,7 @@
  */
 
 import { memo } from 'react';
-import { AlertTriangle, Info, Layers } from 'lucide-react';
+import { AlertTriangle, Info, Layers } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,

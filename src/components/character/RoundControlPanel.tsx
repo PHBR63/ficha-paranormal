@@ -4,7 +4,7 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCcw, FastForward, Swords, Clock, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { RotateCcw, FastForward, Swords, Clock, Zap, ChevronDown, ChevronUp } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';

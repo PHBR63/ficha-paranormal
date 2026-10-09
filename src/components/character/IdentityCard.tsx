@@ -4,7 +4,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Shield, ArrowUp, Sparkles } from 'lucide-react';
+import { Shield, ArrowUp, Sparkles } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ORIGINS, getTrackById } from '@/lib/character-data';

@@ -22,7 +22,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { CONDITIONS, CONDITION_CATEGORIES, type Condition } from '@/lib/conditions';
-import { Plus, X, AlertTriangle, Info } from 'lucide-react';
+import { Plus, X, AlertTriangle, Info } from '@/components/icons/ordem-icons';
 
 interface CharacterConditionsProps {
   conditions: string[];

@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * MobileAffinitySelectorCard - Seletor de afinidade elemental para mobile
  * Exibido para personagens NEX 50%+ que ainda não escolheram afinidade
@@ -14,18 +15,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { CustomScroll } from '@/components/ui/custom-scroll';
-import { 
-  Sparkles, 
-  Droplet, 
-  Skull, 
-  BookOpen, 
-  Zap, 
-  Check, 
-  Loader2, 
-  Info,
-  ChevronRight,
-  AlertCircle,
-} from 'lucide-react';
+import { Sparkles, Check, Loader2, Info } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import {
@@ -39,10 +29,10 @@ import {
 
 // Ícones por elemento
 const AFFINITY_ICONS: Record<ParanormalElement, React.ComponentType<{ className?: string }>> = {
-  sangue: Droplet,
-  morte: Skull,
-  conhecimento: BookOpen,
-  energia: Zap,
+  sangue: SangueSymbol,
+  morte: MorteSymbol,
+  conhecimento: ConhecimentoSymbol,
+  energia: EnergiaSymbol,
 };
 
 // Descrições detalhadas

@@ -50,7 +50,7 @@ import {
   Sparkles,
   TrendingUp,
   History
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CLASSES, CLASS_TRACKS, getClassTracks } from '@/lib/character-data';

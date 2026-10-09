@@ -31,7 +31,7 @@ import {
   Users,
   User,
   Zap
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { CLASS_ONLY_POWERS, ALL_TRACK_POWERS } from '@/lib/class-powers/power-registry';
 import { ORIGINS } from '@/lib/character-data';

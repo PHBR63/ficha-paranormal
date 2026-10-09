@@ -31,7 +31,7 @@ import {
   MoreVertical,
   AlertTriangle,
   X,
-} from "lucide-react";
+} from '@/components/icons/ordem-icons';
 
 interface MobileCombatTrackerProps {
   combatState: CombatState;

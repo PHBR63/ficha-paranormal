@@ -45,7 +45,7 @@ import {
   Loader2,
   ChevronDown,
   Sparkles,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 
 // Condições oficiais do sistema
 const OFFICIAL_CONDITIONS = [

@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * MobileParanormalPowerSelectModal - Modal de seleção de poderes paranormais para mobile
  * Permite escolher poderes ao usar Transcender com sub-escolhas
@@ -14,21 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { CustomScroll } from '@/components/ui/custom-scroll';
-import { 
-  Check, 
-  Lock, 
-  Sparkles, 
-  Droplet, 
-  Skull, 
-  BookOpen, 
-  Zap, 
-  Star,
-  Search,
-  ChevronRight,
-  Brain,
-  AlertCircle,
-  Info,
-} from 'lucide-react';
+import { Check, Lock, Sparkles, Star, Search, ChevronRight, Brain, Info } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import {
   ParanormalPower,
@@ -44,10 +31,10 @@ import {
 
 // Ícones por elemento
 const ELEMENT_ICONS: Record<ParanormalElement | 'generic', React.ComponentType<{ className?: string }>> = {
-  sangue: Droplet,
-  morte: Skull,
-  conhecimento: BookOpen,
-  energia: Zap,
+  sangue: SangueSymbol,
+  morte: MorteSymbol,
+  conhecimento: ConhecimentoSymbol,
+  energia: EnergiaSymbol,
   generic: Star,
 };
 

@@ -17,7 +17,7 @@ import {
   Archive,
   XCircle,
   Pause,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import React from 'react';
 
 // ─── Tipos de ação crítica que geram alertas ───────────────────────────────

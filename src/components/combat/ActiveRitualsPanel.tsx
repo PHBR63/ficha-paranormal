@@ -15,7 +15,7 @@ import {
   ChevronDown,
   ChevronUp,
   AlertTriangle,
-} from "lucide-react";
+} from '@/components/icons/ordem-icons';
 import {
   type SustainedRitual,
   getSustainActionLabel,

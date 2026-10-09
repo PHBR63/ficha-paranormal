@@ -7,7 +7,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CharacterConditions } from './CharacterConditions';
-import { Loader2, Crown, Shield, Crosshair, Skull, User } from 'lucide-react';
+import { Loader2, Crown, Shield, Crosshair, Skull, User } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 
 interface MemberWithCharacter {

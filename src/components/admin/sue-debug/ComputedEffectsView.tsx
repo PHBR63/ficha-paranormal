@@ -7,7 +7,7 @@
  * @module Ordem Paranormal RPG v1.3
  */
 
-import { Sword, Shield, Heart, Footprints } from 'lucide-react';
+import { Sword, Shield, Heart, Footprints } from '@/components/icons/ordem-icons';
 import type { ComputedEffects } from '@/hooks';
 import { EffectCategorySection } from './EffectCategorySection';
 import {

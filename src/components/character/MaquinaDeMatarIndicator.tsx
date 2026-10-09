@@ -5,7 +5,7 @@
 
 import { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Skull, Crosshair, Sparkles } from 'lucide-react';
+import { Skull, Crosshair, Sparkles } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {

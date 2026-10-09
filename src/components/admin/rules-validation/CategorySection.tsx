@@ -13,7 +13,7 @@ import {
   XCircle,
   ChevronDown,
   ChevronUp,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import {
   Collapsible,

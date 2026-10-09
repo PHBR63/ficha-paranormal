@@ -5,7 +5,7 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, BookOpen, Zap } from 'lucide-react';
+import { Sparkles, BookOpen, Zap } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { SKILLS } from '@/lib/character-data';
 import {

@@ -25,7 +25,7 @@ import {
   Check,
   Wand2,
   Target,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import type { CombatantState } from '@/lib/game-engine';
 import type { MapToken } from '@/hooks/campaign/useTacticalBoard';
 import type { LinkedCombatant } from '@/hooks/campaign/useCombatBoardSync';

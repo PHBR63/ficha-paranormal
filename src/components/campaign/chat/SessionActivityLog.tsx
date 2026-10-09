@@ -15,7 +15,7 @@ import {
   AlertTriangle,
   Filter,
   X
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 // ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19

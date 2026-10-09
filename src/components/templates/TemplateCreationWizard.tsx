@@ -23,7 +23,7 @@ import {
   Package,
   Save,
   Eye,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import {
   Dialog,
   DialogContent,

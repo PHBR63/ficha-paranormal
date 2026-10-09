@@ -24,7 +24,7 @@ import {
   Swords,
   BookOpen,
   Wand2,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import {
   Dialog,
   DialogContent,

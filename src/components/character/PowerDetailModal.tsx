@@ -12,7 +12,7 @@ import {
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Zap, User, Scroll, BookOpen, Info, Play } from 'lucide-react';
+import { Sparkles, Zap, User, Scroll, BookOpen, Info, Play } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { getBasePowerReference } from '@/lib/class-powers/base-power-reference';
 
@@ -127,7 +127,7 @@ export function PowerDetailModal({ open, onOpenChange, power, onCastRitual }: Po
                 config.borderColor
               )}>
                 {power.type === 'paranormal' && elementConfig ? (
-                  <span className="text-2xl">{elementConfig.emoji}</span>
+                  <elementConfig.icon className="h-8 w-8" aria-label={elementConfig.label} />
                 ) : (
                   <Icon className={cn("w-6 h-6", config.color)} />
                 )}

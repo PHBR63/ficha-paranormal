@@ -13,7 +13,7 @@ import { Particles } from '@/components/ui/particles';
 import { SEO } from '@/components/SEO';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { DecryptedText } from '@/components/ui/decrypted-text';
-import { Loader2, ArrowLeft, EyeOff, Eye as EyeIcon, KeyRound, Mail } from 'lucide-react';
+import { Loader2, ArrowLeft, EyeOff, Eye as EyeIcon, KeyRound, Mail } from '@/components/icons/ordem-icons';
 import { Logo } from '@/components/ui/logo';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { z } from 'zod';

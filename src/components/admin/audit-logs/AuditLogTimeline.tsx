@@ -19,7 +19,7 @@ import {
   AlertTriangle,
   Inbox,
   Bell
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
 import { useAuditAlerts } from '@/hooks/useAuditAlerts';
 import { AuditLogStats } from './AuditLogStats';

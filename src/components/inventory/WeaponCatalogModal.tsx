@@ -44,7 +44,7 @@ import {
   CheckCircle2,
   XCircle,
   Book,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import {
   ALL_WEAPONS,

@@ -23,7 +23,7 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 
 interface CampaignSession {
   id: string;

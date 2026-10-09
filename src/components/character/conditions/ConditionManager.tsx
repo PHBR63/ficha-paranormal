@@ -47,7 +47,7 @@ import {
   Skull,
   Settings,
   X,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { 
   CONDITIONS_BY_CATEGORY, 
   CATEGORY_LABELS, 

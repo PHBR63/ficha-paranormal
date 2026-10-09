@@ -21,7 +21,7 @@ import {
   Edit2,
   Weight,
   AlertTriangle,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { DefenseBonusBreakdown } from '@/hooks/useDefenseBonuses';

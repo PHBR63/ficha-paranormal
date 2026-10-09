@@ -15,7 +15,7 @@ import {
   ChevronRight,
   Trash2,
   Sparkles
-} from "lucide-react";
+} from '@/components/icons/ordem-icons';
 
 interface Character {
   id: string;

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { usePWAInstall, useIsMobile } from '@/hooks';
 import { Button } from '@/components/ui/button';
-import { Download, X, Smartphone } from 'lucide-react';
+import { Download, X, Smartphone } from '@/components/icons/ordem-icons';
 
 const STORAGE_KEY = 'pwa-install-banner-dismissed';
 const DISMISS_DURATION_DAYS = 7;

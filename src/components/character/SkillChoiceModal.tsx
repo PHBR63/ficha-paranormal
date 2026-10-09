@@ -33,7 +33,7 @@ import {
   ATTRIBUTE_ORDER,
   type AttributeKey 
 } from '@/lib/constants/attributes';
-import { AlertTriangle, Sparkles, Check, Search, GraduationCap } from 'lucide-react';
+import { AlertTriangle, Sparkles, Check, Search, GraduationCap } from '@/components/icons/ordem-icons';
 import { toast } from '@/hooks/use-toast';
 
 interface SkillChoiceModalProps {

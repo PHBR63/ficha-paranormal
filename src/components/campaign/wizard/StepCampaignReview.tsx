@@ -15,7 +15,7 @@ import {
   FileText,
   Dice6,
   CheckCircle2
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { CampaignFormData } from '@/pages/CampaignCreate';

@@ -10,7 +10,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crosshair, Eye, Skull, Ghost, Zap, Info } from 'lucide-react';
+import { Crosshair, Eye, Skull, Ghost, Zap, Info } from '@/components/icons/ordem-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileCollapsibleSection } from '../../mobile/MobileCollapsibleSection';

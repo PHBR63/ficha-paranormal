@@ -7,7 +7,7 @@
  */
 
 import { useState } from 'react';
-import { BookOpen, ChevronDown, ChevronRight } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import {
   Collapsible,

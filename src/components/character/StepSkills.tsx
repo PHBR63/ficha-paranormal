@@ -14,7 +14,7 @@ import { useState, useMemo } from 'react';
 import { SKILLS, getExtraSkillsByNex } from '@/lib/character-data';
 import { getClassSkillRules } from '@/lib/character-builder-engine';
 import { cn } from '@/lib/utils';
-import { AlertTriangle, Check, Lock, Search, ChevronDown, ChevronRight, ChevronsUpDown } from 'lucide-react';
+import { AlertTriangle, Check, Lock, Search, ChevronDown, ChevronRight, ChevronsUpDown } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';

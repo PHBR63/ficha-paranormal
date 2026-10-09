@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MedoSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 // Componente de seleção de rituais para Ocultistas
 // Permite escolher rituais baseados no NEX e círculo máximo disponível
 // Inclui painel educativo do livro de regras
@@ -20,19 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  Search,
-  Lock,
-  Droplets,
-  Skull,
-  BookOpen,
-  Zap,
-  Ghost,
-  ChevronDown,
-  ChevronUp,
-  Sparkles,
-  AlertCircle,
-} from 'lucide-react';
+import { Search, Lock, ChevronDown, ChevronUp, Sparkles, AlertCircle } from '@/components/icons/ordem-icons';
 import { CharacterFormData } from '@/pages/CharacterCreate';
 import { ALL_RITUALS, Ritual, getMaxRitualCircle, getRitualCount } from '@/lib/rituals/legacy-exports';
 import { CLASSES } from '@/lib/character-data';
@@ -47,7 +36,7 @@ interface StepRitualsProps {
 // Configuração visual para cada elemento (5 elementos oficiais)
 const ELEMENT_CONFIG = {
   sangue: {
-    icon: Droplets,
+    icon: SangueSymbol,
     label: 'Sangue',
     color: 'from-red-500/20 to-red-900/20',
     border: 'border-red-500/50',
@@ -59,7 +48,7 @@ const ELEMENT_CONFIG = {
     glowColor: 'rgba(239, 68, 68, 0.4)',
   },
   morte: {
-    icon: Skull,
+    icon: MorteSymbol,
     label: 'Morte',
     color: 'from-gray-600/20 to-gray-800/20',
     border: 'border-gray-500/50',
@@ -71,7 +60,7 @@ const ELEMENT_CONFIG = {
     glowColor: 'rgba(156, 163, 175, 0.3)',
   },
   conhecimento: {
-    icon: BookOpen,
+    icon: ConhecimentoSymbol,
     label: 'Conhecimento',
     color: 'from-yellow-500/20 to-amber-700/20',
     border: 'border-yellow-500/50',
@@ -83,7 +72,7 @@ const ELEMENT_CONFIG = {
     glowColor: 'rgba(234, 179, 8, 0.4)',
   },
   energia: {
-    icon: Zap,
+    icon: EnergiaSymbol,
     label: 'Energia',
     color: 'from-purple-500/20 to-violet-900/20',
     border: 'border-purple-500/50',
@@ -95,16 +84,16 @@ const ELEMENT_CONFIG = {
     glowColor: 'rgba(168, 85, 247, 0.4)',
   },
   medo: {
-    icon: Ghost,
+    icon: MedoSymbol,
     label: 'Medo',
-    color: 'from-emerald-500/10 to-emerald-900/10',
-    border: 'border-emerald-500/30',
-    text: 'text-emerald-400',
-    bg: 'bg-emerald-500/5',
-    badgeBg: 'bg-emerald-500/20 text-emerald-300',
+    color: 'from-zinc-500/10 to-zinc-900/10',
+    border: 'border-zinc-500/30',
+    text: 'text-zinc-400',
+    bg: 'bg-zinc-500/5',
+    badgeBg: 'bg-zinc-500/20 text-zinc-300',
     // Efeito glassmorphism
     animationClass: 'animate-glass-fear',
-    glowColor: 'rgba(16, 185, 129, 0.2)',
+    glowColor: 'rgba(244, 244, 245, 0.2)',
   },
 };
 

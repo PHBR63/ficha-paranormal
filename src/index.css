@@ -248,10 +248,10 @@
     --element-morte-dark: 0 0% 18%;
     
     /* 👁️ Medo - verde abissal, antinatural e perturbador */
-    --element-medo: 157 61% 15%;
-    --element-medo-light: 157 100% 72%;
-    --element-medo-glow: 164 100% 62%;
-    --element-medo-dark: 154 59% 8%;
+    --element-medo: 0 0% 76%;
+    --element-medo-light: 0 0% 96%;
+    --element-medo-glow: 0 0% 88%;
+    --element-medo-dark: 0 0% 24%;
 
     /* Sidebar */
     --sidebar: 260 30% 12%;

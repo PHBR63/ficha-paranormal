@@ -12,7 +12,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Filter, X, Search } from 'lucide-react';
+import { Calendar as CalendarIcon, Filter, X, Search } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';

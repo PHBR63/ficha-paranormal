@@ -29,7 +29,7 @@ import {
   Check,
   X,
   Clock,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { useCharacterActivity } from '@/hooks/character/useCharacterActivity';
 import { activityJson } from '@/services/character-activity-service';
 import { activityRollEntries } from '@/lib/roll-history-adapter';

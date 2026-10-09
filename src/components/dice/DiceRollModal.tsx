@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dices, X, RotateCcw, Sparkles, Info, Zap } from 'lucide-react';
+import { Dices, X, RotateCcw, Sparkles, Info, Zap } from '@/components/icons/ordem-icons';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {

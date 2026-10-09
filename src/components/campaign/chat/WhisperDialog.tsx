@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { MessageSquare, Send, Lock, User } from 'lucide-react';
+import { MessageSquare, Send, Lock, User } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 // ScrollArea removido - usando overflow nativo para evitar bug #185 com React 19

@@ -1,3 +1,4 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * CharacterSheetHeader - Cabeçalho compacto da ficha com avatar e stats principais
  * Layout estilo ficha de papel com barras de HP, PE, XP lado a lado
@@ -6,7 +7,7 @@
 
 import { useRef, useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem, Sparkles, Droplet, Skull, BookOpen, Sword, Dices, Weight, AlertTriangle } from 'lucide-react';
+import { Shield, Heart, Zap, Star, Edit2, Check, X, Award, Crown, Gem, Sparkles, Skull, BookOpen, Sword, Dices, Weight, AlertTriangle } from '@/components/icons/ordem-icons';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -765,10 +766,10 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
           {elementalAffinity && (() => {
             const affinity = elementalAffinity as ParanormalElement;
             const AffinityIcon = {
-              sangue: Droplet,
-              morte: Skull,
-              conhecimento: BookOpen,
-              energia: Zap,
+              sangue: SangueSymbol,
+              morte: MorteSymbol,
+              conhecimento: ConhecimentoSymbol,
+              energia: EnergiaSymbol,
             }[affinity] || Sparkles;
             return (
               <TooltipProvider>

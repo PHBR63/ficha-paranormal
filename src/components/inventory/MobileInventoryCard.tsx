@@ -17,7 +17,7 @@ import {
   Eye,
   Star,
   Clock,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { MobileActionSheet, useActionSheet } from '@/components/ui/mobile-action-sheet';

@@ -6,7 +6,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Dices, Search, X } from 'lucide-react';
+import { Dices, Search, X } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { SKILLS, getSkillBonus } from '@/lib/character-data';
 import { Input } from '@/components/ui/input';

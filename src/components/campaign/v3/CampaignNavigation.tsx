@@ -19,7 +19,7 @@ import {
   Map, 
   FolderOpen, 
   Crown 
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';

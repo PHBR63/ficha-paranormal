@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { SEO } from '@/components/SEO';
 import { Particles } from '@/components/ui/particles';
 import { LogoBox, LogoHero } from '@/components/ui/logo';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Unlock, Lock, ChartNoAxesCombined, TriangleAlert } from '@/components/icons/ordem-icons';
 import { 
   ShieldStar, 
   Scroll, 
@@ -153,15 +153,15 @@ const Index = () => {
             {/* Badges temáticos */}
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mb-8 sm:mb-10 px-4">
               {[
-                { label: 'Acesso Liberado', icon: '🔓' },
-                { label: 'Nível de Exposição: Baixo', icon: '📊' },
-                { label: 'Confidencial', icon: '🔒' }
+                { label: 'Acesso Liberado', icon: Unlock },
+                { label: 'Nível de Exposição: Baixo', icon: ChartNoAxesCombined },
+                { label: 'Confidencial', icon: Lock }
               ].map((badge) => (
                 <span 
                   key={badge.label}
                   className="text-[#A0A0A0] text-xs sm:text-sm font-mono px-3 sm:px-4 py-1.5 rounded border border-[#3D1518]/60 bg-[#1A1214]/50 flex items-center gap-2"
                 >
-                  <span>{badge.icon}</span>
+                  <badge.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {badge.label}
                 </span>
               ))}
@@ -288,7 +288,7 @@ const Index = () => {
             
             <div className="relative z-10">
               <p className="text-[#B22222] text-xs sm:text-sm tracking-[0.2em] uppercase mb-3 font-mono animate-pulse">
-                ⚠ Alerta de Recrutamento ⚠
+                <TriangleAlert className="mr-2 inline-block h-4 w-4" aria-hidden="true" />Alerta de Recrutamento
               </p>
               <h3 className="font-display text-3xl sm:text-5xl tracking-wide text-[#F5F5F5] mb-4">
                 A ORDEM <span className="text-[#B22222]">PRECISA DE VOCÊ</span>

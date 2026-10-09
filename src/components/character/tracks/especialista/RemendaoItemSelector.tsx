@@ -21,7 +21,7 @@ import {
   Shield,
   Sword,
   AlertCircle
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import type { InventoryItem } from '@/lib/inventory-system';
 

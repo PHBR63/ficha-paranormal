@@ -5,7 +5,7 @@
  * Mantém DropdownMenu no desktop para comportamento padrão
  */
 
-import { Palette, HelpCircle, Bug, Check } from 'lucide-react';
+import { Palette, HelpCircle, Bug, Check } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,

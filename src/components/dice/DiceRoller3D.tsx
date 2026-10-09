@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Dices, Sparkles } from "lucide-react";
+import { Dices, Sparkles } from '@/components/icons/ordem-icons';
 import { rollSkillTest, type DiceRollResult } from "@/lib/dice-roller";
 
 interface DiceRoller3DProps {

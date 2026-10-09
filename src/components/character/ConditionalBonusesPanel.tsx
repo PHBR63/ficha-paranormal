@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, Shield, Crosshair, Sparkles, Target, Swords, Zap, Brain, Eye } from 'lucide-react';
+import { ChevronDown, ChevronUp, Shield, Crosshair, Sparkles, Target, Swords, Zap, Brain, Eye } from '@/components/icons/ordem-icons';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';

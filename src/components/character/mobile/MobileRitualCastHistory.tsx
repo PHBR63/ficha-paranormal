@@ -23,7 +23,7 @@ import {
   Clock, 
   Zap,
   Trash2,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { Ritual } from '@/lib/rituals/legacy-exports';
 import { getElementConfig } from '@/lib/element-config';

@@ -16,7 +16,7 @@ import { ParanormalElementIcon } from '@/components/ui/paranormal-element-icon';
 import { 
   ArrowLeft,
   Loader2,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { 
   Plus, 
   UsersThree, 

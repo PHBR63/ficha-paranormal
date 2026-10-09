@@ -5,7 +5,7 @@
 
 import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Zap, Brain, Edit2, Check, X } from 'lucide-react';
+import { Heart, Zap, Brain, Edit2, Check, X } from '@/components/icons/ordem-icons';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AnimatedProgress } from '@/components/ui/animated-progress';

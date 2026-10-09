@@ -35,7 +35,7 @@ import {
   AlertTriangle,
   Search,
   X,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getAvailableTracks, getInitialAbility } from '@/lib/class-powers/track-registry';

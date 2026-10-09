@@ -11,7 +11,7 @@ import {
   ChevronRight,
   Home,
   Shield
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import {
   Breadcrumb,
   BreadcrumbItem,

@@ -21,7 +21,7 @@ import {
   Minus,
   Info,
   CheckCircle2
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { DrawerClose } from '@/components/ui/drawer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';

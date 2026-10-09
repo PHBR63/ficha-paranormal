@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Trash2, MapPin, Eye, EyeOff, FileText, StickyNote } from 'lucide-react';
+import { Trash2, MapPin, Eye, EyeOff, FileText, StickyNote } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import type { MapPin as MapPinType, CreateMapPinData } from '@/hooks/campaign/useMapPins';
 

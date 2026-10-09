@@ -45,7 +45,7 @@ import {
   Eye,
   MessageCircle,
   Loader2,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -79,7 +79,7 @@ import type { DrawToolType } from '@/components/campaign/v3/map/MapToolbar';
 import type { MapAreaEffect } from '@/components/campaign/tactical/layers/AreaEffectLayer';
 import type { CreateAreaEffectData } from '@/hooks/campaign/useAreaEffects';
 import { AreaEffectControls } from '@/components/campaign/tactical/AreaEffectControls';
-import { Target, MapPin } from 'lucide-react';
+import { Target, MapPin } from '@/components/icons/ordem-icons';
 import type { PingType } from '@/hooks/campaign/useAdvancedPings';
 import type { MapPin as MapPinType, CreateMapPinData } from '@/hooks/campaign/useMapPins';
 

@@ -16,7 +16,7 @@ import {
   TrendingUp,
   PieChart,
   Activity
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MetricsStatsCards } from './MetricsStatsCards';

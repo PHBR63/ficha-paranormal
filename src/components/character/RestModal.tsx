@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/mobile-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Moon, Sun, Heart, Sparkles, Brain, Dice1, AlertTriangle, Check } from 'lucide-react';
+import { Moon, Sun, Heart, Sparkles, Brain, Dice1, AlertTriangle, Check } from '@/components/icons/ordem-icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Interface para dados do personagem necessários para descanso

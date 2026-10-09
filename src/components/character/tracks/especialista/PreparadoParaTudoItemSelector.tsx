@@ -28,7 +28,7 @@ import {
   Bomb,
   Wrench,
   Eye
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { 
   ALL_ITEMS,

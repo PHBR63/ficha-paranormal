@@ -23,7 +23,7 @@ import {
   ArrowUp,
   ArrowDown,
   Clock,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MobileButtonGroup } from '@/components/ui/mobile-button-group';

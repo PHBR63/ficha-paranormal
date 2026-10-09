@@ -16,7 +16,7 @@ import {
   FlaskConical,
   Activity,
   Sparkles
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 
 // Dados de cobertura de testes baseados no SUE_TEST_COVERAGE.md
 const testData = {

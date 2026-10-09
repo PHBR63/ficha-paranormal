@@ -3,7 +3,7 @@
  * Mostra ações preparadas e permite ativá-las
  */
 import { useState } from 'react';
-import { Target, Zap, X, Play } from 'lucide-react';
+import { Target, Zap, X, Play } from '@/components/icons/ordem-icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

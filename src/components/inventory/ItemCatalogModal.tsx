@@ -46,7 +46,7 @@ import {
   ChevronDown,
   ChevronUp,
   X,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import {
   ALL_ITEMS,

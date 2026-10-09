@@ -11,7 +11,7 @@ import {
   Sparkles, 
   Package,
   Swords,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 
 // Tipos de tabs disponíveis (compatível com MobileCharacterSheet original)

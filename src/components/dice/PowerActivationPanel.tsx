@@ -13,7 +13,7 @@
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Brain, Hand, BookOpen, Sparkles, AlertCircle, ChevronDown, ChevronUp, Sword, Search, Eye, Move, Target, Shield as ShieldIcon, Heart, Crosshair, Hammer, ShieldCheck, Swords, HandMetal, TreeDeciduous, Dumbbell, FileText, HeartHandshake, Drama, Star, ChefHat, Footprints, HelpingHand, Siren, Banknote, SearchCheck } from 'lucide-react';
+import { Zap, Brain, Hand, BookOpen, Sparkles, AlertCircle, ChevronDown, ChevronUp, Sword, Search, Eye, Move, Target, Shield as ShieldIcon, Heart, Crosshair, Hammer, ShieldCheck, Swords, HandMetal, TreeDeciduous, Dumbbell, FileText, HeartHandshake, Drama, Star, ChefHat, Footprints, HelpingHand, Siren, Banknote, SearchCheck } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';

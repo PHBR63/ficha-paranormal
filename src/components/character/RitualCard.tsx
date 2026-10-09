@@ -27,7 +27,7 @@ import {
   Ghost,
   Swords,
   Hand,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { Ritual, getRitualKind, RitualKind, ritualHasHooks, getRitualHooks } from '@/lib/rituals/legacy-exports';
 import { ELEMENT_CONFIG, getElementConfig } from '@/lib/element-config';

@@ -14,7 +14,7 @@
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Dice6, ArrowDown, Swords } from 'lucide-react';
+import { Send, Dice6, ArrowDown, Swords } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

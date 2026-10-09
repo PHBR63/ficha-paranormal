@@ -10,7 +10,7 @@
 import { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send } from '@/components/icons/ordem-icons';
 import { VirtualizedChatList } from '@/components/campaign/chat/VirtualizedChatList';
 import { IntegratedDiceRoller, SessionActivityLog, parseDiceCommand, WhisperDialog } from '@/components/campaign/chat';
 import type { CampaignMessage } from '@/hooks/campaign/useCampaignRealtime';

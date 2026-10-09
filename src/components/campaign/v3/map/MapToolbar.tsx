@@ -31,7 +31,7 @@ import {
   Square,
   Circle,
   Grid3X3,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,

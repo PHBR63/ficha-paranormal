@@ -1,6 +1,7 @@
+import { ConhecimentoSymbol, EnergiaSymbol, MedoSymbol, MorteSymbol, SangueSymbol } from '@/components/icons/element-symbols';
 /**
  * NonOccultistRitualModal - Modal para não-ocultistas selecionarem rituais
- * 
+ *
  * Usado quando:
  * - Personagem adquire o poder geral "Ritual Aprendido" (1 ritual de 1º círculo)
  * - Personagem equipa o Grimório Vivo (3 rituais de até 3º círculo)
@@ -20,57 +21,46 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { CustomScroll } from '@/components/ui/custom-scroll';
-import { 
-  Search, 
-  Sparkles, 
-  CheckCircle2, 
-  AlertTriangle,
-  Droplet,
-  Skull,
-  BookOpen,
-  Zap,
-  Ghost,
-  Circle
-} from 'lucide-react';
+import { Search, Sparkles, CheckCircle2, AlertTriangle, BookOpen, Circle } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { ALL_RITUALS, Ritual } from '@/lib/rituals/legacy-exports';
 
 // Configuração visual dos elementos (5 elementos oficiais)
 const ELEMENT_CONFIG = {
-  sangue: { 
-    icon: Droplet, 
-    label: 'Sangue', 
-    color: 'text-red-400', 
+  sangue: {
+    icon: SangueSymbol,
+    label: 'Sangue',
+    color: 'text-red-400',
     bgColor: 'bg-red-500/20',
-    borderColor: 'border-red-500/50' 
+    borderColor: 'border-red-500/50'
   },
-  morte: { 
-    icon: Skull, 
-    label: 'Morte', 
-    color: 'text-purple-400', 
+  morte: {
+    icon: MorteSymbol,
+    label: 'Morte',
+    color: 'text-purple-400',
     bgColor: 'bg-purple-500/20',
-    borderColor: 'border-purple-500/50' 
+    borderColor: 'border-purple-500/50'
   },
-  conhecimento: { 
-    icon: BookOpen, 
-    label: 'Conhecimento', 
-    color: 'text-yellow-400', 
+  conhecimento: {
+    icon: ConhecimentoSymbol,
+    label: 'Conhecimento',
+    color: 'text-yellow-400',
     bgColor: 'bg-yellow-500/20',
-    borderColor: 'border-yellow-500/50' 
+    borderColor: 'border-yellow-500/50'
   },
-  energia: { 
-    icon: Zap, 
-    label: 'Energia', 
-    color: 'text-blue-400', 
+  energia: {
+    icon: EnergiaSymbol,
+    label: 'Energia',
+    color: 'text-blue-400',
     bgColor: 'bg-blue-500/20',
-    borderColor: 'border-blue-500/50' 
+    borderColor: 'border-blue-500/50'
   },
-  medo: { 
-    icon: Ghost, 
-    label: 'Medo', 
-    color: 'text-emerald-400', 
-    bgColor: 'bg-emerald-500/20',
-    borderColor: 'border-emerald-500/50' 
+  medo: {
+    icon: MedoSymbol,
+    label: 'Medo',
+    color: 'text-zinc-400',
+    bgColor: 'bg-zinc-500/20',
+    borderColor: 'border-zinc-500/50'
   },
 } as const;
 
@@ -109,7 +99,7 @@ function RitualCard({
       exit={{ opacity: 0, y: -10 }}
       className={cn(
         "p-3 rounded-lg border transition-all cursor-pointer",
-        isSelected 
+        isSelected
           ? cn("border-primary bg-primary/10", elementConfig?.borderColor)
           : "border-border/50 bg-card/50 hover:bg-card/80",
         isDisabled && !isSelected && "opacity-50 cursor-not-allowed"
@@ -124,8 +114,8 @@ function RitualCard({
         {/* Checkbox visual */}
         <div className={cn(
           "w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 flex-shrink-0 transition-colors",
-          isSelected 
-            ? "bg-primary border-primary" 
+          isSelected
+            ? "bg-primary border-primary"
             : "border-muted-foreground"
         )}>
           {isSelected && <CheckCircle2 className="w-4 h-4 text-primary-foreground" />}
@@ -138,8 +128,8 @@ function RitualCard({
             <Badge variant="outline" className="text-xs">
               {ritual.circle}º Círculo
             </Badge>
-            <Badge 
-              variant="secondary" 
+            <Badge
+              variant="secondary"
               className={cn("text-xs gap-1", elementConfig?.color)}
             >
               <ElementIcon className="w-3 h-3" />
@@ -190,7 +180,7 @@ function RitualCard({
                       <p><strong>Resistência:</strong> {ritual.resistance}</p>
                     )}
                   </div>
-                  
+
                   {/* Aprimoramentos detalhados */}
                   {ritual.enhancements && ritual.enhancements.length > 0 && (
                     <div className="pt-2 border-t border-border/50 space-y-2">
@@ -202,12 +192,12 @@ function RitualCard({
                         {ritual.enhancements.map((enh, idx) => (
                           <div key={idx} className="p-2 rounded bg-background/50 border border-border/30">
                             <div className="flex items-center gap-2 mb-1">
-                              <Badge 
-                                variant="outline" 
+                              <Badge
+                                variant="outline"
                                 className={cn(
                                   "text-[10px] font-semibold",
-                                  enh.name === 'Verdadeiro' 
-                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50' 
+                                  enh.name === 'Verdadeiro'
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
                                     : 'bg-blue-500/20 text-blue-300 border-blue-500/50'
                                 )}
                               >
@@ -281,7 +271,7 @@ export function NonOccultistRitualModal({
     return ALL_RITUALS.filter(ritual => {
       // Filtrar por círculo máximo
       if (ritual.circle > config.maxCircle) return false;
-      
+
       // Filtrar por rituais já conhecidos
       if (currentRituals.includes(ritual.id)) return false;
 
@@ -467,8 +457,8 @@ export function NonOccultistRitualModal({
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleConfirm} 
+          <Button
+            onClick={handleConfirm}
             disabled={!canConfirm || isLoading}
             className="gap-2"
           >

@@ -30,7 +30,7 @@ import {
   Flame,
   CheckCircle2,
   Circle
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { 
   calculateDerivedStats, 

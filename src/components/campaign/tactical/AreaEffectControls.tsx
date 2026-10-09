@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Circle, Triangle, Minus, Square, Trash2, Eye, EyeOff, Target } from 'lucide-react';
+import { Circle, Triangle, Minus, Square, Trash2, Eye, EyeOff, Target } from '@/components/icons/ordem-icons';
 import type { CreateAreaEffectData } from '@/hooks/campaign/useAreaEffects';
 import type { MapAreaEffect } from '@/components/campaign/tactical/layers/AreaEffectLayer';
 

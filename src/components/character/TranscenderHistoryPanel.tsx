@@ -34,7 +34,7 @@ import {
   AlertTriangle,
   ChevronDown,
   Info,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { 
   getTranscenderHistory, 
   revertTranscenderChoice,

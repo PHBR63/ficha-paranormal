@@ -33,7 +33,7 @@ import {
   Droplet,
   Skull,
   Star,
-} from 'lucide-react';
+} from '@/components/icons/ordem-icons';
 import { rollOrigin, getOriginSkills } from '@/lib/character-builder-engine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AmnesicSkillModal } from './AmnesicSkillModal';

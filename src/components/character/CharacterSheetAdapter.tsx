@@ -11,7 +11,7 @@
 import { Suspense, lazy, memo } from 'react';
 import { useIsMobile } from '@/hooks';
 import { CharacterSheetProvider } from '@/contexts/CharacterSheetContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/components/icons/ordem-icons';
 
 // Lazy loading dos layouts para reduzir bundle inicial
 const DesktopSheetLayout = lazy(() => 

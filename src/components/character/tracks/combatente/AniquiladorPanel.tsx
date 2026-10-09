@@ -13,7 +13,7 @@
  * @module tracks/combatente
  */
 
-import { Crosshair, Target, Zap, ChevronDown, Check, Loader2 } from 'lucide-react';
+import { Crosshair, Target, Zap, ChevronDown, Check, Loader2 } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

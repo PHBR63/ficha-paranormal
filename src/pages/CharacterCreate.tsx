@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast, useThemeColors } from '@/hooks';
-import { ArrowLeft, ArrowRight, Check, Loader2, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Loader2, Users } from '@/components/icons/ordem-icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Particles } from '@/components/ui/particles';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
