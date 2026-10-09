@@ -8,7 +8,7 @@
  * @module tracks/combatente/useOperacoesEspeciaisTrack
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { EffectDuration, ComputedEffects } from '@/hooks';
 
@@ -95,7 +95,8 @@ export interface UseOperacoesEspeciaisTrackProps {
   classTrack: string | null | undefined;
   nex: number;
   peCurrent: number;
-  onPEChange: (newPE: number) => void;
+  /** Retorna false em recusa; callbacks legados sem retorno continuam compatíveis. */
+  onPEChange: (newPE: number) => boolean | void | Promise<boolean | void>;
   usedAbilitiesThisRound?: string[];
   onAbilityUsed?: (abilityId: string) => void;
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
@@ -130,7 +131,14 @@ export function useOperacoesEspeciaisTrack({
   // Estado local
   const [isOpen, setIsOpen] = useState(true);
   const [localUsedAbilities, setLocalUsedAbilities] = useState<Set<string>>(new Set());
-  const [showSurtoModal, setShowSurtoModal] = useState(false);
+  const [showSurtoModal, updateSurtoModal] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const confirmingRef = useRef(false);
+
+  // O diálogo conserva a preparação enquanto o servidor confirma o gasto.
+  const setShowSurtoModal = useCallback((open: boolean) => {
+    if (!confirmingRef.current) updateSurtoModal(open);
+  }, []);
 
   // Usa tracking externo se fornecido
   const usedAbilitiesSet = useMemo(() => {
@@ -181,15 +189,16 @@ export function useOperacoesEspeciaisTrack({
     [usedAbilitiesSet]
   );
 
-  // Handler para usar habilidade
-  const handleUseAbility = useCallback((ability: OperacoesAbility) => {
+  /** Revalida saldo, desbloqueio e uso tanto ao abrir como ao confirmar a escolha. */
+  const canUseAbility = useCallback((ability: OperacoesAbility) => {
+    if (!unlockedAbilities.some(unlocked => unlocked.id === ability.id)) return false;
     if (ability.perRound && isAbilityUsed(ability.id)) {
       toast({
         title: 'Limite por rodada',
         description: `${ability.name} já foi usada.`,
         variant: 'destructive',
       });
-      return;
+      return false;
     }
 
     if (peCurrent < ability.peCost) {
@@ -198,8 +207,45 @@ export function useOperacoesEspeciaisTrack({
         description: `${ability.name} requer ${ability.peCost} PE.`,
         variant: 'destructive',
       });
+      return false;
+    }
+
+    return true;
+  }, [unlockedAbilities, isAbilityUsed, peCurrent, toast]);
+
+  /** Confirma PE antes de registrar uso/efeito; a trava também cobre cliques no mesmo frame. */
+  const confirmAbility = useCallback(async (ability: OperacoesAbility, choice?: SurtoChoice) => {
+    if (confirmingRef.current || !canUseAbility(ability)) return;
+    confirmingRef.current = true;
+    setIsConfirming(true);
+    let confirmed = false;
+    try {
+      confirmed = (await onPEChange(peCurrent - ability.peCost)) !== false;
+    } catch {
+      // Não transformar falha de transporte em sucesso de habilidade.
+      confirmed = false;
+    } finally {
+      confirmingRef.current = false;
+      setIsConfirming(false);
+    }
+    if (!confirmed) {
+      toast({ title: 'Habilidade não confirmada', description: 'Confira os PE e o histórico antes de tentar novamente.', variant: 'destructive' });
       return;
     }
+    onTrackPESpent?.(ability.name, ability.peCost);
+    markAbilityAsUsed(ability.id);
+    if (ability.id === 'ataque-extra') {
+      onActivateEffect?.(OPERACOES_EFFECT_IDS.ATAQUE_EXTRA, ability.name, 'round');
+    } else {
+      onActivateEffect?.(OPERACOES_EFFECT_IDS.SURTO_ADRENALINA, ability.name, 'round', { choice });
+      updateSurtoModal(false);
+    }
+    toast({ title: `${ability.name}!`, description: `${ability.shortEffect}. -${ability.peCost} PE` });
+  }, [canUseAbility, onPEChange, peCurrent, onTrackPESpent, markAbilityAsUsed, onActivateEffect, toast]);
+
+  // Abrir a escolha não consome recursos nem marca uso.
+  const handleUseAbility = useCallback(async (ability: OperacoesAbility) => {
+    if (confirmingRef.current || !canUseAbility(ability)) return;
 
     // Se precisa de escolha (Surto), abre modal
     if (ability.requiresChoice) {
@@ -207,42 +253,20 @@ export function useOperacoesEspeciaisTrack({
       return;
     }
 
-    // Executa direto
-    onPEChange(peCurrent - ability.peCost);
-    onTrackPESpent?.(ability.name, ability.peCost);
-    markAbilityAsUsed(ability.id);
-
-    // Registra no SUE
-    if (ability.id === 'ataque-extra') {
-      onActivateEffect?.(OPERACOES_EFFECT_IDS.ATAQUE_EXTRA, 'Ataque Extra', 'round');
-    }
-
-    toast({
-      title: `${ability.name}!`,
-      description: `${ability.shortEffect}. -${ability.peCost} PE`,
-    });
-  }, [peCurrent, onPEChange, markAbilityAsUsed, isAbilityUsed, toast, onActivateEffect, onTrackPESpent]);
+    await confirmAbility(ability);
+  }, [canUseAbility, setShowSurtoModal, confirmAbility]);
 
   // Handler para escolha do Surto
-  const handleSurtoChoice = useCallback((choice: SurtoChoice) => {
+  const handleSurtoChoice = useCallback(async (choice: SurtoChoice) => {
+    if (!showSurtoModal || (choice !== 'standard' && choice !== 'movement')) return;
     const ability = OPERACOES_ABILITIES.find(a => a.id === 'surto-de-adrenalina')!;
 
-    onPEChange(peCurrent - ability.peCost);
-    onTrackPESpent?.(ability.name, ability.peCost);
-    markAbilityAsUsed(ability.id);
-    setShowSurtoModal(false);
-
-    // Registra no SUE
-    onActivateEffect?.(OPERACOES_EFFECT_IDS.SURTO_ADRENALINA, 'Surto de Adrenalina', 'round', { choice });
-
-    toast({
-      title: 'Surto de Adrenalina!',
-      description: `+1 ${choice === 'standard' ? 'ação padrão' : 'movimento'}. -${ability.peCost} PE`,
-    });
-  }, [peCurrent, onPEChange, markAbilityAsUsed, toast, onActivateEffect]);
+    await confirmAbility(ability, choice);
+  }, [showSurtoModal, confirmAbility]);
 
   // Reset de usos locais
   const resetRoundUsage = useCallback(() => {
+    if (confirmingRef.current) return;
     if (!externalUsedAbilities) {
       setLocalUsedAbilities(new Set());
     }
@@ -263,6 +287,7 @@ export function useOperacoesEspeciaisTrack({
     setIsOpen,
     showSurtoModal,
     setShowSurtoModal,
+    isConfirming,
 
     // Dados
     unlockedAbilities,

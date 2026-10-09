@@ -67,9 +67,11 @@ function PassivesList({ passives }: { passives: typeof PASSIVE_ABILITIES }) {
 function SurtoChoiceButtons({
   onChoice,
   isMobile,
+  disabled,
 }: {
   onChoice: (choice: SurtoChoice) => void;
   isMobile: boolean;
+  disabled: boolean;
 }) {
   return (
     <div className={cn('grid gap-3', isMobile ? 'grid-cols-2' : 'grid-cols-2')}>
@@ -77,6 +79,7 @@ function SurtoChoiceButtons({
         variant="outline"
         className="h-auto py-6 flex flex-col gap-2"
         onClick={() => onChoice('standard')}
+        disabled={disabled}
       >
         <Hand className={cn('text-primary', isMobile ? 'w-8 h-8' : 'w-10 h-10')} />
         <span className="font-medium">Ação Padrão</span>
@@ -86,6 +89,7 @@ function SurtoChoiceButtons({
         variant="outline"
         className="h-auto py-6 flex flex-col gap-2"
         onClick={() => onChoice('movement')}
+        disabled={disabled}
       >
         <Footprints className={cn('text-primary', isMobile ? 'w-8 h-8' : 'w-10 h-10')} />
         <span className="font-medium">Movimento</span>
@@ -100,22 +104,6 @@ function SurtoChoiceButtons({
 
 import React from 'react';
 
-/**
- * Comparação customizada para evitar re-renders desnecessários.
- * Ignora peCurrent pois mudanças de PE não afetam a estrutura do painel.
- */
-function arePropsEqual(prev: OperacoesEspeciaisPanelProps, next: OperacoesEspeciaisPanelProps): boolean {
-  return (
-    prev.classTrack === next.classTrack &&
-    prev.nex === next.nex &&
-    prev.className === next.className &&
-    prev.onPEChange === next.onPEChange &&
-    prev.onActivateEffect === next.onActivateEffect &&
-    prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId &&
-    prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId
-  );
-}
-
 function OperacoesEspeciaisPanelComponent(props: OperacoesEspeciaisPanelProps) {
   const isMobile = useIsMobile();
   const { className, peCurrent } = props;
@@ -126,6 +114,7 @@ function OperacoesEspeciaisPanelComponent(props: OperacoesEspeciaisPanelProps) {
     setIsOpen,
     showSurtoModal,
     setShowSurtoModal,
+    isConfirming,
     unlockedAbilities,
     unlockedPassives,
     hasLocalUsage,
@@ -188,11 +177,11 @@ function OperacoesEspeciaisPanelComponent(props: OperacoesEspeciaisPanelProps) {
                   <Button
                     size="sm"
                     variant={isUsed ? 'outline' : 'default'}
-                    disabled={isUsed || !affordable}
+                    disabled={isConfirming || isUsed || !affordable}
                     onClick={() => handleUseAbility(ability)}
                     className="h-7 text-[10px] px-2 shrink-0"
                   >
-                    {isUsed ? 'Usada' : 'Usar'}
+                    {isConfirming ? 'Confirmando...' : isUsed ? 'Usada' : 'Usar'}
                   </Button>
                 </motion.div>
               );
@@ -203,6 +192,7 @@ function OperacoesEspeciaisPanelComponent(props: OperacoesEspeciaisPanelProps) {
                 variant="outline"
                 size="sm"
                 onClick={resetRoundUsage}
+                disabled={isConfirming}
                 className="w-full text-xs h-7"
               >
                 Nova Rodada
@@ -225,7 +215,8 @@ function OperacoesEspeciaisPanelComponent(props: OperacoesEspeciaisPanelProps) {
             </MobileDrawerHeader>
 
             <MobileDrawerBody useScrollArea={false}>
-              <SurtoChoiceButtons onChoice={handleSurtoChoice} isMobile={true} />
+              <SurtoChoiceButtons onChoice={handleSurtoChoice} isMobile={true} disabled={isConfirming} />
+              {isConfirming && <p role="status" className="text-xs text-center">Confirmando gasto de PE...</p>}
               <p className="text-xs text-muted-foreground text-center pt-4">
                 Custo: 5 PE
               </p>
@@ -300,10 +291,10 @@ function OperacoesEspeciaisPanelComponent(props: OperacoesEspeciaisPanelProps) {
                         size="sm"
                         variant={isUsed ? 'ghost' : 'default'}
                         className="h-7 text-xs"
-                        disabled={isUsed || !affordable}
+                        disabled={isConfirming || isUsed || !affordable}
                         onClick={() => handleUseAbility(ability)}
                       >
-                        {isUsed ? 'Usada' : 'Usar'}
+                        {isConfirming ? 'Confirmando...' : isUsed ? 'Usada' : 'Usar'}
                       </Button>
                     </div>
                   </motion.div>
@@ -315,6 +306,7 @@ function OperacoesEspeciaisPanelComponent(props: OperacoesEspeciaisPanelProps) {
                   variant="outline"
                   size="sm"
                   onClick={resetRoundUsage}
+                  disabled={isConfirming}
                   className="w-full text-xs"
                 >
                   Nova Rodada
@@ -342,7 +334,8 @@ function OperacoesEspeciaisPanelComponent(props: OperacoesEspeciaisPanelProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <SurtoChoiceButtons onChoice={handleSurtoChoice} isMobile={false} />
+          <SurtoChoiceButtons onChoice={handleSurtoChoice} isMobile={false} disabled={isConfirming} />
+          {isConfirming && <p role="status" className="text-xs text-center">Confirmando gasto de PE...</p>}
 
           <DialogFooter>
             <p className="text-xs text-muted-foreground w-full text-center">
@@ -356,4 +349,5 @@ function OperacoesEspeciaisPanelComponent(props: OperacoesEspeciaisPanelProps) {
 }
 
 /** Componente exportado com memoização para otimização de performance */
-export const OperacoesEspeciaisPanel = React.memo(OperacoesEspeciaisPanelComponent, arePropsEqual);
+// A comparação padrão inclui saldo, usos e callbacks; não conserva dados antigos.
+export const OperacoesEspeciaisPanel = React.memo(OperacoesEspeciaisPanelComponent);
