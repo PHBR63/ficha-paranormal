@@ -4,6 +4,8 @@ import { CombatRollModal } from '../CombatRollModal';
 import { MobileCombatRollModal } from '../mobile/MobileCombatRollModal';
 import { rollSkillTest } from '@/lib/dice-roller';
 import { CombatWeaponsTable } from '../CombatWeaponsTable';
+import { getTrackEffects } from '@/lib/effects/track-effects-adapter';
+import { consolidateEffects } from '@/lib/unified-effects-engine';
 vi.mock('@/hooks/useCombatFeedback', () => ({ useCombatFeedback: () => ({ triggerRoll: vi.fn(), triggerFumble: vi.fn(), triggerCriticalMiss: vi.fn(), triggerCritical: vi.fn(), triggerHit: vi.fn(), triggerMiss: vi.fn() }) }));
 
 vi.mock('../SpecialAttackSelector', () => ({
@@ -29,6 +31,36 @@ const props = {
   skills: { luta: 0 }, currentPE: 10, maxPE: 10,
   characterClass: 'Combatente', abilities: [], paranormalPowers: [], hasAffinity: false, nex: 5,
 };
+
+describe.each([
+  ['desktop', CombatRollModal], ['mobile', MobileCombatRollModal],
+] as const)('Mira de Elite no dano: %s', (_name, Modal) => {
+  it.each([
+    ['balas_longas', true], ['balas_curtas', true],
+    ['balas_longas', false], ['balas_curtas', false],
+  ] as const)('aplica Intelecto uma vez com munição %s e SUE %s', async (ammoType, useSUE) => {
+    const complete = vi.fn();
+    const attributes = { ...props.attributes, intellect: 3 };
+    const unifiedEffects = consolidateEffects(getTrackEffects('atirador-elite', 40, attributes), {
+      attributes, nex: 40, hpCurrent: 20, hpMax: 20, peCurrent: 20, peMax: 20,
+      inCombat: true, isFirstRound: false, currentRound: 2, hasShield: false,
+      activeConditions: [], activatedEffects: [],
+    });
+    render(<Modal {...props} attributes={attributes} characterClass="Especialista"
+      classTrack="atirador-elite" nex={40} unifiedEffects={useSUE ? unifiedEffects : undefined}
+      weapon={{ id: 'qa-rifle', name: 'Arma QA', type: 'Disparo', damage: '2d8',
+        damageType: 'Balístico', critical: '20', ammoType }}
+      onConfirmAttack={vi.fn().mockResolvedValue(true)} onPEChange={vi.fn()}
+      onRollComplete={complete} />);
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    // A transição animada desktop pode ultrapassar 1 s durante a regressão completa.
+    await waitFor(() => expect(screen.getByRole('button', { name: /rolar dano/i })).toBeEnabled(), { timeout: 5000 });
+    fireEvent.click(screen.getByRole('button', { name: /rolar dano/i }));
+    await waitFor(() => expect(complete).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'damage', otherBonuses: ammoType === 'balas_longas' ? 3 : 0,
+    })));
+  });
+});
 
 it('a tabela desktop repassa trilha, arma favorita e rejeição do servidor ao modal real', async () => {
   const save = vi.fn().mockResolvedValue(false);

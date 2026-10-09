@@ -1740,7 +1740,8 @@ export function getTrackCombatBonuses(
   nex: number,
   attributes: Record<AttributeType, number>,
   attackType: 'melee' | 'ranged',
-  activatedEffects: string[] = []
+  activatedEffects: string[] = [],
+  damageContext?: { representedEffectIds: string[]; isLongFirearm: boolean },
 ): {
   attackBonus: number;
   damageBonus: number;
@@ -1775,12 +1776,17 @@ export function getTrackCombatBonuses(
       result.attackBonus += m.rangedAttackBonus || 0;
     }
 
-    // Dano
-    result.damageBonus += m.damageBonus || 0;
-    if (attackType === 'melee') {
-      result.damageBonus += m.meleeDamageBonus || 0;
-    } else {
-      result.damageBonus += m.rangedDamageBonus || 0;
+    // O resumo já contém esses efeitos: a trilha não pode somá-los novamente.
+    // Mira de Elite exige a arma elegível no contexto dos modais de combate.
+    const representedDamage = damageContext?.representedEffectIds.includes(effect.id);
+    const ineligibleMira = effect.id === 'track-mira-elite' && damageContext && !damageContext.isLongFirearm;
+    if (!representedDamage && !ineligibleMira) {
+      result.damageBonus += m.damageBonus || 0;
+      if (attackType === 'melee') {
+        result.damageBonus += m.meleeDamageBonus || 0;
+      } else {
+        result.damageBonus += m.rangedDamageBonus || 0;
+      }
     }
 
     // Crítico

@@ -18,6 +18,7 @@ import type { ConfirmCombatAttack, CombatCostSelection } from '@/services/combat
 
 import { useConfirmedDiceRoll, type ConfirmDicePE } from '@/hooks/useConfirmedDiceRoll';
 import { getCombatPowerDicePenalty } from '@/lib/class-powers/combat-test-dice';
+import { getWeaponDamageEffects, hasLongFirearmDamage } from '@/lib/effects/weapon-damage-effects';
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -240,7 +241,7 @@ export function MobileCombatRollModal({
   classTrack,
   abilities,
   nex,
-  unifiedEffects,
+  unifiedEffects: sheetEffects,
   activeConditions = [],
   weaponBuffs = [],
   onRollComplete,
@@ -255,6 +256,7 @@ export function MobileCombatRollModal({
   activeConditionalBonuses = [], // NOVO: Bônus condicionais ativos
   excludedEffects = [], // SUE Hardening: Efeitos excluídos por stacking
 }: MobileCombatRollModalProps) {
+  const unifiedEffects = useMemo(() => getWeaponDamageEffects(sheetEffects, weapon), [sheetEffects, weapon]);
   // === HOOK DE COMBATE INTEGRADO COM SUE ===
   // Preparação para migração: hook já configurado para uso futuro
   // Quando a migração estiver completa, substituirá rollSkillTest/rollDamage
@@ -386,9 +388,13 @@ export function MobileCombatRollModal({
       nex,
       attributes,
       attackType,
-      combinedActivatedEffects
+      combinedActivatedEffects,
+      {
+        representedEffectIds: unifiedEffects?.damage.breakdown.flatMap(entry => entry.effectId ? [entry.effectId] : []) ?? [],
+        isLongFirearm: hasLongFirearmDamage(weapon),
+      },
     );
-  }, [classTrack, nex, attributes, attackType, combinedActivatedEffects]);
+  }, [classTrack, nex, attributes, attackType, combinedActivatedEffects, unifiedEffects, weapon]);
   
   // === PROCESSAR WEAPON BUFFS (Amaldiçoar Arma, etc.) ===
   const weaponBuffBonuses = useMemo(() => {
