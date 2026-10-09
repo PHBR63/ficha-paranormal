@@ -4,6 +4,8 @@ SELECT set_config('test.buff_master',user_id::text,true) FROM public.characters 
 SELECT set_config('test.buff_owner',id::text,true) FROM auth.users WHERE id<>current_setting('test.buff_master')::uuid ORDER BY created_at LIMIT 1;
 INSERT INTO public.characters(id,user_id,name,origin,class,pe_current,pe_max,active_buffs)
 VALUES('96ba0000-0000-4000-8000-000000000001',current_setting('test.buff_owner')::uuid,'QA BUFF ROLLBACK','Vítima','Ocultista',4,4,'[{"id":"custom","unrecognized":true}]');
+-- Contrato atual de conjuração, sem perda de SAN para isolar buff/sustentação.
+UPDATE public.characters SET san_current=30,san_max=30 WHERE id='96ba0000-0000-4000-8000-000000000001';
 INSERT INTO public.campaigns_v2(id,master_id,name) VALUES('96ba0000-0000-4000-8000-000000000002',current_setting('test.buff_master')::uuid,'QA BUFF V2 ROLLBACK');
 INSERT INTO public.campaign_members_v2(campaign_id,user_id,character_id,role)
 VALUES('96ba0000-0000-4000-8000-000000000002',current_setting('test.buff_owner')::uuid,'96ba0000-0000-4000-8000-000000000001','player');
@@ -11,7 +13,7 @@ SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub',current_setting('test.buff_master'),true);
 SELECT set_config('request.jwt.claims',json_build_object('sub',current_setting('test.buff_master'),'role','authenticated')::text,true);
 DO $$ DECLARE cast_event public.character_activity_events; effect public.character_activity_events; value jsonb; sustain jsonb; BEGIN
- cast_event:=public.cast_character_ritual('96ba0000-0000-4000-8000-000000000010','96ba0000-0000-4000-8000-000000000001',4,1,'{"ritualId":"qa","ritualName":"QA ritual"}');
+ cast_event:=public.cast_character_ritual('96ba0000-0000-4000-8000-000000000010','96ba0000-0000-4000-8000-000000000001',4,1,'{"ritualId":"qa","ritualName":"QA ritual","ritualElement":"conhecimento","requirementsConfirmed":true,"expectedSan":30,"expectedSanMax":30,"paranormalCost":{"source":"system_roll","element":"conhecimento","test":{"attribute":1,"dicePenalty":0,"dice":[20],"bonuses":[{"name":"Situação QA","value":5}],"bonus":5,"total":25}}}');
  value:='{"ritualId":"qa","ritualName":"QA arma","element":"Conhecimento","duration":"rodadas","turnsRemaining":3,"enhancements":[],"bonusDamage":{"diceCount":1,"diceType":6,"damageType":"conhecimento"},"attackBonus":2}';
  effect:=public.apply_character_effect('96ba0000-0000-4000-8000-000000000011',cast_event.character_id,'weapon_buff',value,
  '{"active_buffs":[{"id":"custom","unrecognized":true}]}',cast_event.id);

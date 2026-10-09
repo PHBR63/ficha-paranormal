@@ -17,6 +17,9 @@ BEGIN
    '[{"id":"regra-caseira","name":"Regra caseira","params":{"valor":7},"turnsRemaining":2}]');
  INSERT INTO public.characters(id,user_id,name,origin,class)
  VALUES('97ba0000-0000-4000-8000-000000000002',auth.uid(),'QA ACTIVITY FICHA B','Vítima','Combatente');
+ -- Snapshot explícito de SAN para o contrato atual de conjuração; teste aprovado
+ -- do custo do Paranormal isola aqui histórico/aplicação das regras de perda de SAN.
+ UPDATE public.characters SET san_current=30,san_max=30 WHERE id='97ba0000-0000-4000-8000-000000000001';
  event:=public.record_character_activity('97ba0000-0000-4000-8000-000000000010','97ba0000-0000-4000-8000-000000000001','roll','{"total":27,"dice":[17],"skillBonus":5,"otherBonuses":5}');
  retry:=public.record_character_activity('97ba0000-0000-4000-8000-000000000010','97ba0000-0000-4000-8000-000000000001','roll','{"total":27,"dice":[17],"skillBonus":5,"otherBonuses":5}');
  IF event.id<>retry.id OR (SELECT count(*) FROM public.list_character_activity('97ba0000-0000-4000-8000-000000000001'))<>1 THEN RAISE EXCEPTION 'Registro duplicado'; END IF;
@@ -25,15 +28,15 @@ BEGIN
    PERFORM public.record_character_activity(event.id,event.character_id,'roll','{"total":999}');
    RAISE EXCEPTION 'Operação reutilizada com dados diferentes';
  EXCEPTION WHEN unique_violation THEN NULL; END;
- event:=public.cast_character_ritual('97ba0000-0000-4000-8000-000000000011','97ba0000-0000-4000-8000-000000000001',4,1,'{"ritualId":"qa","ritualName":"QA ritual"}');
- retry:=public.cast_character_ritual(event.id,event.character_id,4,1,'{"ritualId":"qa","ritualName":"QA ritual"}');
+ event:=public.cast_character_ritual('97ba0000-0000-4000-8000-000000000011','97ba0000-0000-4000-8000-000000000001',4,1,'{"ritualId":"qa","ritualElement":"conhecimento","requirementsConfirmed":true,"expectedSan":30,"expectedSanMax":30,"paranormalCost":{"source":"system_roll","element":"conhecimento","test":{"attribute":1,"dicePenalty":0,"dice":[20],"bonuses":[{"name":"Situação QA","value":5}],"bonus":5,"total":25}},"ritualName":"QA ritual"}');
+ retry:=public.cast_character_ritual(event.id,event.character_id,4,1,'{"ritualId":"qa","ritualElement":"conhecimento","requirementsConfirmed":true,"expectedSan":30,"expectedSanMax":30,"paranormalCost":{"source":"system_roll","element":"conhecimento","test":{"attribute":1,"dicePenalty":0,"dice":[20],"bonuses":[{"name":"Situação QA","value":5}],"bonus":5,"total":25}},"ritualName":"QA ritual"}');
  IF (SELECT pe_current FROM public.characters WHERE id=event.character_id)<>3 OR event.status<>'pending' OR retry.id<>event.id THEN RAISE EXCEPTION 'Débito duplicado ou conjuração perdida'; END IF;
  BEGIN
-   PERFORM public.cast_character_ritual('97ba0000-0000-4000-8000-000000000012',event.character_id,4,1,'{"ritualId":"qa","ritualName":"QA ritual"}');
+   PERFORM public.cast_character_ritual('97ba0000-0000-4000-8000-000000000012',event.character_id,4,1,'{"ritualId":"qa","ritualElement":"conhecimento","requirementsConfirmed":true,"expectedSan":30,"expectedSanMax":30,"paranormalCost":{"source":"system_roll","element":"conhecimento","test":{"attribute":1,"dicePenalty":0,"dice":[20],"bonuses":[{"name":"Situação QA","value":5}],"bonus":5,"total":25}},"ritualName":"QA ritual"}');
    RAISE EXCEPTION 'Débito concorrente sobrescreveu PE';
  EXCEPTION WHEN serialization_failure THEN NULL; END;
  BEGIN
-   PERFORM public.cast_character_ritual('97ba0000-0000-4000-8000-000000000012',event.character_id,3,4,'{"ritualId":"qa","ritualName":"QA ritual"}');
+   PERFORM public.cast_character_ritual('97ba0000-0000-4000-8000-000000000012',event.character_id,3,4,'{"ritualId":"qa","ritualElement":"conhecimento","requirementsConfirmed":true,"expectedSan":30,"expectedSanMax":30,"paranormalCost":{"source":"system_roll","element":"conhecimento","test":{"attribute":1,"dicePenalty":0,"dice":[20],"bonuses":[{"name":"Situação QA","value":5}],"bonus":5,"total":25}},"ritualName":"QA ritual"}');
    RAISE EXCEPTION 'PE insuficiente aceito';
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  retry:=public.apply_character_effect('97ba0000-0000-4000-8000-000000000013',event.character_id,'heal','20','{"hp_current":5,"hp_max":10}',event.id);
@@ -50,7 +53,7 @@ BEGIN
  IF (SELECT conditions->0->'params'->>'valor' FROM public.characters WHERE id=event.character_id)<>'7'
    OR (SELECT jsonb_array_length(conditions) FROM public.characters WHERE id=event.character_id)<>2 THEN RAISE EXCEPTION 'Condição desconhecida perdida'; END IF;
  BEGIN
-   PERFORM public.apply_character_effect('97ba0000-0000-4000-8000-000000000016',event.character_id,'temporary_hp','10','{}');
+   PERFORM public.apply_character_effect('97ba0000-0000-4000-8000-000000000016',event.character_id,'unsupported_qa','10','{}');
    RAISE EXCEPTION 'Efeito sem suporte anunciou aplicação';
  EXCEPTION WHEN feature_not_supported THEN NULL; END;
  PERFORM public.hide_character_activity(event.character_id,true);

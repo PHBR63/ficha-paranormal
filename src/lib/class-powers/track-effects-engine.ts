@@ -128,6 +128,10 @@ function applyTrackMechanics(
   // Bônus de crítico (Técnica Letal, Máquina de Matar)
   if (mechanics.criticalBonus) {
     const { marginBonus, multiplierBonus, conditions } = mechanics.criticalBonus;
+
+    // O resumo da ficha não confirma ativações nem gastos de PE. Efeitos
+    // ativados continuam visíveis como opções, sem virar bônus permanentes.
+    const requiresActivation = mechanics.kind === 'activated';
     
     // Verifica condições (ex: apenas corpo a corpo)
     const conditionsMet = !conditions?.weaponType || 
@@ -135,13 +139,14 @@ function applyTrackMechanics(
     
     if (conditionsMet) {
       if (marginBonus) {
-        summary.criticalMarginBonus += marginBonus;
-        effects.push(`+${marginBonus} margem de ameaça`);
+        if (!requiresActivation) summary.criticalMarginBonus += marginBonus;
+        effects.push(`${requiresActivation ? 'Ao ativar: ' : ''}+${marginBonus} margem de ameaça`);
       }
       if (multiplierBonus) {
-        summary.criticalMultiplierBonus += multiplierBonus;
-        effects.push(`+${multiplierBonus} multiplicador crítico`);
+        if (!requiresActivation) summary.criticalMultiplierBonus += multiplierBonus;
+        effects.push(`${requiresActivation ? 'Ao ativar: ' : ''}+${multiplierBonus} multiplicador crítico`);
       }
+      if (requiresActivation) effects.push(ability.description);
     }
   }
   
@@ -153,7 +158,11 @@ function applyTrackMechanics(
     }
     if (mechanics.damageBonus.attribute) {
       // O valor real depende do atributo do personagem
-      effects.push(`+${mechanics.damageBonus.attribute.toUpperCase()} no dano`);
+      const attributeLabels: Record<Attribute, string> = {
+        strength: 'Força', agility: 'Agilidade', vigor: 'Vigor',
+        intellect: 'Intelecto', presence: 'Presença',
+      };
+      effects.push(`+${attributeLabels[mechanics.damageBonus.attribute]} no dano`);
     }
     if (mechanics.damageBonus.extraDice) {
       const dice = `+${mechanics.damageBonus.extraDice.count}d`;

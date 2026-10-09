@@ -377,6 +377,7 @@ function HelpPanel({
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
+                aria-label="Fechar guia rápido"
               >
                 <X className="w-5 h-5" />
               </Button>

@@ -76,6 +76,17 @@ describe('Motor de Trilhas - Criação de Sumário', () => {
 // ========================================
 
 describe('Motor de Trilhas - Cálculo de Bônus', () => {
+  it('mostra Disparo Letal como opção com custo, sem somar margem antes da ativação', () => {
+    const result = calculateTrackBonuses('atirador-elite', createContext({ nex: 40 }));
+    expect(result.criticalMarginBonus).toBe(0);
+    const disparo = result.breakdown.find(entry => entry.abilityId === 'disparo-letal');
+    expect(disparo?.effects.join(' ')).toContain('Ao ativar: +2 margem de ameaça');
+    expect(disparo?.effects.join(' ')).toContain('1 PE');
+    expect(result.breakdown.find(entry => entry.abilityId === 'mira-elite')?.effects)
+      .toContain('+Intelecto no dano');
+    expect(calculateTrackBonuses('guerreiro', createContext({ nex: 40, weaponType: 'melee' }))
+      .criticalMarginBonus).toBe(2);
+  });
   it('calculateTrackBonuses deve retornar sumário vazio para trilha inexistente', () => {
     const context = createContext();
     const result = calculateTrackBonuses('trilha-inexistente', context);

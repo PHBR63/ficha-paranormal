@@ -8,6 +8,8 @@ SELECT set_config('request.jwt.claims',json_build_object('sub',current_setting('
 DO $$ BEGIN
  INSERT INTO public.characters(id,user_id,name,origin,class,hp_current,hp_max,pe_current,pe_max)
  VALUES('98fa0000-0000-4000-8000-000000000001',auth.uid(),'QA FILTROS ROLLBACK','Vítima','Combatente',5,10,4,4);
+ -- SAN estável e teste do Paranormal aprovado mantêm o foco nos filtros.
+ UPDATE public.characters SET san_current=30,san_max=30 WHERE id='98fa0000-0000-4000-8000-000000000001';
  INSERT INTO public.campaigns(id,master_id,name) VALUES('98fa0000-0000-4000-8000-000000000010',auth.uid(),'QA FILTROS V1');
  INSERT INTO public.campaigns_v2(id,master_id,name) VALUES('98fa0000-0000-4000-8000-000000000011',auth.uid(),'QA FILTROS V2');
  INSERT INTO public.campaign_members(campaign_id,user_id,character_id,role)
@@ -22,13 +24,14 @@ DO $$ BEGIN
  INSERT INTO public.campaign_sessions_v2(id,campaign_id,session_number,title,status)
  VALUES('98fa0000-0000-4000-8000-000000000020','98fa0000-0000-4000-8000-000000000011',2,'Segunda sessão v2','active');
  PERFORM public.cast_character_ritual('98fa0000-0000-4000-8000-000000000030','98fa0000-0000-4000-8000-000000000001',4,0,
-   '{"ritualId":"qa","ritualName":"QA V1","sessionId":"98fa0000-0000-4000-8000-000000000020"}',
+   '{"ritualId":"qa","ritualElement":"conhecimento","requirementsConfirmed":true,"expectedSan":30,"expectedSanMax":30,"paranormalCost":{"source":"system_roll","element":"conhecimento","test":{"attribute":1,"dicePenalty":0,"dice":[20],"bonuses":[{"name":"Situação QA","value":5}],"bonus":5,"total":25}},"ritualName":"QA V1","sessionId":"98fa0000-0000-4000-8000-000000000020"}',
    '98fa0000-0000-4000-8000-000000000010','v1');
  PERFORM public.cast_character_ritual('98fa0000-0000-4000-8000-000000000031','98fa0000-0000-4000-8000-000000000001',4,0,
-   '{"ritualId":"qa","ritualName":"QA V2","sessionId":"98fa0000-0000-4000-8000-000000000020"}',
+   '{"ritualId":"qa","ritualElement":"conhecimento","requirementsConfirmed":true,"expectedSan":30,"expectedSanMax":30,"paranormalCost":{"source":"system_roll","element":"conhecimento","test":{"attribute":1,"dicePenalty":0,"dice":[20],"bonuses":[{"name":"Situação QA","value":5}],"bonus":5,"total":25}},"ritualName":"QA V2","sessionId":"98fa0000-0000-4000-8000-000000000020"}',
    '98fa0000-0000-4000-8000-000000000011','v2');
  PERFORM public.apply_character_effect('98fa0000-0000-4000-8000-000000000032','98fa0000-0000-4000-8000-000000000001','heal','0',
-   '{"hp_current":5,"hp_max":10}','98fa0000-0000-4000-8000-000000000030');
+   '{"hp_current":5,"hp_max":10}','98fa0000-0000-4000-8000-000000000030',
+   '98fa0000-0000-4000-8000-000000000010','v1');
  PERFORM public.record_character_activity('98fa0000-0000-4000-8000-000000000033','98fa0000-0000-4000-8000-000000000001','roll','{"total":3}');
 END $$;
 -- Só o runner prepara a data histórica; clientes seguem sem UPDATE no ledger.

@@ -5,6 +5,8 @@ SELECT set_config('test.session_player',id::text,true) FROM auth.users WHERE id<
 INSERT INTO public.characters(id,user_id,name,origin,class,pe_current,pe_max,hp_current,hp_max)
 VALUES('94ba0000-0000-4000-8000-000000000001',current_setting('test.session_master')::uuid,'QA SESSION CASTER ROLLBACK','Vítima','Ocultista',4,4,5,10),
  ('94ba0000-0000-4000-8000-000000000002',current_setting('test.session_player')::uuid,'QA SESSION TARGET ROLLBACK','Vítima','Combatente',4,4,5,10);
+ -- Contrato atual: custo do Paranormal validado sem perda de SAN nesta fixture.
+ UPDATE public.characters SET san_current=30,san_max=30 WHERE id='94ba0000-0000-4000-8000-000000000001';
 INSERT INTO public.campaigns_v2(id,master_id,name) VALUES
  ('94ba0000-0000-4000-8000-000000000003',current_setting('test.session_master')::uuid,'QA SESSION SOURCE PRIVADA'),
  ('94ba0000-0000-4000-8000-000000000004',current_setting('test.session_master')::uuid,'QA SESSION TARGET ROLLBACK');
@@ -18,10 +20,25 @@ SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub',current_setting('test.session_master'),true);
 SELECT set_config('request.jwt.claims',json_build_object('sub',current_setting('test.session_master'),'role','authenticated')::text,true);
 SELECT public.cast_character_ritual('94ba0000-0000-4000-8000-000000000006','94ba0000-0000-4000-8000-000000000001',4,1,
- '{"ritualId":"qa","ritualName":"QA ritual","sessionId":"94ba0000-0000-4000-8000-000000000005"}',
+ '{"ritualId":"qa","ritualElement":"conhecimento","requirementsConfirmed":true,"expectedSan":30,"expectedSanMax":30,"paranormalCost":{"source":"system_roll","element":"conhecimento","test":{"attribute":1,"dicePenalty":0,"dice":[20],"bonuses":[{"name":"Situação QA","value":5}],"bonus":5,"total":25}},"ritualName":"QA ritual","sessionId":"94ba0000-0000-4000-8000-000000000005"}',
  '94ba0000-0000-4000-8000-000000000003','v2');
-SELECT public.apply_character_effect('94ba0000-0000-4000-8000-000000000007','94ba0000-0000-4000-8000-000000000002','heal','1',
- '{"hp_current":5,"hp_max":10}','94ba0000-0000-4000-8000-000000000006');
+-- A RPC atual recusa alvo fora da campanha da conjuração.
+DO $$ BEGIN
+ BEGIN
+  PERFORM public.apply_character_effect('94ba0000-0000-4000-8000-000000000007','94ba0000-0000-4000-8000-000000000002','heal','1',
+   '{"hp_current":5,"hp_max":10}','94ba0000-0000-4000-8000-000000000006',
+   '94ba0000-0000-4000-8000-000000000003','v2');
+  RAISE EXCEPTION 'Alvo fora da campanha aceito';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END $$;
+-- O runner simula um registro legado anterior à restrição, somente na transação.
+-- Assim a proteção de nomes/títulos continua testada para históricos existentes.
+RESET ROLE;
+INSERT INTO public.character_activity_events(id,operation_id,character_id,author_id,category,status,payload,request_hash)
+VALUES('94ba0000-0000-4000-8000-000000000007','94ba0000-0000-4000-8000-000000000007',
+ '94ba0000-0000-4000-8000-000000000002',current_setting('test.session_master')::uuid,'application','confirmed',
+ '{"castEventId":"94ba0000-0000-4000-8000-000000000006"}','qa-legacy-privacy');
+SET LOCAL ROLE authenticated;
 DO $$ BEGIN
  IF (SELECT count(*) FROM public.list_character_activity_sessions('94ba0000-0000-4000-8000-000000000002'))<>1 THEN RAISE EXCEPTION 'Mestre perdeu sessão autorizada'; END IF;
 END $$;
