@@ -126,7 +126,7 @@ export function PowerDetailModal({ open, onOpenChange, power, onCastRitual }: Po
                 "border",
                 config.borderColor
               )}>
-                {power.type === 'paranormal' && elementConfig ? (
+                {(power.type === 'paranormal' || power.type === 'ritual') && elementConfig ? (
                   <elementConfig.icon className="h-8 w-8" aria-label={elementConfig.label} />
                 ) : (
                   <Icon className={cn("w-6 h-6", config.color)} />

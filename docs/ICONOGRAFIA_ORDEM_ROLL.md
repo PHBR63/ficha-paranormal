@@ -29,7 +29,7 @@ const Icon = config?.icon;
 ```
 
 ## Validação
-Regressão existente: 3.367 testes passaram em 154 arquivos. Testes do contrato visual: oito passaram. Tipos e compilação são conferidos separadamente. Revisão visual: tamanhos 16/24/32/64, fundos claro/escuro e página inicial em 320 pixels. Cinco snapshots locais antigos foram preservados em backup antes de atualizar a comparação dos novos SVGs; os snapshots que já estavam fora do Git não são incluídos neste lote.
+Regressão existente: 3.388 testes passaram em 154 arquivos. Testes do contrato visual e helpers mobile: 29 passaram. Tipos e compilação são conferidos separadamente. Revisão visual: tamanhos 16/24/32/64, fundos claro/escuro e página inicial em 320 pixels. Cinco snapshots locais antigos foram preservados em backup antes de atualizar a comparação dos novos SVGs; os snapshots que já estavam fora do Git não são incluídos neste lote.
 
 ## Integrações explícitas dos elementos
 - `src/components/character/AffinitySelectorCard.tsx`: associa seletores/cartões ao mapa oficial; entradas e eventos existentes preservados.
@@ -420,3 +420,10 @@ Cada arquivo abaixo passa a importar a biblioteca central; fora dos itens descri
 - `src/pages/Install.tsx` — integração da biblioteca de ícones na responsabilidade existente.
 - `src/pages/MyTemplates.tsx` — integração da biblioteca de ícones na responsabilidade existente.
 - `src/pages/TacticalMapFullscreen.tsx` — integração da biblioteca de ícones na responsabilidade existente.
+
+## Complemento encontrado na conferência publicada
+- `src/components/character/mobile/utils.ts`: helpers de elementos e itens retornam SVGs, substituindo os emojis fixos. Entradas continuam sendo nomes de elemento/tipo/categoria; saída agora é `ReactElement`, utilizada somente por componentes de renderização. Elementos/tipos desconhecidos recebem ícone neutro, sem alterar dados.
+- `src/components/character/mobile/MobilePowersTab.tsx`: usa o helper também no rótulo do elemento do ritual. Preserva círculo, nome e ação do cartão. É utilizado pelo `MobileCharacterSheet` e envia somente o clique existente para abrir detalhes.
+- `src/components/character/PowerDetailModal.tsx`: passa a mostrar o símbolo também em rituais. Recebe `PowerDetailData` e `onOpenChange`; não conjura nem cobra recursos por exibir o ícone.
+- `MobileVirtualizedPowersList` e `MobileCharacterSheet` reutilizam os helpers sem mudança de seus contratos.
+- `src/components/icons/__tests__/icon-contract.test.tsx`: valida cinco elementos, quinze tipos/categorias e fallback desconhecido, além dos oito contratos anteriores.

@@ -6,6 +6,8 @@
  */
 
 import { getSkillAttribute as getSkillAttr, type AttributeKey } from '@/lib/constants/game-ids';
+import { createElement, type ReactElement } from 'react';
+import { Swords, Shield, Pill, Search, Radio, Backpack, Sparkles, FileText, Tent, Circle, Package, type LucideIcon } from '@/components/icons/ordem-icons';
 import { getElementConfig } from '@/lib/element-config';
 
 // ============= ATRIBUTOS =============
@@ -65,15 +67,10 @@ export function getAttributeColor(attr: string): string {
 
 // ============= ELEMENTOS PARANORMAIS =============
 
-/**
- * Retorna ícone emoji para cada elemento paranormal
- * Usa config centralizado em lib/element-config.ts
- * @param element Nome do elemento
- * @returns Emoji representando o elemento
- */
-export function getElementIcon(element: string): string {
-  const config = getElementConfig(element);
-  return config?.emoji || '✨';
+/** Recebe um elemento; retorna o símbolo local ou um ícone neutro para IDs desconhecidos. */
+export function getElementIcon(element: string): ReactElement {
+  const Icon = getElementConfig(element)?.icon || Sparkles;
+  return createElement(Icon, { className: 'h-5 w-5 shrink-0', 'aria-hidden': true });
 }
 
 /**
@@ -92,29 +89,18 @@ export function getElementColor(element: string): string {
 
 // ============= ITENS E INVENTÁRIO =============
 
-/**
- * Retorna ícone emoji para tipo de item
- * @param type Tipo ou categoria do item
- * @returns Emoji representando o tipo
- */
-export function getItemIcon(type: string): string {
-  const icons: Record<string, string> = {
-    'weapon': '⚔️',
-    'armor': '🛡️',
-    'medical': '💊',
-    'investigation': '🔍',
-    'communication': '📡',
-    'field': '🎒',
-    'paranormal': '✨',
-    'document': '📄',
-    'survival': '⛺',
-    'I': '🟢',
-    'II': '🔵',
-    'III': '🟣',
-    'IV': '🔴',
-    '0': '⚪',
-  };
-  return icons[type] || '📦';
+const ITEM_ICONS: Record<string, LucideIcon> = {
+  weapon: Swords, armor: Shield, medical: Pill, investigation: Search,
+  communication: Radio, field: Backpack, paranormal: Sparkles,
+  document: FileText, survival: Tent,
+};
+
+/** Retorna um SVG de tipo/categoria; dados personalizados continuam com fallback neutro. */
+export function getItemIcon(type: string): ReactElement {
+  const isCategory = ['0', 'I', 'II', 'III', 'IV'].includes(type);
+  const Icon = ITEM_ICONS[type] || (isCategory ? Circle : Package);
+  const categoryColor = isCategory ? getCategoryColor(type).split(' ').filter(token => token.startsWith('text-')).join(' ') : '';
+  return createElement(Icon, { className: `h-5 w-5 shrink-0 ${categoryColor}`, fill: isCategory ? 'currentColor' : undefined, 'aria-hidden': true });
 }
 
 /**

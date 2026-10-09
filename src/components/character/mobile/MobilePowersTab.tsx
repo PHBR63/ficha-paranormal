@@ -25,7 +25,8 @@ import { TRAINING_GRADE_KEYS } from '@/lib/constants/game-ids';
 
 // Altura estimada por tipo de item
 const POWER_ITEM_HEIGHT = 76;
-const RITUAL_ITEM_HEIGHT = 60;
+// Reserva espaço para nome, símbolo e elemento também na lista virtualizada.
+const RITUAL_ITEM_HEIGHT = 72;
 
 // Tipos
 interface ParanormalPower {
@@ -201,9 +202,12 @@ const RitualItem = memo(function RitualItem({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <span className="text-sm text-paranormal font-medium">{ritualData?.name || ritualId}</span>
+          <span className="block truncate text-sm text-paranormal font-medium">{ritualData?.name || ritualId}</span>
           {ritualData?.element && (
-            <p className="text-[10px] text-muted-foreground capitalize">{ritualData.element}</p>
+            <div className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground capitalize">
+              {getElementIcon(ritualData.element)}
+              <span>{ritualData.element}</span>
+            </div>
           )}
         </div>
         <ChevronRight className="w-4 h-4 text-paranormal/50 flex-shrink-0" />
