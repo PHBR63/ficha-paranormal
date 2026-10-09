@@ -185,6 +185,7 @@ export function SpecialAttackSelector({
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Switch
+              aria-label="Ativar Ataque Especial"
               checked={config.enabled}
               onCheckedChange={handleToggle}
               disabled={!canAfford}
@@ -248,6 +249,7 @@ export function SpecialAttackSelector({
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
+                      aria-label="Reduzir bônus de ataque especial"
                       onClick={decrementAttack}
                       disabled={config.attackIncrements <= 0}
                     >
@@ -260,6 +262,7 @@ export function SpecialAttackSelector({
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
+                      aria-label="Aumentar bônus de ataque especial"
                       onClick={incrementAttack}
                       disabled={incrementsRemaining <= 0}
                     >
@@ -279,6 +282,7 @@ export function SpecialAttackSelector({
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
+                      aria-label="Reduzir bônus de dano especial"
                       onClick={decrementDamage}
                       disabled={config.damageIncrements <= 0}
                     >
@@ -291,6 +295,7 @@ export function SpecialAttackSelector({
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
+                      aria-label="Aumentar bônus de dano especial"
                       onClick={incrementDamage}
                       disabled={incrementsRemaining <= 0}
                     >
@@ -339,6 +344,7 @@ export function SpecialAttackSelector({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Switch
+              aria-label="Ativar Ataque Especial"
               checked={config.enabled}
               onCheckedChange={handleToggle}
               disabled={!canAfford}
@@ -431,6 +437,7 @@ export function SpecialAttackSelector({
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label="Destinar todo o bônus especial ao ataque"
                       onClick={allToAttack}
                       className="text-xs h-6"
                     >
@@ -443,6 +450,7 @@ export function SpecialAttackSelector({
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
+                      aria-label="Reduzir bônus de ataque especial"
                       onClick={decrementAttack}
                       disabled={config.attackIncrements <= 0}
                     >
@@ -462,6 +470,7 @@ export function SpecialAttackSelector({
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
+                      aria-label="Aumentar bônus de ataque especial"
                       onClick={incrementAttack}
                       disabled={incrementsRemaining <= 0}
                     >
@@ -480,6 +489,7 @@ export function SpecialAttackSelector({
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label="Destinar todo o bônus especial ao dano"
                       onClick={allToDamage}
                       className="text-xs h-6"
                     >
@@ -492,6 +502,7 @@ export function SpecialAttackSelector({
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
+                      aria-label="Reduzir bônus de dano especial"
                       onClick={decrementDamage}
                       disabled={config.damageIncrements <= 0}
                     >
@@ -511,6 +522,7 @@ export function SpecialAttackSelector({
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
+                      aria-label="Aumentar bônus de dano especial"
                       onClick={incrementDamage}
                       disabled={incrementsRemaining <= 0}
                     >

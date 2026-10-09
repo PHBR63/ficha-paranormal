@@ -47,6 +47,13 @@ it('a tabela desktop repassa trilha, arma favorita e rejeição do servidor ao m
 describe.each([
   ['desktop', CombatRollModal], ['mobile', MobileCombatRollModal],
 ] as const)('Ataque confirmado: %s', (_name, Modal) => {
+  it('separa treinamento de perícia e bônus especial na rolagem enviada ao histórico', async () => {
+    const confirm = vi.fn().mockResolvedValue(true);
+    render(<Modal {...props} skills={{ luta: 1 }} onPEChange={vi.fn()} onConfirmAttack={confirm} />);
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    expect(rollSkillTest).toHaveBeenCalledWith(expect.objectContaining({ skillBonus: 5, otherBonuses: 5 }));
+  });
   it('avisa e bloqueia nova rolagem enquanto o turno não puder ser conferido', () => {
     render(<Modal {...props} onPEChange={vi.fn()} confirmationUnavailable="Carregando orçamento" />);
     expect(screen.getByRole('status')).toHaveTextContent('Carregando orçamento');

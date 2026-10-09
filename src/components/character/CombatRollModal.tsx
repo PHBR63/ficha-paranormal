@@ -1275,8 +1275,8 @@ export function CombatRollModal({
     const result = rollSkillTest({
       attributeValue: attackAttribute,
       dicePenalty: attackDicePenalty,
-      skillBonus: totalAttackBonus,
-      otherBonuses: 0,
+      skillBonus: attackSkill.bonus,
+      otherBonuses: totalAttackBonus - attackSkill.bonus,
       label: `Ataque: ${weapon.name}`,
       criticalThreshold: effectiveCritical,
     });

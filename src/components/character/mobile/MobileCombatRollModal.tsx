@@ -729,6 +729,9 @@ export function MobileCombatRollModal({
     if (attackSkill.bonus > 0) {
       sources.push({ label: attackSkill.name, value: attackSkill.bonus, type: 'skill' });
     }
+    if (specialAttackConfig.enabled && specialAttackResult.attackBonus !== 0) {
+      sources.push({ label: 'Ataque Especial', value: specialAttackResult.attackBonus, type: 'power' });
+    }
     
     if (unifiedEffects) {
       if (unifiedEffects.attack.general !== 0) {
@@ -807,7 +810,7 @@ export function MobileCombatRollModal({
     }
     
     return sources;
-  }, [attackSkill, unifiedEffects, weapon, trackCombatBonuses, weaponBuffBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, proficiencyCheck, activeTechniqueEffects]);
+  }, [attackSkill, unifiedEffects, weapon, trackCombatBonuses, weaponBuffBonuses, passiveBonuses, selectedBonuses, availableBonuses, manualAttackMod, proficiencyCheck, activeTechniqueEffects, specialAttackConfig.enabled, specialAttackResult.attackBonus]);
 
   // === DETALHAMENTO DAS FONTES DE BÔNUS DE DANO ===
   // Fornece transparência completa sobre cada fonte que contribui para o dano
@@ -1129,7 +1132,8 @@ export function MobileCombatRollModal({
     const result = rollSkillTest({
       attributeValue: attackAttribute,
       dicePenalty: attackDicePenalty,
-      skillBonus: totalAttackBonus,
+      skillBonus: attackSkill.bonus,
+      otherBonuses: totalAttackBonus - attackSkill.bonus,
       criticalThreshold: criticalMargin,
       label: `Ataque com ${weapon.name}`,
     });
@@ -1195,7 +1199,7 @@ export function MobileCombatRollModal({
       },
 
     }).finally(() => { preparingAttack.current = false; setIsRolling(false); });
-  }, [confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, isAtiradorElite, disparoLetalConfig, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
+  }, [confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, isAtiradorElite, disparoLetalConfig, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
