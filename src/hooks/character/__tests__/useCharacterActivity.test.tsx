@@ -14,6 +14,45 @@ const operationId = '00000000-0000-4000-8000-000000000003';
 function wrapper({ children }: { children: ReactNode }) { return <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{children}</QueryClientProvider>; }
 beforeEach(() => { vi.restoreAllMocks(); localStorage.clear(); fake.user.id = 'owner'; fake.subscriptions.length = 0; vi.clearAllMocks(); fake.list.mockResolvedValue([]); fake.sessions.mockResolvedValue([]); fake.record.mockRejectedValue(new Error('Sem conexão')); });
 describe('isolamento e recuperação de atividade', () => {
+  it('guarda a rolagem na ficha original sem aviso tardio na ficha seguinte', async () => {
+    let reject!: (error: Error) => void;
+    fake.record.mockImplementationOnce(() => new Promise<void>((_resolve, fail) => { reject = fail; }));
+    const { result, rerender } = renderHook(({ id }) => useCharacterActivity(id), { initialProps: { id: characterA }, wrapper });
+    let operation!: Promise<boolean>;
+    act(() => { operation = result.current.addRoll({ total: 12 }, operationId); });
+    rerender({ id: characterB });
+    await act(async () => { reject(new Error('Sem conexão na ficha anterior')); await operation; });
+    expect(result.current.saveError).toBeNull();
+    expect(result.current.pendingRolls).toEqual([]);
+    expect(fake.toast).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem(`character-activity-pending:owner:${characterA}`) ?? '[]')).toHaveLength(1);
+  });
+
+  it('não mostra erro tardio de ocultação na ficha ou conta seguinte', async () => {
+    let reject!: (error: Error) => void;
+    fake.hide.mockImplementationOnce(() => new Promise<void>((_resolve, fail) => { reject = fail; }));
+    const { result, rerender } = renderHook(({ id }) => useCharacterActivity(id), { initialProps: { id: characterA }, wrapper });
+    let operation!: Promise<unknown>;
+    act(() => { operation = result.current.hideHistory().catch(error => error); });
+    fake.user.id = 'visibility-next-owner';
+    rerender({ id: characterB });
+    await act(async () => { reject(new Error('Falha da ficha anterior')); await operation; });
+    expect(result.current.saveError).toBeNull();
+  });
+
+  it('distingue ocultação confirmada de falha ao atualizar o feed', async () => {
+    fake.hide.mockResolvedValueOnce(undefined);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = renderHook(() => useCharacterActivity(characterA), {
+      wrapper: ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+    vi.spyOn(client, 'invalidateQueries').mockRejectedValue(new Error('Falha de leitura'));
+    await act(async () => { await result.current.hideHistory().catch(() => {}); });
+    expect(result.current.saveError).toContain('confirmada');
+    expect(result.current.saveError).toContain('atualizar');
+    expect(fake.hide).toHaveBeenCalledTimes(1);
+  });
+
   it('reconectar atualiza recursos/condições da ficha além do histórico', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     client.setQueryData(['character', characterA], { san_current: 15 });

@@ -135,15 +135,26 @@ export function useCharacterActivity(characterId: string) {
       return true;
     } catch (error) {
       const message = queueFailureMessage(queueKey, error);
-      if (currentScope.current === queueKey) setSaveError(message);
-      toast({ title: 'Rolagem pendente de gravação', description: `${message} Tente recuperar no histórico.`, variant: 'destructive' });
+      if (currentScope.current === queueKey) {
+        setSaveError(message);
+        toast({ title: 'Rolagem pendente de gravação', description: `${message} Tente recuperar no histórico.`, variant: 'destructive' });
+      }
       return false;
     }
   }, [user, characterId, queueKey, writePending, refresh, toast]);
   const changeVisibility = useCallback(async (hidden: boolean) => {
-    try { await hideCharacterActivity(characterId, hidden); await refresh(); }
-    catch (error) { setSaveError(error instanceof Error ? error.message : 'Não foi possível atualizar o histórico.'); throw error; }
-  }, [characterId, refresh]);
+    // A resposta pertence à ficha/conta que iniciou a ação, mesmo após navegação.
+    try { await hideCharacterActivity(characterId, hidden); }
+    catch (error) {
+      if (currentScope.current === queueKey) setSaveError(error instanceof Error ? error.message : 'Não foi possível atualizar o histórico.');
+      throw error;
+    }
+    // Falhar na leitura após o commit não desfaz a preferência já confirmada.
+    try { await refresh(); }
+    catch {
+      if (currentScope.current === queueKey) setSaveError('Alteração de visibilidade confirmada pelo servidor, mas o histórico não atualizou. Tente atualizar a visualização.');
+    }
+  }, [characterId, queueKey, refresh]);
   const events = query.data?.pages.flat() ?? [];
   const loadedCurrentScope = loadedScope.current === queueKey;
   return { ...query, events, category, setCategory, includeHidden, setIncludeHidden, period, setPeriod, session, setSession,
