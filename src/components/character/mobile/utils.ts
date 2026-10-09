@@ -98,7 +98,9 @@ const ITEM_ICONS: Record<string, LucideIcon> = {
 /** Retorna um SVG de tipo/categoria; dados personalizados continuam com fallback neutro. */
 export function getItemIcon(type: string): ReactElement {
   const isCategory = ['0', 'I', 'II', 'III', 'IV'].includes(type);
-  const Icon = ITEM_ICONS[type] || (isCategory ? Circle : Package);
+  const Icon = Object.prototype.hasOwnProperty.call(ITEM_ICONS, type)
+    ? ITEM_ICONS[type]
+    : (isCategory ? Circle : Package);
   const categoryColor = isCategory ? getCategoryColor(type).split(' ').filter(token => token.startsWith('text-')).join(' ') : '';
   return createElement(Icon, { className: `h-5 w-5 shrink-0 ${categoryColor}`, fill: isCategory ? 'currentColor' : undefined, 'aria-hidden': true });
 }

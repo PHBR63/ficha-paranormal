@@ -45,7 +45,7 @@ describe('Ícones dos helpers mobile', () => {
     expect(container.querySelector('svg')).toHaveAttribute('data-element-symbol', element);
     expect(container.textContent).toBe('');
   });
-  it.each(['weapon', 'armor', 'medical', 'investigation', 'communication', 'field', 'paranormal', 'document', 'survival', '0', 'I', 'II', 'III', 'IV', 'custom'])('renderiza SVG para item %s sem alterar o tipo', type => {
+  it.each(['weapon', 'armor', 'medical', 'investigation', 'communication', 'field', 'paranormal', 'document', 'survival', '0', 'I', 'II', 'III', 'IV', '__proto__'])('renderiza SVG para item %s sem alterar o tipo', type => {
     const { container } = render(getItemIcon(type));
     expect(container.querySelector('svg')).toBeInTheDocument();
     expect(container.textContent).toBe('');
