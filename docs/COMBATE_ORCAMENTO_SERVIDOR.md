@@ -35,3 +35,9 @@ Tabelas afetadas: `characters.pe_current`, `character_temporary_resources.remain
 Ações, reações, requisitos circunstanciais, frequência do Ataque Furtivo, preparação de Mirar, munição, demais poderes pagos e aplicação de dano continuam fora desta automação. Seleção paga fora do catálogo é recusada com aviso de conferência manual. Ajuste manual de PE não vira gasto de habilidade.
 
 Verificar: ataque gratuito; custo mínimo em NEX 5; ataque + ritual no mesmo orçamento; excesso sem alteração; turno antigo; PE temporários antes dos normais; técnica sem NEX/favorita; recibo de outra ficha; mesma intenção após falha de rede; recusa explícita permitindo fechar/corrigir; histórico único após recarregar. O ensaio SQL usa transação com rollback e não deixa usuários ou fichas de teste.
+
+## Apresentação dos bônus
+
+Os dois modais enviam `attackSkill.bonus` como treinamento e a diferença `totalAttackBonus - attackSkill.bonus` como outros modificadores para `rollSkillTest`. O total calculado não muda. Serviço, recibo e adaptador de histórico conservam as duas parcelas; registros antigos não são reescritos sem dados que comprovem a origem de cada parcela. O mobile inclui Ataque Especial na lista de fontes quando ativo.
+
+`SpecialAttackSelector.tsx` recebe NEX, PE disponíveis e configuração; chama `onConfigChange` sem gravar no banco. É usado pelos modais desktop/mobile. Alternância, aumento, redução e distribuição total têm nomes acessíveis que identificam ataque ou dano. O teste de confirmação confere treinamento +5 e modificador especial +5 separados em ambos os modais.
