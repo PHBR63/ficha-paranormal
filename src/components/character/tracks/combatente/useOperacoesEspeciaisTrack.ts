@@ -43,7 +43,7 @@ export interface PassiveAbility {
 /** IDs de efeitos para integração com SUE */
 export const OPERACOES_EFFECT_IDS = {
   ATAQUE_EXTRA: 'track-ataque-extra',
-  SURTO_ADRENALINA: 'track-surto-adrenalina',
+  SURTO_ADRENALINA: 'track-surto-de-adrenalina',
 } as const;
 
 /** Habilidades ativas de Operações Especiais */

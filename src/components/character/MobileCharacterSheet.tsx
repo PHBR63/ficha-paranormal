@@ -702,6 +702,7 @@ export function MobileCharacterSheet({
     elementalAffinity: character?.elemental_affinity,
     affinityActive: character?.affinity_active ?? false,
     activeConditionalBonuses: character?.active_conditional_bonuses || [],
+    activatedEffectIds: activatedEffects.activatedEffectIds,
     activeRituals: activeRitualsForDefense,
     skills: character?.skills || {},
     intellect: character?.intellect || 1,
@@ -909,6 +910,7 @@ export function MobileCharacterSheet({
     conditions: parseConditions(character.conditions || []).map(condition => condition.id),
     activeRituals: activeRitualsForSUE,
     paranormalPowers: paranormalPowersForSUE,
+    activatedEffectIds: activatedEffects.activatedEffectIds,
   });
   
   // Hook de bônus de rituais derivado do SUE (DT, dano, redução de PE)

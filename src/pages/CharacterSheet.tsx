@@ -639,6 +639,7 @@ export default function CharacterSheet() {
     elementalAffinity: character?.elemental_affinity,
     affinityActive: character?.affinity_active,
     activeConditionalBonuses: character?.active_conditional_bonuses || [],
+    activatedEffectIds: activatedEffects.activatedEffectIds,
     activeRituals: activeRitualsForDefense,
     skills: character?.skills || {},
     intellect: character?.intellect || 1,

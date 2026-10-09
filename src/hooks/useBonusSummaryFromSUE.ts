@@ -53,6 +53,8 @@ export interface UseBonusSummaryFromSUEProps {
   elementalAffinity?: string | null;
   affinityActive?: boolean;
   activeConditionalBonuses?: string[];
+  /** Habilidades confirmadas pelo painel; mantém alternâncias manuais separadas. */
+  activatedEffectIds?: string[];
   activeRituals?: ActiveRitualForDefense[];
   skills?: Record<string, number>;
   
@@ -134,6 +136,7 @@ export function useBonusSummaryFromSUE({
   elementalAffinity,
   affinityActive = false,
   activeConditionalBonuses = [],
+  activatedEffectIds = [],
   activeRituals = [],
   skills = {},
   strength = 1,
@@ -196,7 +199,7 @@ export function useBonusSummaryFromSUE({
     generalPowers: generalPowers.map(p => p.id),
     abilities,
     activeConditionalBonuses,
-    activatedEffectIds: activeConditionalBonuses,
+    activatedEffectIds: [...new Set([...activeConditionalBonuses, ...activatedEffectIds])],
     // Trilha de Versatilidade (NEX 50%)
     versatilityTrack: versatilityTrack || undefined,
   }), [
@@ -205,7 +208,7 @@ export function useBonusSummaryFromSUE({
     activeConditions, activeRituals,
     hpCurrent, hpMax, peCurrent, peMax,
     elementalAffinity, affinityActive,
-    generalPowers, abilities, activeConditionalBonuses,
+    generalPowers, abilities, activeConditionalBonuses, activatedEffectIds,
     versatilityTrack,
   ]);
   

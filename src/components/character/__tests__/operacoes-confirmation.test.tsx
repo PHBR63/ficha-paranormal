@@ -94,7 +94,7 @@ describe('Confirmação de Operações Especiais', () => {
     expect(onPEChange).toHaveBeenCalledOnce();
     await act(async () => { resolve(true); await pending; });
     expect(result.current.showSurtoModal).toBe(false);
-    expect(onActivateEffect).toHaveBeenCalledWith('track-surto-adrenalina', surto.name, 'round', { choice: 'movement' });
+    expect(onActivateEffect).toHaveBeenCalledWith('track-surto-de-adrenalina', surto.name, 'round', { choice: 'movement' });
     expect(onTrackPESpent).toHaveBeenCalledWith(surto.name, 5);
   });
 
