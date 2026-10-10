@@ -867,7 +867,7 @@ export function MobileDiceRollModal({
                 onClick: executeRoll,
                 variant: 'outline',
                 type: 'secondary',
-                disabled: isRolling,
+                disabled: isRolling || (!pendingConfirmation && Boolean(trainingRequirement)),
               },
               {
                 id: 'close',

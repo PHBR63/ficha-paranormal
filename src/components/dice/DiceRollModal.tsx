@@ -769,7 +769,7 @@ export function DiceRollModal({
             <Button
               variant="outline"
               onClick={handleReroll}
-              disabled={isRolling}
+              disabled={isRolling || (!pendingConfirmation && Boolean(trainingRequirement))}
               className="flex-1 font-display"
             >
               <RotateCcw className={cn('w-4 h-4 mr-2', isRolling && 'animate-spin')} />

@@ -34,6 +34,8 @@ for (const [name, Modal] of [['desktop', DiceRollModal], ['mobile', MobileDiceRo
         skillBonus={15} characterSkillTraining={{ profissao: 0 }} onRollComplete={complete} onPEChange={pe} />);
       expect(screen.getByRole('alert').textContent).toContain('Profissão exige treinamento');
       const engine = vi.spyOn(diceEngine, 'rollSkillTest');
+      expect(screen.getByRole('button', { name: 'ROLAR NOVAMENTE' })).toBeDisabled();
+      fireEvent.click(screen.getByRole('button', { name: 'ROLAR NOVAMENTE' }));
       expect(screen.getByRole('button', { name: /ROLAR DADOS/ })).toBeDisabled();
       fireEvent.click(screen.getByRole('button', { name: /ROLAR DADOS/ }));
       await act(async () => { vi.advanceTimersByTime(2000); });
