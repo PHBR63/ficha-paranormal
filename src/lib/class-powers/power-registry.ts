@@ -10,6 +10,7 @@
 
 import { UnifiedClassPower, ClassId } from './types';
 import { getBasePowerReference } from './base-power-reference';
+import { isBaseClassPower } from '../rules/base-class-catalog';
 import { COMBATENTE_POWERS } from './combatente-powers';
 import { ESPECIALISTA_POWERS } from './especialista-powers';
 import { OCULTISTA_POWERS } from './ocultista-powers';
@@ -98,7 +99,7 @@ export function getCorePowers(classId: ClassId): UnifiedClassPower[] {
  * Retorna poderes escolhíveis de uma classe
  */
 export function getChoosablePowers(classId: ClassId): UnifiedClassPower[] {
-  return getPowersByClass(classId).filter(p => !p.isCore);
+  return getPowersByClass(classId).filter(p => !p.isCore && isBaseClassPower(classId, p.name));
 }
 
 /**

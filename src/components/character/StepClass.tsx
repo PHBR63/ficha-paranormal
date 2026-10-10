@@ -59,12 +59,18 @@ export function StepClass({ formData, updateFormData }: StepClassProps) {
       return;
     }
     
+    if (formData.characterClass === classId) return;
+    if (formData.characterClass && !window.confirm('Trocar a classe reinicia perícias, poderes, rituais e trilha dessa classe. Deseja continuar?')) return;
     updateFormData({ 
       characterClass: classId as ClassId,
       classSkillChoices: {},
       freeSkills: [],
       classTrack: '',
       trackAbilities: [],
+      abilities: [], rituals: [], extraRituals: {}, trainingAdvances: {},
+      skillTrainingChoices: {}, classPowerChoices: {}, transcenderChoices: {},
+      conflictResolutions: {}, versatilityChoice: null, secondaryTrackAbility: null,
+      creationItemChoices: {},
     });
   };
 

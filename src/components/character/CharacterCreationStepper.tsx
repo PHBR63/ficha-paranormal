@@ -150,6 +150,8 @@ export function CharacterCreationStepper({
                   <TooltipTrigger asChild>
                     <motion.button
                       onClick={() => canClick && onStepClick?.(index)}
+                      aria-label={`Etapa ${index + 1}: ${step.title}`}
+                      aria-current={isCurrent ? 'step' : undefined}
                       disabled={!canClick}
                       className={cn(
                         'relative w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-300',
@@ -264,12 +266,15 @@ export function CharacterCreationStepper({
               return (
                 <motion.button
                   key={step.id}
+                  aria-label={`Etapa ${index + 1}: ${step.title}`}
+                  aria-current={isCurrent ? 'step' : undefined}
+                  disabled={canNavigate ? !canNavigate(index) : false}
                   onClick={() => canNavigate?.(index) && onStepClick?.(index)}
                   className={cn(
-                    'relative rounded-full transition-all',
-                    isCompleted && 'bg-primary w-2.5 h-2.5',
-                    isCurrent && !isCompleted && 'bg-primary/50 w-6 h-2.5',
-                    !isCurrent && !isCompleted && 'bg-muted w-2 h-2'
+                    'relative rounded-md transition-all min-w-11 min-h-11 border text-xs focus-visible:ring-2 focus-visible:ring-primary',
+                    isCompleted && 'bg-primary text-primary-foreground',
+                    isCurrent && !isCompleted && 'bg-primary/20 border-primary',
+                    !isCurrent && !isCompleted && 'bg-muted'
                   )}
                   animate={isCurrent ? { 
                     scale: [1, 1.2, 1],
@@ -277,7 +282,7 @@ export function CharacterCreationStepper({
                   } : undefined}
                   transition={{ duration: 1.5, repeat: Infinity }}
                   whileTap={{ scale: 0.9 }}
-                />
+                >{index + 1}</motion.button>
               );
             })}
           </div>

@@ -14,6 +14,15 @@ const effects = consolidateEffects([
 });
 
 describe('contexto de dano da arma', () => {
+  it('Ferramenta de Trabalho só altera ataque, dano e crítico da arma vinculada',()=>{
+    const origin=consolidateEffects(getOriginEffects('operario','Operário'),{
+      attributes,nex:15,hpCurrent:20,hpMax:20,peCurrent:10,peMax:10,inCombat:true,isFirstRound:false,currentRound:1,hasShield:false,activeConditions:[],activatedEffects:[],
+    });
+    const other=getWeaponDamageEffects(origin,{id:'other'})!;
+    expect([other.attack.general,other.damage.general,other.critical.marginBonus]).toEqual([0,0,0]);
+    const linked=getWeaponDamageEffects(origin,{id:'linked',favoriteAbilityId:'ferramenta-de-trabalho'})!;
+    expect([linked.attack.general,linked.damage.general,linked.critical.marginBonus]).toEqual([1,1,1]);
+  });
   it('conserva origem e dados do resumo ao retirar Mira de uma pistola', () => {
     const before = structuredClone(effects);
     const resolved = getWeaponDamageEffects(effects, { type: 'Disparo', ammoType: 'balas_curtas' })!;

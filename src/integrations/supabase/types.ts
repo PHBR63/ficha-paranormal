@@ -1870,6 +1870,8 @@ export type Database = {
           class: string
           class_power_choices: Json | null
           class_track: string | null
+          creation_data: Json | null
+          creation_review: Json
           concept: string | null
           conditions: Json
           created_at: string
@@ -1922,6 +1924,8 @@ export type Database = {
           class: string
           class_power_choices?: Json | null
           class_track?: string | null
+          creation_data?: Json | null
+          creation_review?: Json
           concept?: string | null
           conditions?: Json
           created_at?: string
@@ -1974,6 +1978,8 @@ export type Database = {
           class?: string
           class_power_choices?: Json | null
           class_track?: string | null
+          creation_data?: Json | null
+          creation_review?: Json
           concept?: string | null
           conditions?: Json
           created_at?: string
@@ -2617,6 +2623,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_character_base: { Args: { p_operation_id: string; p_build: Json; p_campaign_id: string | null }; Returns: Json }
       activity_json_integer: {
         Args: { p_max: number; p_min: number; p_value: Json }
         Returns: boolean

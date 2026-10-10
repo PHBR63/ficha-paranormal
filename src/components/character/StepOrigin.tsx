@@ -7,7 +7,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { ORIGINS, SKILLS } from '@/lib/character-data';
+import { CORE_ORIGINS as ORIGINS, SKILLS } from '@/lib/character-data';
 import { 
   CORE_ORIGIN_IDS, 
   SUPPLEMENT_ORIGIN_IDS, 
@@ -56,6 +56,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CreationPowerChoices } from './CreationPowerChoices';
 import { 
   PARANORMAL_POWERS, 
   getPowerById,
@@ -198,7 +199,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
   };
 
   const handleParanormalPowerSelect = (power: ParanormalPower) => {
-    updateFormData({ originParanormalPower: power.id });
+    updateFormData({ originParanormalPower: power.id, originParanormalChoices: {} });
     setShowParanormalModal(false);
   };
 
@@ -755,6 +756,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
           currentSelection={formData.originSkills}
         />
 
+        <CreationPowerChoices formData={formData} updateFormData={updateFormData} originOnly />
         {/* Paranormal Power Selection Modal (Cultista Arrependido) */}
         <Dialog open={showParanormalModal} onOpenChange={(open) => {
           setShowParanormalModal(open);

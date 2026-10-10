@@ -76,6 +76,7 @@ interface WeaponEntry {
   ammoType?: string;
   // Aniquilador: indica se esta arma é a favorita
   isFavoriteWeapon?: boolean;
+  favoriteAbilityId?: string;
   // Categoria da arma para proficiência (0=Simples, I=Tática, II=Pesada)
   category?: '0' | 'I' | 'II';
 }

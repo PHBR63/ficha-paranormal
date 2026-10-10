@@ -1649,7 +1649,7 @@ export function consolidateEffects(
     // === Dano ===
     if (m.damageBonus) {
       result.damage.general += m.damageBonus;
-      result.damage.breakdown.push({ source, value: m.damageBonus });
+      result.damage.breakdown.push({ source, value: m.damageBonus, ...(m.requiresChosenWeapon ? {effectId:effect.id} : {}) });
     }
     if (m.meleeDamageBonus) {
       result.damage.melee += m.meleeDamageBonus;

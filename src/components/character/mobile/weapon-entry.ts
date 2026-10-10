@@ -32,5 +32,6 @@ export function toMobileWeaponEntry(item: MobileWeaponInventoryData): WeaponEntr
     ammoMax: item.ammoMax,
     ammoType: item.ammoType,
     isFavoriteWeapon: isAniquiladorFavoriteWeapon(item),
+    favoriteAbilityId: item.favoriteAbilityId,
   };
 }

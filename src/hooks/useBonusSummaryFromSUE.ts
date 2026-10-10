@@ -25,6 +25,8 @@ import type { ComputedEffects } from '@/lib/unified-effects-engine';
 import type { ActiveClassPower, WeaponCategory, ProtectionCategory } from '@/lib/class-powers/types';
 import { getWeaponGroupName, getWeaponGroupForWeapon } from '@/lib/constants/weapon-groups';
 import type { ClassPowerSubchoice } from './useCharacterBonusSummary';
+import { characterPowerInput } from '@/lib/effects/character-power-input';
+import type { SavedParanormalPower } from '@/lib/paranormal-powers';
 
 // Re-exporta tipos para compatibilidade com código existente
 export type { BonusBreakdown, ConditionalBonus, CombatBonuses, DamageReduction, EffectResistances, SkillBonuses, BonusSummary } from './useCharacterBonusSummary';
@@ -198,6 +200,8 @@ export function useBonusSummaryFromSUE({
     // Novos campos para bônus condicionais
     generalPowers: generalPowers.map(p => p.id),
     abilities,
+    classPowers:characterPowerInput(abilities,classId || '',nex,classPowerChoices),
+    paranormalPowers:paranormalPowers as SavedParanormalPower[],
     activeConditionalBonuses,
     activatedEffectIds: [...new Set([...activeConditionalBonuses, ...activatedEffectIds])],
     // Trilha de Versatilidade (NEX 50%)
@@ -209,7 +213,7 @@ export function useBonusSummaryFromSUE({
     hpCurrent, hpMax, peCurrent, peMax,
     elementalAffinity, affinityActive,
     generalPowers, abilities, activeConditionalBonuses, activatedEffectIds,
-    versatilityTrack,
+    versatilityTrack,classPowerChoices,paranormalPowers,
   ]);
   
   // Obtém efeitos unificados do SUE
@@ -266,6 +270,11 @@ export function useBonusSummaryFromSUE({
   // Converte SUE para BonusSummary
   const bonusSummary = useMemo<BonusSummary>(() => {
     const computed = unifiedEffects.computed;
+    // Cada fonte conhecida no motor participa uma única vez do subtotal.
+    const normalize=(name:string)=>name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const modeled=(source:string)=>unifiedEffects.allEffects.some(effect=>normalize(effect.name).includes(normalize(source)));
+    const legacyDefense=defenseBonuses.breakdown.filter(b=>b.active && !b.excluded && !modeled(b.source));
+    const legacyResistances=defenseBonuses.resistances.breakdown.filter(b=>b.active && !modeled(b.source));
     
     // === COMBATE (do SUE) ===
     const combat: CombatBonuses = {
@@ -546,9 +555,9 @@ export function useBonusSummaryFromSUE({
     // === RETORNO ===
     return {
       defense: {
-        total: computed.defense.general + defenseBonuses.totalBonus + paranormalEffects.defenseBonus,
+        total: computed.defense.general + legacyDefense.reduce((sum,b)=>sum+b.bonus,0),
         breakdown: [
-          ...defenseBonuses.breakdown,
+          ...legacyDefense,
           ...computed.defense.breakdown.map(b => ({
             source: b.source,
             type: 'ability' as const,
@@ -556,19 +565,14 @@ export function useBonusSummaryFromSUE({
             active: true,
             conditional: b.conditional,
           })),
-          ...(paranormalEffects.defenseBonus > 0 ? [{
-            source: 'Poderes Paranormais',
-            type: 'paranormal' as const,
-            bonus: paranormalEffects.defenseBonus,
-            active: true,
-          }] : []),
+
         ],
       },
       resistances: {
         fortitude: {
-          total: computed.resistances.fortitude + defenseBonuses.resistances.fortitude + paranormalEffects.fortitudeBonus,
+          total: computed.resistances.fortitude + legacyResistances.reduce((sum,b)=>sum+b.fortitude,0),
           breakdown: [
-            ...defenseBonuses.resistances.breakdown.filter(b => b.fortitude > 0),
+            ...legacyResistances.filter(b => b.fortitude > 0),
             ...computed.resistances.breakdown.filter(b => b.resistance === 'fortitude').map(b => ({
               source: b.source,
               type: 'ability' as const,
@@ -580,9 +584,9 @@ export function useBonusSummaryFromSUE({
           ],
         },
         reflexos: {
-          total: computed.resistances.reflexos + defenseBonuses.resistances.reflexos + paranormalEffects.reflexBonus,
+          total: computed.resistances.reflexos + legacyResistances.reduce((sum,b)=>sum+b.reflexos,0),
           breakdown: [
-            ...defenseBonuses.resistances.breakdown.filter(b => b.reflexos > 0),
+            ...legacyResistances.filter(b => b.reflexos > 0),
             ...computed.resistances.breakdown.filter(b => b.resistance === 'reflexos').map(b => ({
               source: b.source,
               type: 'ability' as const,
@@ -594,9 +598,9 @@ export function useBonusSummaryFromSUE({
           ],
         },
         vontade: {
-          total: computed.resistances.vontade + defenseBonuses.resistances.vontade + paranormalEffects.willpowerBonus,
+          total: computed.resistances.vontade + legacyResistances.reduce((sum,b)=>sum+b.vontade,0),
           breakdown: [
-            ...defenseBonuses.resistances.breakdown.filter(b => b.vontade > 0),
+            ...legacyResistances.filter(b => b.vontade > 0),
             ...computed.resistances.breakdown.filter(b => b.resistance === 'vontade').map(b => ({
               source: b.source,
               type: 'ability' as const,
@@ -616,8 +620,8 @@ export function useBonusSummaryFromSUE({
       paranormalEffects,
       conditionalBonuses,
       // A trilha já foi consolidada pelo SUE; não repetir o subtotal do hook legado.
-      hpBonus: computed.resources.hpBonus + paranormalEffects.hpBonus,
-      peBonus: computed.resources.peBonus + paranormalEffects.peBonus,
+      hpBonus: computed.resources.hpBonus,
+      peBonus: computed.resources.peBonus,
       // Bônus de movimento (Ligeireza, condições, etc.)
       movementBonus: computed.movement.bonus,
       movementBreakdown: computed.movement.breakdown,

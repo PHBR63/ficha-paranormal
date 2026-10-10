@@ -1,0 +1,364 @@
+-- Contrato de criação Base v1.3. O catálogo é gerado dos registros do produto.
+-- Não altera políticas de leitura nem permite editar personagens de outros proprietários.
+BEGIN;
+ALTER TABLE public.characters ADD COLUMN IF NOT EXISTS creation_data jsonb;
+ALTER TABLE public.characters ADD COLUMN IF NOT EXISTS creation_review jsonb NOT NULL DEFAULT '["Revisar escolhas da criação anterior"]'::jsonb;
+
+CREATE TABLE IF NOT EXISTS public.character_creation_operations (
+ user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+ operation_id uuid NOT NULL, request_hash text NOT NULL,
+ character_id uuid NOT NULL REFERENCES public.characters(id) ON DELETE CASCADE,
+ result jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(user_id,operation_id)
+);
+ALTER TABLE public.character_creation_operations ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.character_creation_operations FROM anon,authenticated;
+
+CREATE OR REPLACE FUNCTION public.character_creation_catalog() RETURNS jsonb
+LANGUAGE sql IMMUTABLE SET search_path=public AS $$ SELECT $catalog$__CATALOG__$catalog$::jsonb $$;
+CREATE OR REPLACE FUNCTION public.creation_require(p_valid boolean,p_message text) RETURNS void
+LANGUAGE plpgsql SET search_path=public AS $$ BEGIN
+ IF NOT coalesce(p_valid,false) THEN RAISE EXCEPTION '%',p_message USING ERRCODE='P0001'; END IF;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.creation_apply_grade(p_grades jsonb,p_form jsonb,p_nex integer) RETURNS jsonb
+LANGUAGE plpgsql SET search_path=public AS $$
+DECLARE selected jsonb:=coalesce(p_form->'trainingAdvances'->p_nex::text,'[]'); skill text;
+ expected integer:=(CASE p_form->>'characterClass' WHEN 'Especialista' THEN 5 WHEN 'Ocultista' THEN 3 ELSE 2 END)+(p_form->'attributes'->>'intellect')::integer;
+ previous integer:=CASE WHEN p_nex=35 THEN 1 ELSE 2 END;
+BEGIN
+ PERFORM public.creation_require(jsonb_array_length(selected)=expected AND (SELECT count(DISTINCT id) FROM jsonb_array_elements_text(selected) AS x(id))=expected,'Complete os graus de treinamento de NEX 35/70.');
+ FOR skill IN SELECT jsonb_array_elements_text(selected) LOOP
+  PERFORM public.creation_require(coalesce((p_grades->>skill)::integer,0)>=previous,'Aumento de grau exige o treinamento anterior.');
+  p_grades:=p_grades || jsonb_build_object(skill,greatest((p_grades->>skill)::integer,previous+1));
+ END LOOP;
+ RETURN p_grades;
+END $$;
+
+-- Valida estrutura, progressão e escolhas sem confiar nos máximos enviados pelo cliente.
+CREATE OR REPLACE FUNCTION public.validate_character_creation(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SET search_path=public AS $$
+DECLARE
+ cat jsonb:=public.character_creation_catalog(); f jsonb:=p->'creation_data';
+ cls jsonb; ori jsonb; track jsonb; skill text; key text; val jsonb; power jsonb; selected jsonb; req jsonb;
+ nex integer; lev integer; intellect integer; vigor integer; presence integer; extra integer; cap integer;
+ trained jsonb:='{}'; grades jsonb:='{}'; acquired jsonb:='[]'; paranormal jsonb:='[]'; seen jsonb:='{}';
+ milestones integer[]; acquisition integer; position integer:=0; copies integer; expected integer; count_choice integer;
+ hp integer; pe integer; san integer; tcount integer:=0; ritual jsonb; circles integer[]; ritual_levels integer[];
+ chosen jsonb; source text; c integer; max_circle integer; all_rituals jsonb:='[]';
+ canonical_abilities jsonb:='[]'; canonical_powers jsonb:='[]'; canonical_proficiencies jsonb:='[]'; canonical_inventory jsonb:='[]'; foreign_power jsonb; selected_item jsonb; favorite text; slots integer;
+ grade35_applied boolean:=false; grade70_applied boolean:=false; affinity boolean:=false; hp_bonus integer:=0; pe_bonus integer:=0; mechanics jsonb; effective text; reduction integer; canonical_choices jsonb:='{}'; canonical_training jsonb:='{}'; canonical_grades jsonb:='{}'; canonical_versatility jsonb;
+BEGIN
+ PERFORM public.creation_require(jsonb_typeof(p)='object' AND octet_length(p::text)<500000 AND jsonb_typeof(f)='object','Formulário de criação inválido.');
+ PERFORM public.creation_require(length(trim(p->>'name')) BETWEEN 2 AND 100,'Nome precisa de 2 a 100 caracteres.');
+ nex:=(p->>'nex')::integer; lev:=CASE WHEN nex=99 THEN 20 ELSE nex/5 END;
+ PERFORM public.creation_require(nex=99 OR nex BETWEEN 5 AND 95 AND nex%5=0,'NEX fora da progressão do Livro Base.');
+ cls:=cat->'classes'->(p->>'class'); ori:=cat->'origins'->(p->>'origin'); track:=cat->'tracks'->(p->>'class_track');
+ PERFORM public.creation_require(cls IS NOT NULL AND ori IS NOT NULL,'Escolha classe e origem do Livro Base.');
+ PERFORM public.creation_require(cat->'patents' ? (p->>'patent'),'Escolha uma patente válida.');
+ PERFORM public.creation_require(nex<10 OR track->>'classId'=p->>'class','Escolha uma trilha da classe.');
+ PERFORM public.creation_require(f->>'characterClass'=p->>'class' AND f->>'origin'=p->>'origin' AND (f->>'nex')::integer=nex AND f->>'patent'=p->>'patent','Dados da revisão não coincidem com a ficha.');
+ extra:=(CASE WHEN nex>=20 THEN 1 ELSE 0 END)+(CASE WHEN nex>=50 THEN 1 ELSE 0 END)+(CASE WHEN nex>=80 THEN 1 ELSE 0 END)+(CASE WHEN nex>=95 THEN 1 ELSE 0 END); cap:=least(5,3+extra);
+ expected:=0; copies:=0;
+ FOREACH key IN ARRAY ARRAY['agility','strength','intellect','presence','vigor'] LOOP
+  PERFORM public.creation_require((p->>key) ~ '^[0-9]+$' AND (f->'attributes'->>key)=(p->>key),'Atributos precisam ser inteiros e coincidir com a revisão.');
+  c:=(p->>key)::integer; expected:=expected+c; IF c=0 THEN copies:=copies+1; END IF;
+  PERFORM public.creation_require(c BETWEEN 0 AND cap,'Atributo acima do limite permitido pelo NEX.');
+ END LOOP;
+ PERFORM public.creation_require(expected=9+extra AND copies<=1,'Distribuição incompleta ou inválida dos atributos.');
+ intellect:=(p->>'intellect')::integer; vigor:=(p->>'vigor')::integer; presence:=(p->>'presence')::integer;
+ canonical_abilities:=cls->'core'->nex::text; canonical_proficiencies:=cls->'proficiencies';
+ SELECT coalesce(jsonb_agg(jsonb_build_object('name',name,'description',coalesce(ori->>'powerDescription',''))),'[]') INTO canonical_powers FROM jsonb_array_elements_text(ori->'powers') AS x(name);
+ IF p->>'age' IS NOT NULL THEN PERFORM public.creation_require((p->>'age') ~ '^[0-9]+$' AND (p->>'age')::integer BETWEEN 1 AND 999,'Idade inválida.'); END IF;
+
+ -- Substituições de treinamentos repetidos conservam o número de direitos de cada fonte.
+ chosen:=CASE WHEN p->>'origin'='amnesico' THEN f->'originSkills' ELSE ori->'skills' END;
+ PERFORM public.creation_require(jsonb_array_length(chosen)=2,'Defina as duas perícias da origem.');
+ FOR skill IN SELECT jsonb_array_elements_text(chosen) LOOP
+  PERFORM public.creation_require(cat->'skills' ? skill AND NOT trained ? skill,'Perícia da origem inválida ou repetida.');
+  trained:=trained || jsonb_build_object(skill,1);
+ END LOOP;
+ FOR skill IN SELECT jsonb_array_elements_text(cls->'mandatory') LOOP
+  IF trained ? skill THEN skill:=f->'conflictResolutions'->>skill; END IF;
+  PERFORM public.creation_require(cat->'skills' ? skill AND NOT trained ? skill,'Resolva o treinamento repetido da classe.');
+  trained:=trained || jsonb_build_object(skill,1);
+ END LOOP;
+ FOR val IN SELECT jsonb_array_elements(cls->'choices') LOOP
+  skill:=f->'classSkillChoices'->>(val->>'id');
+  PERFORM public.creation_require(cat->'skills' ? skill AND NOT trained ? skill AND ((val->'options') ? skill OR EXISTS(SELECT 1 FROM jsonb_array_elements_text(val->'options') AS opts(id) WHERE chosen ? opts.id)),'Complete a escolha de perícia da classe ou sua substituição válida.');
+  trained:=trained || jsonb_build_object(skill,1);
+ END LOOP;
+ PERFORM public.creation_require(jsonb_array_length(f->'freeSkills')=(cls->>'free')::integer+intellect,'Quantidade incorreta de perícias livres.');
+ FOR skill IN SELECT jsonb_array_elements_text(f->'freeSkills') LOOP
+  PERFORM public.creation_require(cat->'skills' ? skill AND NOT trained ? skill,'Perícia livre inválida ou já concedida por outra fonte.');
+  trained:=trained || jsonb_build_object(skill,1);
+ END LOOP;
+ grades:=trained;
+ IF p->>'class'='Especialista' THEN
+  SELECT item->'chosenValues' INTO chosen FROM jsonb_each(f->'classPowerChoices') AS x(key,item) WHERE item->>'powerId'='perito' LIMIT 1;
+  PERFORM public.creation_require(jsonb_array_length(chosen)=2 AND chosen->>0<>chosen->>1 AND NOT chosen ? 'luta' AND NOT chosen ? 'pontaria','Perito exige duas perícias distintas, exceto Luta e Pontaria.');
+  FOR skill IN SELECT jsonb_array_elements_text(chosen) LOOP PERFORM public.creation_require(trained ? skill,'Perito exige perícias treinadas.'); END LOOP;
+  canonical_choices:=jsonb_build_object('perito-0',jsonb_build_object('powerId','perito','choiceType','skill','chosenValues',chosen,'instanceIndex',0));
+ END IF;
+ IF nex>=50 THEN
+  PERFORM public.creation_require(f->'versatilityChoice'->>'type' IN ('class_power','track_ability'),'Defina Versatilidade em NEX 50.');
+  IF f->'versatilityChoice'->>'type'='track_ability' THEN
+   val:=cat->'tracks'->(f->'versatilityChoice'->>'trackId');
+   PERFORM public.creation_require(val->>'classId'=p->>'class' AND val->>'id'<>p->>'class_track' AND val->'abilities'->0->>'id'=f->'versatilityChoice'->>'abilityId','Versatilidade exige o primeiro poder de outra trilha da classe.');
+   canonical_abilities:=canonical_abilities || jsonb_build_array(val->'abilities'->0->>'name');
+   canonical_versatility:=jsonb_build_object('trackId',val->>'id','trackName',val->>'name','abilityId',val->'abilities'->0->>'id','abilityName',val->'abilities'->0->>'name');
+  END IF;
+ END IF;
+ milestones:=ARRAY(SELECT n FROM unnest(ARRAY[15,30,45,50,60,75,90]) AS m(n) WHERE n<=nex AND (n<>50 OR f->'versatilityChoice'->>'type'='class_power'));
+ PERFORM public.creation_require(jsonb_array_length(f->'abilities')=cardinality(milestones),'Complete todos os poderes de classe da progressão.');
+ IF p->>'origin'='cultista-arrependido' THEN
+  selected:=cat->'paranormal'->(f->>'originParanormalPower');
+  PERFORM public.creation_require(selected IS NOT NULL AND coalesce((selected->'prerequisite'->>'count')::integer,0)=0,'Escolha um poder paranormal elegível para a origem.');
+  paranormal:=jsonb_build_array(jsonb_build_object('id',selected->>'id','name',selected->>'name','element',selected->>'element','description',selected->>'description','choices',f->'originParanormalChoices'));
+  IF selected->>'choice'='ritual' THEN
+   ritual:=cat->'rituals'->(f->'originParanormalChoices'->>'ritualId');
+   PERFORM public.creation_require((ritual->>'circle')::integer=1,'A origem permite aprender ritual de primeiro círculo.');
+   all_rituals:=all_rituals || jsonb_build_array(ritual->>'id');
+   paranormal:=jsonb_set(paranormal,'{0,element}',ritual->'element');
+  ELSIF selected->>'choice'='element_resistance' THEN
+   PERFORM public.creation_require(f->'originParanormalChoices'->>'resistElement' IN ('sangue','morte','conhecimento','energia'),'Defina o elemento de Resistir a Elemento.');
+   paranormal:=jsonb_set(paranormal,'{0,element}',f->'originParanormalChoices'->'resistElement');
+  END IF;
+ END IF;
+ FOR key IN SELECT jsonb_array_elements_text(f->'abilities') LOOP
+  position:=position+1; acquisition:=milestones[position]; power:=cat->'powers'->key;
+  IF acquisition>=35 AND NOT grade35_applied THEN grades:=public.creation_apply_grade(grades,f,35); grade35_applied:=true; END IF;
+  IF acquisition>=70 AND NOT grade70_applied THEN grades:=public.creation_apply_grade(grades,f,70); grade70_applied:=true; END IF;
+  PERFORM public.creation_require(power->>'classId'=p->>'class' AND (power->>'minNex')::integer<=acquisition,'Poder incompatível com a classe ou NEX de aquisição.');
+  copies:=coalesce((seen->>key)::integer,0);
+  canonical_abilities:=canonical_abilities || jsonb_build_array(power->>'name');
+  PERFORM public.creation_require(copies=0 OR (power->>'repeatable')::boolean,'Poder de classe não permite repetição.');
+  seen:=seen || jsonb_build_object(key,copies+1); req:=power->'prerequisites';
+  PERFORM public.creation_require(coalesce((req->>'minNex')::integer,0)<=acquisition,'Pré-requisito de NEX precisa ser atendido na aquisição.');
+  IF power->'proficiencies'->'weapons' ? 'heavy' THEN canonical_proficiencies:=canonical_proficiencies || '["Armas pesadas"]'; END IF;
+  IF power->'proficiencies'->'weapons' ? 'tactical' THEN canonical_proficiencies:=canonical_proficiencies || '["Armas táticas"]'; END IF;
+  IF power->'proficiencies'->'weapons' ? 'tactical-ranged-nonfirearm' THEN canonical_proficiencies:=canonical_proficiencies || '["Armas táticas de disparo"]'; END IF;
+  IF power->'proficiencies'->'protections' ? 'heavy' THEN canonical_proficiencies:=canonical_proficiencies || '["Proteções pesadas"]'; END IF;
+  FOR source,val IN SELECT * FROM jsonb_each(coalesce(req->'attributes','{}')) LOOP
+   PERFORM public.creation_require((p->>source)::integer>=val::text::integer AND val::text::integer<=least(5,3+(CASE WHEN acquisition>=20 THEN 1 ELSE 0 END)+(CASE WHEN acquisition>=50 THEN 1 ELSE 0 END)),'Pré-requisito de atributo não atendido na aquisição.');
+  END LOOP;
+  FOR val IN SELECT jsonb_array_elements(coalesce(req->'skills','[]')) LOOP
+   PERFORM public.creation_require(coalesce((grades->>(val->>'skill'))::integer,0)>=CASE val->>'level' WHEN 'expert' THEN 3 WHEN 'veteran' THEN 2 ELSE 1 END,'Pré-requisito de perícia não atendido.');
+  END LOOP;
+  FOR source IN SELECT jsonb_array_elements_text(coalesce(req->'powers','[]')) LOOP
+   PERFORM public.creation_require(acquired ? source,'Pré-requisito de poder precisa ser adquirido antes.');
+  END LOOP;
+  IF key LIKE 'transcender%' THEN
+   IF acquisition>=50 THEN affinity:=true; END IF;
+   tcount:=tcount+1; val:=f->'transcenderChoices'->(key||'-'||copies); selected:=cat->'paranormal'->(val->>'powerId');
+   PERFORM public.creation_require(selected IS NOT NULL,'Complete o poder paranormal de Transcender.');
+   expected:=coalesce((selected->'prerequisite'->>'count')::integer,0);
+   PERFORM public.creation_require((SELECT count(*) FROM jsonb_array_elements(paranormal) AS x(item) WHERE item->>'element'=selected->'prerequisite'->>'element')>=expected,'Pré-requisito de elemento não atendido.');
+   count_choice:=(SELECT count(*) FROM jsonb_array_elements(paranormal) AS x(item) WHERE item->>'id'=selected->>'id');
+   PERFORM public.creation_require(count_choice=0 OR selected->>'element'='generic' OR count_choice=1 AND acquisition>=50 AND p->>'elemental_affinity'=selected->>'element','Poder paranormal repetido exige afinidade no elemento.');
+   source:=selected->>'element';
+   IF selected->>'choice'='ritual' THEN
+    ritual:=cat->'rituals'->(val->'subchoices'->>'ritualId');
+    PERFORM public.creation_require((ritual->>'circle')::integer<=CASE WHEN acquisition>=75 THEN 3 WHEN acquisition>=45 THEN 2 ELSE 1 END,'Círculo do ritual não permitido na aquisição.');
+    all_rituals:=all_rituals || jsonb_build_array(ritual->>'id'); source:=ritual->>'element';
+   ELSIF selected->>'choice'='element_resistance' THEN
+    source:=val->'subchoices'->>'resistElement'; PERFORM public.creation_require(source IN ('sangue','morte','conhecimento','energia'),'Defina o elemento de Resistir a Elemento.');
+   END IF;
+   IF selected->>'id'='expansao-de-conhecimento' THEN
+    foreign_power:=cat->'powers'->(val->'subchoices'->'classPowerIds'->>0);
+    PERFORM public.creation_require(foreign_power IS NOT NULL AND foreign_power->>'classId'<>p->>'class' AND NOT EXISTS(SELECT 1 FROM jsonb_each(cat->'powers') AS same(id,item) WHERE item->>'classId'=p->>'class' AND item->>'name'=foreign_power->>'name') AND (foreign_power->>'minNex')::integer<=acquisition,'Expansão de Conhecimento exige poder elegível de outra classe.');
+    -- O poder concedido conserva requisitos e subescolhas; poderes comuns à classe não são estrangeiros.
+    req:=foreign_power->'prerequisites';
+    PERFORM public.creation_require(coalesce((req->>'minNex')::integer,0)<=acquisition,'Poder concedido exige NEX de aquisição maior.');
+    FOR skill,chosen IN SELECT * FROM jsonb_each(coalesce(req->'attributes','{}')) LOOP
+     PERFORM public.creation_require((p->>skill)::integer>=chosen::text::integer AND chosen::text::integer<=least(5,3+(CASE WHEN acquisition>=20 THEN 1 ELSE 0 END)+(CASE WHEN acquisition>=50 THEN 1 ELSE 0 END)),'Poder concedido: requisito de atributo não atendido.');
+    END LOOP;
+    FOR chosen IN SELECT jsonb_array_elements(coalesce(req->'skills','[]')) LOOP
+     PERFORM public.creation_require(coalesce((grades->>(chosen->>'skill'))::integer,0)>=CASE chosen->>'level' WHEN 'expert' THEN 3 WHEN 'veteran' THEN 2 ELSE 1 END,'Poder concedido: requisito de perícia não atendido.');
+    END LOOP;
+    FOR skill IN SELECT jsonb_array_elements_text(coalesce(req->'powers','[]')) LOOP PERFORM public.creation_require(acquired ? skill,'Poder concedido: requisito de poder anterior não atendido.'); END LOOP;
+    IF foreign_power->'choice' IS NOT NULL THEN
+     SELECT item->'chosenValues' INTO chosen FROM jsonb_each(f->'classPowerChoices') AS x(key,item) WHERE item->>'powerId'=foreign_power->>'id' LIMIT 1;
+     PERFORM public.creation_require(jsonb_array_length(chosen)=coalesce((foreign_power->'choice'->>'count')::integer,1) AND (SELECT count(DISTINCT id) FROM jsonb_array_elements_text(chosen) AS x(id))=jsonb_array_length(chosen),'Complete a subescolha do poder concedido.');
+     canonical_choices:=canonical_choices || jsonb_build_object('expansao-'||(foreign_power->>'id'),jsonb_build_object('powerId',foreign_power->>'id','choiceType',foreign_power->'choice'->>'type','chosenValues',chosen,'instanceIndex',0));
+     FOR skill IN SELECT jsonb_array_elements_text(chosen) LOOP
+      IF foreign_power->'choice'->'options' IS NOT NULL THEN PERFORM public.creation_require(foreign_power->'choice'->'options' ? skill,'Subescolha inválida no poder concedido.'); END IF;
+      IF foreign_power->'choice'->>'type'='item' THEN PERFORM public.creation_require(cat->'items' ? skill,'Item inválido no poder concedido.'); END IF;
+      IF foreign_power->>'id'='ritual-predileto' THEN PERFORM public.creation_require(p->'rituals' ? skill,'Ritual Predileto precisa ser conhecido.'); END IF;
+      IF foreign_power->>'id'='mestre-em-elemento' THEN PERFORM public.creation_require(EXISTS(SELECT 1 FROM jsonb_each(f->'classPowerChoices') AS x(key,item) WHERE item->>'powerId'='especialista-em-elemento' AND item->'chosenValues' ? skill),'Mestre em Elemento exige Especialista no mesmo elemento.'); END IF;
+     END LOOP;
+    END IF;
+    IF foreign_power->'proficiencies'->'weapons' ? 'heavy' THEN canonical_proficiencies:=canonical_proficiencies || '["Armas pesadas"]'; END IF;
+    IF foreign_power->'proficiencies'->'weapons' ? 'tactical' THEN canonical_proficiencies:=canonical_proficiencies || '["Armas táticas"]'; END IF;
+    IF foreign_power->'proficiencies'->'weapons' ? 'tactical-ranged-nonfirearm' THEN canonical_proficiencies:=canonical_proficiencies || '["Armas táticas de disparo"]'; END IF;
+    IF foreign_power->'proficiencies'->'protections' ? 'heavy' THEN canonical_proficiencies:=canonical_proficiencies || '["Proteções pesadas"]'; END IF;
+    PERFORM public.creation_require(NOT acquired ? (foreign_power->>'id') OR coalesce((foreign_power->>'repeatable')::boolean,false),'Poder concedido não permite repetição.');
+    acquired:=acquired || jsonb_build_array(foreign_power->>'id');
+    canonical_abilities:=canonical_abilities || jsonb_build_array(foreign_power->>'name');
+   END IF;
+   paranormal:=paranormal || jsonb_build_array(jsonb_build_object('id',selected->>'id','name',selected->>'name','element',source,'description',selected->>'description','choices',val->'subchoices'));
+  ELSIF key LIKE 'treinamento-pericia%' THEN
+   chosen:=f->'skillTrainingChoices'->(key||'-'||copies);
+   PERFORM public.creation_require(jsonb_array_length(chosen)=2 AND chosen->0->>'skillId'<>chosen->1->>'skillId','Treinamento em Perícia exige duas escolhas distintas.');
+   canonical_training:=canonical_training || jsonb_build_object(key||'-'||copies,chosen);
+   FOR val IN SELECT jsonb_array_elements(chosen) LOOP
+    skill:=val->>'skillId'; c:=(val->>'toLevel')::integer;
+    PERFORM public.creation_require(cat->'skills' ? skill AND (val->>'fromLevel')::integer=coalesce((grades->>skill)::integer,0) AND c=(val->>'fromLevel')::integer+1 AND c<=CASE WHEN acquisition>=70 THEN 3 WHEN acquisition>=35 THEN 2 ELSE 1 END,'Treinamento em Perícia com avanço inválido.');
+    grades:=grades || jsonb_build_object(skill,greatest(coalesce((grades->>skill)::integer,0),c));
+   END LOOP;
+  ELSIF power->'choice' IS NOT NULL THEN
+   SELECT item->'chosenValues' INTO chosen FROM jsonb_each(f->'classPowerChoices') AS x(key,item) WHERE item->>'powerId'=power->>'id' AND coalesce((item->>'instanceIndex')::integer,0)=copies LIMIT 1;
+   PERFORM public.creation_require(jsonb_array_length(chosen)=coalesce((power->'choice'->>'count')::integer,1),'Complete a escolha adicional do poder de classe.');
+   canonical_choices:=canonical_choices || jsonb_build_object(key||'-'||copies,jsonb_build_object('powerId',key,'choiceType',power->'choice'->>'type','chosenValues',chosen,'instanceIndex',copies));
+   PERFORM public.creation_require((SELECT count(DISTINCT id) FROM jsonb_array_elements_text(chosen) AS x(id))=jsonb_array_length(chosen),'Subescolhas do poder precisam ser distintas.');
+   FOR source IN SELECT jsonb_array_elements_text(chosen) LOOP
+    IF power->'choice'->'options' IS NOT NULL THEN PERFORM public.creation_require(power->'choice'->'options' ? source,'Escolha adicional inválida.'); END IF;
+    IF power->'choice'->>'type'='item' THEN PERFORM public.creation_require(cat->'items' ? source,'Escolha um item do catálogo.'); END IF;
+    IF key='ritual-predileto' THEN PERFORM public.creation_require(p->'rituals' ? source,'Ritual Predileto precisa ser conhecido.'); END IF;
+    IF key='mestre-em-elemento' THEN PERFORM public.creation_require(EXISTS(SELECT 1 FROM jsonb_each(f->'classPowerChoices') AS x(key,item) WHERE item->>'powerId'='especialista-em-elemento' AND item->'chosenValues' ? source),'Mestre em Elemento exige Especialista no mesmo elemento.'); END IF;
+   END LOOP;
+  END IF;
+  acquired:=acquired || jsonb_build_array(key);
+ END LOOP;
+ IF affinity THEN PERFORM public.creation_require(p->>'elemental_affinity' IN ('sangue','morte','conhecimento','energia') AND p->>'elemental_affinity'=f->>'elementalAffinity','Escolha o elemento de afinidade ao Transcender a partir de NEX 50.'); END IF;
+ IF nex>=35 AND NOT grade35_applied THEN grades:=public.creation_apply_grade(grades,f,35); END IF;
+ IF nex>=70 AND NOT grade70_applied THEN grades:=public.creation_apply_grade(grades,f,70); END IF;
+ PERFORM public.creation_require(grades=p->'skills','Os graus de perícia da revisão não coincidem com as aquisições.');
+ PERFORM public.creation_require((SELECT count(*) FROM jsonb_array_elements(paranormal) AS x(item) WHERE item->>'id'='aprender-ritual')<=intellect,'Aprender Ritual está limitado pelo Intelecto.');
+
+ -- Compara os círculos com as aquisições alcançáveis, incluindo os três rituais iniciais.
+ max_circle:=CASE WHEN nex>=85 THEN 4 WHEN nex>=55 THEN 3 WHEN nex>=25 THEN 2 ELSE 1 END;
+ IF p->>'class'='Ocultista' THEN
+  PERFORM public.creation_require(jsonb_array_length(f->'rituals')=lev+2,'Quantidade de rituais de classe incompleta.');
+  circles:=ARRAY(SELECT (cat->'rituals'->id->>'circle')::integer FROM jsonb_array_elements_text(f->'rituals') AS x(id) ORDER BY (cat->'rituals'->id->>'circle')::integer);
+  position:=0;
+  FOREACH c IN ARRAY circles LOOP
+   position:=position+1; acquisition:=CASE WHEN position<=3 THEN 5 ELSE least(99,(position-2)*5) END;
+   PERFORM public.creation_require(c BETWEEN 1 AND CASE WHEN acquisition>=85 THEN 4 WHEN acquisition>=55 THEN 3 WHEN acquisition>=25 THEN 2 ELSE 1 END,'Distribuição de círculos impossível pela progressão da classe.');
+  END LOOP;
+  all_rituals:=all_rituals || (f->'rituals');
+  PERFORM public.creation_require((SELECT count(DISTINCT id) FROM jsonb_array_elements_text(f->'rituals') AS x(id))=lev+2,'Rituais da classe precisam ser distintos.');
+  IF p->>'class_track'='graduado' AND nex>=10 THEN
+   FOR c IN 1..max_circle LOOP
+    chosen:=f->'extraRituals'->('saber-'||c); PERFORM public.creation_require(jsonb_array_length(chosen)=1 AND (cat->'rituals'->(chosen->>0)->>'circle')::integer=c,'Complete Saber Ampliado por círculo.');
+    all_rituals:=all_rituals || chosen;
+   END LOOP;
+   IF nex>=40 THEN
+    chosen:=f->'extraRituals'->'grimorio-inicial'; PERFORM public.creation_require(jsonb_array_length(chosen)=intellect,'Grimório precisa das escolhas iniciais igual ao Intelecto.');
+    FOR skill IN SELECT jsonb_array_elements_text(chosen) LOOP PERFORM public.creation_require((cat->'rituals'->skill->>'circle')::integer BETWEEN 1 AND 2,'Grimório inicial permite primeiro e segundo círculos.'); END LOOP;
+    all_rituals:=all_rituals || chosen;
+    IF max_circle>=3 THEN FOR c IN 3..max_circle LOOP
+     chosen:=f->'extraRituals'->('grimorio-'||c); PERFORM public.creation_require(jsonb_array_length(chosen)=1 AND (cat->'rituals'->(chosen->>0)->>'circle')::integer=c,'Complete o ritual de novo círculo do Grimório.');
+     all_rituals:=all_rituals || chosen;
+    END LOOP; END IF;
+   END IF;
+   PERFORM public.creation_require((SELECT count(DISTINCT id) FROM jsonb_array_elements_text(all_rituals) AS x(id))=jsonb_array_length(all_rituals),'Rituais adicionais precisam ser distintos dos já aprendidos.');
+  ELSIF p->>'class_track'='lamina-paranormal' AND nex>=10 THEN
+   chosen:=f->'extraRituals'->'lamina';
+   PERFORM public.creation_require(jsonb_array_length(chosen)=1 AND cat->'rituals'->(chosen->>0)->>'name'='Amaldiçoar Arma','Lâmina Paranormal: escolha o elemento de Amaldiçoar Arma.');
+   all_rituals:=all_rituals || chosen;
+  END IF;
+  IF nex=99 THEN
+   source:=CASE p->>'class_track' WHEN 'conduite' THEN 'Canalizar o Medo' WHEN 'flagelador' THEN 'Medo Tangível' WHEN 'graduado' THEN 'Conhecendo o Medo' WHEN 'intuitivo' THEN 'Presença do Medo' WHEN 'lamina-paranormal' THEN 'Lâmina do Medo' END;
+   SELECT jsonb_build_array(id) INTO chosen FROM jsonb_each(cat->'rituals') AS x(id,item) WHERE item->>'name'=source LIMIT 1;
+   all_rituals:=all_rituals || coalesce(chosen,'[]');
+  END IF;
+ END IF;
+ PERFORM public.creation_require((SELECT coalesce(jsonb_agg(DISTINCT id ORDER BY id),'[]') FROM jsonb_array_elements_text(all_rituals) AS x(id))=(SELECT coalesce(jsonb_agg(DISTINCT id ORDER BY id),'[]') FROM jsonb_array_elements_text(p->'rituals') AS x(id)),'Rituais da revisão não coincidem com as fontes.');
+ hp:=(cls->>'hp')::integer+vigor+(lev-1)*((cls->>'hpGain')::integer+vigor);
+ pe:=(cls->>'pe')::integer+presence+(lev-1)*((cls->>'peGain')::integer+presence);
+ san:=(cls->>'san')::integer+(lev-1-tcount)*(cls->>'sanGain')::integer;
+ IF p->>'origin'='universitario' THEN pe:=pe+1+(lev-1)/2; END IF;
+ IF p->>'origin'='desgarrado' THEN hp:=hp+lev; END IF;
+ IF p->>'origin'='vitima' THEN san:=san+lev; END IF;
+ IF p->>'origin'='cultista-arrependido' THEN san:=san-((cls->>'san')::integer/2); END IF;
+ IF nex>=10 AND (p->>'class_track'='tropa-choque' OR f->'versatilityChoice'->>'trackId'='tropa-choque') THEN hp:=hp+lev; END IF;
+ IF nex>=10 THEN
+  SELECT coalesce(jsonb_agg(item->>'name'),'[]') INTO chosen FROM jsonb_array_elements(track->'abilities') AS x(item) WHERE (item->>'minNex')::integer<=nex;
+  canonical_abilities:=canonical_abilities || chosen;
+ END IF;
+ -- Equipamentos escolhidos são reconstruídos pelo catálogo, conservando a associação de origem/poder/trilha.
+ FOR source IN SELECT unnest(ARRAY['ferramenta-favorita','ferramenta-de-trabalho','a-favorita','mochila-utilidades']) LOOP
+  IF source='ferramenta-favorita' AND p->>'origin'<>'engenheiro' OR source='ferramenta-de-trabalho' AND p->>'origin'<>'operario' OR source='a-favorita' AND (coalesce(p->>'class_track','')<>'aniquilador' OR nex<10) OR source='mochila-utilidades' AND NOT acquired ? source THEN CONTINUE; END IF;
+  key:=f->'creationItemChoices'->>source;
+  IF source='mochila-utilidades' THEN SELECT x.item->'chosenValues'->>0 INTO key FROM jsonb_each(f->'classPowerChoices') AS x(key,item) WHERE x.item->>'powerId'=source LIMIT 1; END IF;
+  selected_item:=CASE WHEN source IN ('a-favorita','ferramenta-de-trabalho') THEN cat->'weapons'->key ELSE cat->'items'->key END;
+  PERFORM public.creation_require(selected_item IS NOT NULL AND (source<>'ferramenta-de-trabalho' OR selected_item->>'proficiency' IN ('simples','tatica')),'Escolha um equipamento elegível no catálogo.');
+  favorite:=CASE WHEN source='a-favorita' AND nex=99 THEN 'maquina-de-matar' WHEN source='a-favorita' AND nex>=40 THEN 'tecnica-secreta' ELSE source END;
+  slots:=CASE WHEN selected_item->>'spaces' ~ '^[0-9]+$' THEN (selected_item->>'spaces')::integer ELSE 0 END;
+  reduction:=CASE WHEN favorite='maquina-de-matar' THEN 3 WHEN favorite='tecnica-secreta' THEN 2 WHEN source='ferramenta-de-trabalho' THEN 0 ELSE 1 END;
+  effective:=(ARRAY['0','I','II','III','IV'])[greatest(1,array_position(ARRAY['0','I','II','III','IV'],selected_item->>'category')-reduction)];
+  canonical_inventory:=canonical_inventory || jsonb_build_array(selected_item || jsonb_build_object('id',(f->>'creationOperationId')||':'||source,'catalogId',key,'itemType',CASE WHEN source IN ('a-favorita','ferramenta-de-trabalho') THEN 'weapon' ELSE 'item' END,'weaponType',CASE WHEN source IN ('a-favorita','ferramenta-de-trabalho') THEN selected_item->>'type' ELSE NULL END,'slots',slots,'quantity',1,'favoriteAbilityId',favorite,'creationSource',source,'effectiveCategory',effective,'spaceReduction',CASE WHEN source='mochila-utilidades' THEN 1 ELSE 0 END));
+  IF source='ferramenta-de-trabalho' THEN canonical_proficiencies:=canonical_proficiencies || jsonb_build_array('Arma: '||(selected_item->>'name')); END IF;
+ END LOOP;
+ IF p->>'class_track'='graduado' AND nex>=40 THEN canonical_inventory:=canonical_inventory || jsonb_build_array(jsonb_build_object('id',(f->>'creationOperationId')||':grimorio','name','Grimório','category','0','effectiveCategory','0','itemType','item','slots',1,'quantity',1,'creationSource','grimorio','spaceReduction',0)); END IF;
+ FOREACH source IN ARRAY ARRAY['I','II','III','IV'] LOOP
+  PERFORM public.creation_require((SELECT count(*) FROM jsonb_array_elements(canonical_inventory) AS x(item) WHERE item->>'effectiveCategory'=source)<=(cat->'patentLimits'->(p->>'patent')->>source)::integer,'Equipamentos excedem o limite da patente após as reduções.');
+ END LOOP;
+ FOR selected IN SELECT DISTINCT ON (item->>'id') item FROM jsonb_array_elements(paranormal) AS x(item) LOOP
+  val:=cat->'paranormal'->(selected->>'id');
+  mechanics:=CASE WHEN affinity AND p->>'elemental_affinity'=selected->>'element' AND (SELECT count(*) FROM jsonb_array_elements(paranormal) AS x(item) WHERE item->>'id'=selected->>'id')>=2 THEN coalesce(val->'affinityMechanics',val->'mechanics') ELSE val->'mechanics' END;
+  hp_bonus:=hp_bonus+coalesce((mechanics->>'hpBonusPerNex')::integer,0)*lev;
+  pe_bonus:=pe_bonus+coalesce((mechanics->>'peBonusPerNex')::integer,0)*lev;
+ END LOOP;
+ -- Apenas escolhas de habilidades realmente adquiridas podem ativar efeitos.
+ FOREACH c IN ARRAY ARRAY[35,70] LOOP IF nex>=c THEN
+  SELECT jsonb_agg(jsonb_build_object('skillId',id,'fromLevel',CASE WHEN c=35 THEN 1 ELSE 2 END,'toLevel',CASE WHEN c=35 THEN 2 ELSE 3 END)) INTO chosen FROM jsonb_array_elements_text(f->'trainingAdvances'->c::text) AS x(id);
+  canonical_grades:=canonical_grades || jsonb_build_object('nex'||c,chosen);
+ END IF; END LOOP;
+ PERFORM public.creation_require(jsonb_strip_nulls(paranormal)=jsonb_strip_nulls(p->'paranormal_powers'),'Poderes paranormais não coincidem com as aquisições.');
+ PERFORM public.creation_require((p->>'hp_max')::integer=hp AND (p->>'pe_max')::integer=pe AND (p->>'san_max')::integer=greatest(0,san),'Recursos da revisão divergiram do cálculo do servidor.');
+ RETURN p || jsonb_build_object('hp_max',hp,'pe_max',pe,'san_max',greatest(0,san),'hp_current',hp+hp_bonus,'pe_current',pe+pe_bonus,'san_current',greatest(0,san),'defense',10+(p->>'agility')::integer,'movement',9,'creation_review','[]'::jsonb,'abilities',canonical_abilities,'powers',canonical_powers,'proficiencies',(SELECT coalesce(jsonb_agg(DISTINCT id),'[]') FROM jsonb_array_elements_text(canonical_proficiencies) AS x(id)),'inventory',canonical_inventory,'paranormal_powers',paranormal,'class_power_choices',canonical_choices,'skill_training_choices',canonical_training,'training_grade_choices',canonical_grades,'versatility_track',canonical_versatility,'affinity_active',affinity);
+END $$;
+
+CREATE OR REPLACE FUNCTION public.create_character_base(p_operation_id uuid,p_build jsonb,p_campaign_id uuid DEFAULT NULL) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE actor uuid:=auth.uid(); saved public.character_creation_operations%ROWTYPE; payload jsonb; row_data public.characters%ROWTYPE;
+ member_id uuid; member_character uuid; master uuid; version integer; result jsonb; request_hash text;
+BEGIN
+ PERFORM public.creation_require(actor IS NOT NULL,'Entre na sua conta para criar a ficha.');
+ PERFORM public.creation_require(p_operation_id IS NOT NULL,'Identificação da criação ausente.');
+ PERFORM pg_advisory_xact_lock(hashtextextended(actor::text||p_operation_id::text,0));
+ request_hash:=md5(p_build::text||coalesce(p_campaign_id::text,''));
+ SELECT * INTO saved FROM public.character_creation_operations WHERE user_id=actor AND operation_id=p_operation_id;
+ IF FOUND THEN
+  PERFORM public.creation_require(saved.request_hash=request_hash,'Esta operação já foi gravada com outros dados. Recupere a ficha criada antes de iniciar outra.');
+  RETURN saved.result;
+ END IF;
+ payload:=public.validate_character_creation(p_build);
+ PERFORM public.creation_require(p_build->'creation_data'->>'creationOperationId'=p_operation_id::text,'A identificação da operação divergiu do rascunho.');
+ IF p_campaign_id IS NOT NULL THEN
+  SELECT master_id INTO master FROM public.campaigns_v2 WHERE id=p_campaign_id FOR UPDATE;
+  IF FOUND THEN
+   version:=2; SELECT id,character_id INTO member_id,member_character FROM public.campaign_members_v2 WHERE campaign_id=p_campaign_id AND user_id=actor FOR UPDATE;
+  ELSE
+   SELECT master_id INTO master FROM public.campaigns WHERE id=p_campaign_id FOR UPDATE;
+   IF FOUND THEN version:=1; SELECT id,character_id INTO member_id,member_character FROM public.campaign_members WHERE campaign_id=p_campaign_id AND user_id=actor FOR UPDATE; END IF;
+  END IF;
+  PERFORM public.creation_require(version IS NOT NULL,'Campanha não encontrada.');
+  PERFORM public.creation_require(member_id IS NOT NULL OR master=actor,'Você precisa participar dessa campanha antes de vincular uma ficha.');
+  PERFORM public.creation_require(member_character IS NULL,'A campanha já tem uma ficha vinculada para sua conta. Desvincule-a antes de criar outra.');
+ END IF;
+ row_data:=jsonb_populate_record(NULL::public.characters,payload);
+ row_data.id:=gen_random_uuid(); row_data.user_id:=actor;
+ INSERT INTO public.characters(id,user_id,name,player_name,origin,class,nex,patent,agility,strength,intellect,presence,vigor,hp_current,hp_max,pe_current,pe_max,san_current,san_max,defense,skills,powers,inventory,rituals,background,concept,age,gender,appearance,personality,photo_url,movement,proficiencies,abilities,class_track,paranormal_powers,class_power_choices,skill_training_choices,training_grade_choices,versatility_track,elemental_affinity,affinity_active,creation_data,creation_review)
+ VALUES(row_data.id,actor,row_data.name,row_data.player_name,row_data.origin,row_data.class,row_data.nex,row_data.patent,row_data.agility,row_data.strength,row_data.intellect,row_data.presence,row_data.vigor,row_data.hp_current,row_data.hp_max,row_data.pe_current,row_data.pe_max,row_data.san_current,row_data.san_max,row_data.defense,row_data.skills,row_data.powers,coalesce(row_data.inventory,'[]'),row_data.rituals,row_data.background,row_data.concept,row_data.age,row_data.gender,row_data.appearance,row_data.personality,row_data.photo_url,9,row_data.proficiencies,row_data.abilities,row_data.class_track,row_data.paranormal_powers,row_data.class_power_choices,row_data.skill_training_choices,row_data.training_grade_choices,row_data.versatility_track,row_data.elemental_affinity,row_data.affinity_active,row_data.creation_data,'[]');
+ IF p_campaign_id IS NOT NULL THEN
+  IF version=2 THEN
+   IF member_id IS NULL THEN INSERT INTO public.campaign_members_v2(campaign_id,user_id,character_id,role) VALUES(p_campaign_id,actor,row_data.id,'master');
+   ELSE UPDATE public.campaign_members_v2 SET character_id=row_data.id WHERE id=member_id; END IF;
+   PERFORM public.creation_require(EXISTS(SELECT 1 FROM public.campaign_members_v2 WHERE campaign_id=p_campaign_id AND user_id=actor AND character_id=row_data.id),'O vínculo não foi confirmado.');
+  ELSE
+   IF member_id IS NULL THEN INSERT INTO public.campaign_members(campaign_id,user_id,character_id,role) VALUES(p_campaign_id,actor,row_data.id,'master');
+   ELSE UPDATE public.campaign_members SET character_id=row_data.id WHERE id=member_id; END IF;
+   PERFORM public.creation_require(EXISTS(SELECT 1 FROM public.campaign_members WHERE campaign_id=p_campaign_id AND user_id=actor AND character_id=row_data.id),'O vínculo não foi confirmado.');
+  END IF;
+ END IF;
+ result:=jsonb_build_object('id',row_data.id,'confirmed',true,'campaign_id',p_campaign_id,'campaign_version',version);
+ INSERT INTO public.character_creation_operations(user_id,operation_id,request_hash,character_id,result) VALUES(actor,p_operation_id,request_hash,row_data.id,result);
+ RETURN result;
+END $$;
+NOTIFY pgrst, 'reload schema';
+REVOKE ALL ON FUNCTION public.create_character_base(uuid,jsonb,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.create_character_base(uuid,jsonb,uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.validate_character_creation(jsonb) FROM PUBLIC,anon,authenticated;
+COMMIT;

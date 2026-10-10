@@ -9,7 +9,9 @@
  * Diferente do PowerSubchoiceModal que é para poderes paranormais.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
+import { ALL_ITEMS } from '@/lib/catalogs/items-catalog';
 import {
   MobileModal,
   MobileModalContent,
@@ -35,7 +37,7 @@ import type { UnifiedClassPower } from '@/lib/class-powers/types';
 /**
  * Tipos de escolha suportados pelo modal
  */
-export type ClassPowerChoiceType = 'weaponGroup' | 'skill' | 'attribute' | 'power';
+export type ClassPowerChoiceType = 'weaponGroup' | 'skill' | 'attribute' | 'power' | 'element' | 'ritual' | 'item';
 
 /**
  * Resultado de uma sub-escolha de poder de classe
@@ -66,6 +68,7 @@ interface ClassPowerSubchoiceModalProps {
    * Usado para validar escolhas de poderes que exigem perícias treinadas (ex: Perito).
    */
   trainedSkillIds?: string[];
+  knownRitualIds?: string[];
 }
 
 // ============================================
@@ -81,9 +84,11 @@ export function ClassPowerSubchoiceModal({
   existingWeaponGroups = [],
   existingSkillChoices = [],
   trainedSkillIds = [],
+  knownRitualIds = [],
 }: ClassPowerSubchoiceModalProps) {
   // Estado para valores selecionados
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
+  useEffect(() => { setSelectedValues([]); }, [power.id, open]);
   
   // Extrair tipo de escolha do poder
   const choiceConfig = power.effects?.base?.requiresChoice;
@@ -130,7 +135,7 @@ export function ClassPowerSubchoiceModal({
   
   // Validação de escolhas completas
   const isValid = useMemo(() => {
-    return selectedValues.length >= choiceCount;
+    return selectedValues.length === choiceCount;
   }, [selectedValues, choiceCount]);
   
   // Handler para toggle de valor
@@ -183,6 +188,19 @@ export function ClassPowerSubchoiceModal({
         return renderSkills();
       case 'attribute':
         return renderAttributes();
+      case 'element':
+      case 'ritual':
+      case 'item': {
+        const options = choiceType === 'element'
+          ? (choiceConfig?.options || []).map(id => ({id,name:id}))
+          : choiceType === 'ritual' ? ALL_RITUALS.filter(r => knownRitualIds.includes(r.id)) : ALL_ITEMS;
+        return <div className="space-y-2 max-h-80 overflow-y-auto">
+          {options.map(option => <label key={option.id} className="flex items-center gap-3 min-h-11 p-3 border rounded-md">
+            <Checkbox checked={selectedValues.includes(option.id)} onCheckedChange={() => handleToggle(option.id)} />{option.name}
+          </label>)}
+          {options.length === 0 && <p>Escolha seus rituais antes de configurar este poder.</p>}
+        </div>;
+      }
       case 'power':
         // Transcender é tratado por ParanormalPowerSelectModal em ClassPowerSelectionSection
         // Se chegou aqui, há um erro de fluxo - mostra mensagem informativa

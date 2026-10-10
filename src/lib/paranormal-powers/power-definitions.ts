@@ -82,6 +82,7 @@ export interface SavedParanormalPower {
     skills?: string[];
     ritualId?: string;
     resistElement?: ParanormalElement;
+    classPowerIds?: string[];
   };
 }
 

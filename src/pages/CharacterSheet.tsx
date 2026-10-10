@@ -1,3 +1,4 @@
+import { CreationReviewNotice } from '@/components/character/CreationReviewNotice';
 import { confirmCombatAttack } from '@/services/combat-attack-service';
 import { isAniquiladorFavoriteWeapon } from '@/lib/category-reduction';
 import { PETurnBudgetPanel } from '@/components/character/PETurnBudgetPanel';
@@ -260,6 +261,7 @@ interface PersistedCondition {
 
 // Interface do personagem
 interface Character {
+  creation_review?:string[];
   id: string;
   name: string;
   player_name: string | null;
@@ -2452,6 +2454,7 @@ export default function CharacterSheet() {
       id: item.id || crypto.randomUUID(),
       name: item.name,
       isFavoriteWeapon: isAniquiladorFavoriteWeapon(item),
+      favoriteAbilityId: item.favoriteAbilityId,
       // Usa inferência centralizada (mesmo que o mobile) para consistência
       type: normalizeWeaponTypeForDisplay({
         weaponType: item.weaponType,
@@ -2672,6 +2675,7 @@ export default function CharacterSheet() {
       </header>
 
       <main className="container mx-auto px-4 py-4 sm:py-6 relative z-[1]">
+        <CreationReviewNotice issues={character.creation_review} onReview={()=>setEditModalOpen(true)} />
         {/* Modo mobile: layout compacto */}
         {isMobile ? (
           <MobileCharacterSheet
