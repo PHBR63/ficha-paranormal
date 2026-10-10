@@ -80,3 +80,23 @@ describe('Confirmação, ajuda e treinamento na edição da ficha', () => {
     expect(onSave).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('Atributos de zero a cinco', () => {
+  it('permite reduzir de 1 para 0, bloqueia valor negativo e salva zero', async () => {
+    const save = vi.fn();
+    render(<CharacterEditModal open initialTab="attributes" onClose={vi.fn()} character={character} onSave={save} />);
+    const decrease = screen.getByRole('button', { name: 'Diminuir AGILIDADE' });
+    expect(decrease).toBeEnabled();
+    fireEvent.click(decrease);
+    expect(decrease).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+    await waitFor(() => expect(save).toHaveBeenCalled());
+    expect(save.mock.calls[0][0].agility).toBe(0);
+  });
+  it('reabre atributo zero sem convertê-lo em 1 e respeita o máximo 5', () => {
+    render(<CharacterEditModal open initialTab="attributes" onClose={vi.fn()} character={{ ...character, agility: 0, strength: 5 }} onSave={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Diminuir AGILIDADE' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Aumentar AGILIDADE' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Aumentar FORÇA' })).toBeDisabled();
+  });
+});

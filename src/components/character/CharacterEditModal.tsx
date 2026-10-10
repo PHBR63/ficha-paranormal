@@ -162,7 +162,8 @@ function FieldTooltip({ content, label }: { content: string; label: string }) {
 }
 
 // Limite de pontos de atributos
-const MIN_ATTRIBUTE = 1;
+// Zero é um atributo válido; testes usam 2d20 mantendo o menor.
+const MIN_ATTRIBUTE = 0;
 const MAX_ATTRIBUTE = 5;
 
 interface CharacterEditData {
@@ -1455,6 +1456,7 @@ function AttributeEditor({
         <Button
           variant="outline"
           size="sm"
+          aria-label={`Diminuir ${label}`}
           onClick={onDecrease}
           disabled={value <= MIN_ATTRIBUTE}
           className="w-8 h-8 p-0"
@@ -1472,6 +1474,7 @@ function AttributeEditor({
         <Button
           variant="outline"
           size="sm"
+          aria-label={`Aumentar ${label}`}
           onClick={onIncrease}
           disabled={value >= MAX_ATTRIBUTE}
           className="w-8 h-8 p-0"
