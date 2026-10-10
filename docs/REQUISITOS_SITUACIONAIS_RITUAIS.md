@@ -56,6 +56,13 @@ Para a fonte, registros preservados e verificáveis da criação distinguem o gr
 | `src/services/__tests__/ritual-situational-service.test.ts` | Rejeita resposta incompleta, ficha/ritual divergentes e ausência de confirmação do servidor. |
 | `src/hooks/character/__tests__/useRitualSituationalContext.test.tsx` | Verifica recuperação da mesma conferência, falha de leitura posterior e isolamento entre fichas. |
 | `src/lib/__tests__/character-activity-presentation.test.ts` | Confere apresentação de novos recibos e compatibilidade dos antigos. |
+| `src/components/character/tracks/ocultista/useGraduadoTrack.ts` | Corrige o resumo da trilha para distinguir consulta e execução. |
+| `src/components/character/tracks/ocultista/useLaminaParanormalTrack.ts` | Resumo da trilha informa conhecimento anterior e uso com arma amaldiçoada. |
+| `src/lib/character-data.ts` | Descrição de Lâmina Maldita com os mesmos requisitos do modal e servidor. |
+| `src/lib/rituals/known-ritual-limit.ts` | Mantém limite comum e reconhece apenas extras preservados do Graduado, ainda conhecidos e compatíveis com fonte/círculo/capacidade. |
+| `src/lib/character-audit-engine.ts` | Usa o mesmo limite da ficha, sem exigir remoção de extras legítimos. Recebe também a proveniência preservada. |
+| `src/components/character/mobile/MobilePowersTab.tsx` | Mostra a parcela de extras registrados no contador móvel. |
+| `src/lib/__tests__/known-ritual-limit.test.ts` | Confere ausência de proveniência, fontes inválidas, duplicação, capacidade e excesso real na auditoria. |
 
 ## Fluxo e dados
 
@@ -73,6 +80,8 @@ Para a fonte, registros preservados e verificáveis da criação distinguem o gr
 O gatilho protege `characters.creation_data` de inserção/alteração direta pelo cliente. A criação validada no servidor continua podendo gravar esse campo. Edição normal da ficha e alterações de inventário/recursos continuam compatíveis; conferências posteriores não reescrevem o formulário original. A migration não exclui nem reconstrói fichas antigas.
 
 ## Como testar
+
+Conferência visual complementar: o resumo de Lâmina deve mencionar o conhecimento anterior confirmado, inclusive fora do modal. O contador e a auditoria da ficha do Graduado devem reconhecer somente rituais extras com fonte preservada, ainda conhecidos e compatíveis com trilha, NEX, círculo e capacidade; metadados ausentes ou adulterados não concedem uma cota genérica. A correção não remove rituais nem amplia o limite comum de aprendizagem.
 
 Executar a suíte dos modais, serviços, hooks e histórico; verificar tipos e build. No banco, executar a migration em transação de ensaio junto de `ritual_situational_requirements.sql`, revertendo inclusive as definições ao final. Repetir os contratos de orçamento, concentração, sustentação de arma e criação validada.
 
