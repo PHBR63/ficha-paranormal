@@ -225,7 +225,11 @@ export function auditStatsCalculation(character: CharacterForAudit): {
     const origin = getOriginById(character.origin);
     const classData = getClassById(character.class);
     
-    let description = `Sanidade esperada: ${expected.san}, encontrada: ${actual.san}.`;
+    const belowInitial = actual.san < expected.san;
+    let description = `SAN máxima pela fórmula de criação: ${expected.san}; registrada: ${actual.san}.`;
+    description += belowInitial
+      ? ' A diferença pode decorrer de perdas permanentes, inclusive do Custo do Paranormal. Confira o histórico com o mestre; a auditoria não repõe SAN.'
+      : ' Confira os ajustes e o histórico com o mestre antes de alterar recursos.';
     
     if (origin?.sanityModifier) {
       const baseReduction = Math.floor((classData?.sanBase || 0) * (origin.sanityModifier / 100));
@@ -235,13 +239,13 @@ export function auditStatsCalculation(character: CharacterForAudit): {
     issues.push({
       id: `san_mismatch_${character.id}`,
       category: 'sanity',
-      severity: 'error',
-      title: 'Sanidade Incorreta',
+      severity: belowInitial ? 'warning' : 'error',
+      title: 'Conferir SAN máxima e histórico',
       description,
       currentValue: actual.san,
       expectedValue: expected.san,
-      autoFixable: true,
-      fixAction: `Atualizar san_max para ${expected.san}`,
+      autoFixable: false,
+      fixAction: 'Revisão manual com o mestre; preserve perdas permanentes registradas',
     });
   }
   
@@ -930,6 +934,11 @@ export async function autoFixCharacterIssues(
 }> {
   const errors: string[] = [];
   const appliedFixes: string[] = [];
+
+  // Uma seleção antiga não pode restaurar SAN após perda permanente ou curar SAN atual.
+  if (issues.some(issue => issue.category === 'sanity' && issue.autoFixable)) {
+    return { success: false, fixedCount: 0, errors: ['A SAN máxima exige revisão manual do histórico com o mestre. Refaça a auditoria; nenhuma correção foi aplicada.'], appliedFixes: [] };
+  }
   
   // Filtrar apenas problemas auto-corrigíveis
   const fixableIssues = issues.filter(i => i.autoFixable);
@@ -946,13 +955,6 @@ export async function autoFixCharacterIssues(
   
   for (const issue of fixableIssues) {
     switch (issue.category) {
-      case 'sanity':
-        updates.san_max = issue.expectedValue as number;
-        // Se san_current > san_max, ajustar também
-        updates.san_current = issue.expectedValue as number;
-        appliedFixes.push(`Sanidade corrigida para ${issue.expectedValue}`);
-        break;
-        
       case 'hp':
         updates.hp_max = issue.expectedValue as number;
         appliedFixes.push(`HP máximo corrigido para ${issue.expectedValue}`);
