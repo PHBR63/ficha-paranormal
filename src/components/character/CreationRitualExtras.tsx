@@ -62,7 +62,7 @@ export function CreationRitualExtras({
                   className="min-h-11 flex items-center gap-3 p-2 border border-border rounded"
                 >
                   <Checkbox
-                    aria-label={`${slot.label}: ${ritual.name}`}
+                    aria-label={`${slot.label}: ${ritual.name} (${ritual.element}, ${ritual.circle}º círculo)`}
                     checked={selected.includes(ritual.id)}
                     disabled={
                       !selected.includes(ritual.id) &&
@@ -81,7 +81,7 @@ export function CreationRitualExtras({
                     }
                   />
                   <span>
-                    {ritual.name} <small>({ritual.circle}º círculo)</small>
+                    {ritual.name} <small>({ritual.element} · {ritual.circle}º círculo)</small>
                   </span>
                 </label>
               ))}
