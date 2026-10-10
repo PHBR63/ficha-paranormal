@@ -237,7 +237,7 @@ export function calculateModifiedStats(
   let rd = baseArmor.rd || 0;
   let spaces = baseArmor.spaces;
 
-  modifications.forEach(modId => {
+  [...new Set(modifications)].forEach(modId => {
     const mod = getModificationById(modId);
     if (mod) {
       if (mod.defenseBonus) defenseBonus += mod.defenseBonus;

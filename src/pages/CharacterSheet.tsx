@@ -1,3 +1,4 @@
+import { preserveInventoryModifications } from '@/lib/inventory-modifications';
 import { CreationReviewNotice } from '@/components/character/CreationReviewNotice';
 import { useRitualSituationalContext } from '@/hooks/character/useRitualSituationalContext';
 import { confirmCombatAttack } from '@/services/combat-attack-service';
@@ -3299,6 +3300,7 @@ export default function CharacterSheet() {
                 <DataErrorBoundary fallbackMessage="Erro ao carregar inventário">
                   <InventoryPanel
                     inventory={character.inventory.map((item) => ({
+                      ...preserveInventoryModifications(item),
                       // Usa ID persistido ou gera novo UUID se não existir
                       id: item.id || crypto.randomUUID(),
                       name: item.name,
@@ -3349,6 +3351,7 @@ export default function CharacterSheet() {
                     onInventoryChange={async (newInventory) => {
                       // Persiste TODOS os campos importantes do item
                       const updatedInventory: InventoryItemPersisted[] = newInventory.map(item => ({
+                        ...preserveInventoryModifications(item),
                         id: item.id,
                         name: item.name,
                         category: item.category,
@@ -3396,12 +3399,8 @@ export default function CharacterSheet() {
                         .update({ inventory: JSON.parse(JSON.stringify(updatedInventory)) })
                         .eq('id', character.id);
 
-                      if (!error) {
-                        setCharacter(prev => prev ? {
-                          ...prev,
-                          inventory: updatedInventory,
-                        } : null);
-                      }
+                      if (error) throw new Error('Não foi possível salvar o inventário. Tente novamente.');
+                      setCharacter(prev => prev ? { ...prev, inventory: updatedInventory } : null);
                     }}
                   />
                 </DataErrorBoundary>

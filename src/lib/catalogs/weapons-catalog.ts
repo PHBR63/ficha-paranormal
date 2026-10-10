@@ -1088,6 +1088,7 @@ export function getModifiedCategory(
   baseCategory: CatalogWeapon['category'], 
   modifications: WeaponModification[]
 ): CatalogWeapon['category'] {
+  modifications = [...new Set(modifications)];
   if (baseCategory === 'especial') return 'especial';
   
   const baseIndex = CATEGORY_ORDER.indexOf(baseCategory);
@@ -1136,6 +1137,8 @@ export function calculateModifiedWeaponStats(
   baseWeapon: CatalogWeapon, 
   modifications: WeaponModification[]
 ): ModifiedWeaponStats {
+  // Uma melhoria repetida no payload não pode multiplicar categoria ou efeitos.
+  modifications = [...new Set(modifications)];
   let attackBonus = 0;
   let criticalMargin = baseWeapon.critical;
   let criticalMultiplier = baseWeapon.criticalMultiplier;
