@@ -1,4 +1,6 @@
 import type { PETurnBudget } from '@/services/pe-turn-budget-service';
+import { RitualSituationalForm, type RitualSituationalProps } from '@/components/character/RitualSituationalForm';
+import { EMPTY_RITUAL_SITUATIONAL, ritualBladeExtraCost, ritualSituationalExecution, validateRitualSituational } from '@/lib/rituals/situational-requirements';
 import { CastingConcentrationForm } from '@/components/character/CastingConcentrationForm';
 import { DEFAULT_CASTING_CONCENTRATION, validateCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
 /**
@@ -10,7 +12,7 @@ import { DEFAULT_CASTING_CONCENTRATION, validateCastingConcentration, type Casti
  * Exibe automaticamente bônus de DT, dano/cura e reduções de PE
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRitualConfirmation, type RitualConfirmationResult } from '@/hooks/character/useRitualConfirmation';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -82,7 +84,7 @@ function triggerElementParticles(elementHex: string, elementHexLight: string) {
 // Tipo que suporta tanto rituais legados quanto unificados
 type RitualInput = Ritual | UnifiedRitual;
 
-interface RitualCastModalProps {
+interface RitualCastModalProps extends RitualSituationalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   ritual: RitualInput | null;
@@ -131,9 +133,12 @@ export function RitualCastModal({
   ritualBonuses,
   intellect = 0,
   peLimitBonus = 0,
+  ...situationalProps
 }: RitualCastModalProps) {
-  const confirmation = useRitualConfirmation(open);
+  const confirmation = useRitualConfirmation(open, `${situationalProps.context?.characterId}:${ritual?.id}`);
   const [concentration, setConcentration] = useState(DEFAULT_CASTING_CONCENTRATION);
+  const [situational, setSituational] = useState(EMPTY_RITUAL_SITUATIONAL);
+  useEffect(() => { setSituational(EMPTY_RITUAL_SITUATIONAL); }, [open, ritual?.id, situationalProps.context?.characterId, situationalProps.context?.source, situationalProps.context?.bladeEligible]);
   // Estado dos aprimoramentos selecionados
   const [selectedEnhancements, setSelectedEnhancements] = useState<string[]>([]);
   // Estado dos modificadores de trilha ativados
@@ -225,14 +230,18 @@ export function RitualCastModal({
   }, 0);
 
   // Custo total (inclui modificadores de trilha)
-  const totalCost = baseCost + enhancementsCost + modifiersCost;
+  const costBeforeBlade = baseCost + enhancementsCost + modifiersCost;
+  const bladeExtraCost = ritualBladeExtraCost(situationalProps.context, situational);
+  const totalCost = costBeforeBlade + bladeExtraCost;
+  const situationalError = validateRitualSituational(situationalProps.context, situational);
+  const execution = ritualSituationalExecution(situationalProps.context?.execution ?? ritual.execution, situationalProps.context, situational);
 
   // Validação de PE com limite por turno
   // Valida exatamente o débito confirmado, incluindo descontos e modificadores.
   const peValidation = validatePECost(totalCost, [], false, selectedEnhancements.length === 0 && totalCost <= baseCost);
 
   // Pode conjurar se validação de PE passar
-  const canCast = !peBudgetLoading && !peBudgetError && peValidation.isValid && ritual.circle <= maxCircle;
+  const canCast = !peBudgetLoading && !peBudgetError && !situationalProps.loading && !situationalProps.error && !situationalProps.reviewing && !situationalError && peValidation.isValid && ritual.circle <= maxCircle;
 
   // Toggle de aprimoramento (só permite se válido)
   const toggleEnhancement = (enhName: string) => {
@@ -258,7 +267,8 @@ export function RitualCastModal({
   const handleConfirm = () => {
     if (!canCast || validateCastingConcentration(concentration)) return;
     void confirmation.confirm(
-      () => onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined, concentration),
+      () => onConfirm(ritual, totalCost, validSelectedEnhancements, activeModifiers, isCounterActive ? counterRitualCost : undefined,
+        situationalProps.context ? { ...concentration, situational: { ...situational, costBeforeBlade } } : concentration),
       result => {
         const effectsAllowed = typeof result !== 'object' || result.effectsAllowed;
         if (effectsAllowed && elementConfig) triggerElementParticles(elementConfig.hex, elementConfig.hexLight);
@@ -328,11 +338,14 @@ export function RitualCastModal({
         <ScrollArea className="max-h-[60vh]">
           <div className="space-y-4 py-4">
 <CastingConcentrationForm value={concentration} onChange={setConcentration} peCost={totalCost} disabled={confirmation.isConfirming} />
+<RitualSituationalForm key={`${situationalProps.context?.characterId}:${ritual?.id}:${open}`} {...situationalProps} value={situational} onChange={setSituational} disabled={confirmation.isConfirming} />
+{situationalError && <p role="alert" className="text-sm text-destructive">{situationalError}</p>}
+{bladeExtraCost > 0 && <p role="status" className="text-sm">Lâmina Maldita: +1 PE incluído no custo total · Execução de movimento.</p>}
             {/* Info do ritual */}
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Clock className="w-3 h-3" />
-                <span>{ritual.execution}</span>
+                <span>{execution}</span>
               </div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Target className="w-3 h-3" />
@@ -911,7 +924,7 @@ export function RitualCastModal({
               {!canCast && (
                 <p className="text-xs text-destructive mt-2 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
-                  {ritual.circle > maxCircle ? `Requer ${ritual.circle}º círculo (seu máximo: ${maxCircle}º)` : peValidation.reason}
+                  {situationalProps.loading ? 'Conferindo requisitos no servidor…' : situationalProps.error || situationalError || (ritual.circle > maxCircle ? `Requer ${ritual.circle}º círculo (seu máximo: ${maxCircle}º)` : peValidation.reason) }
                 </p>
               )}
             </div>

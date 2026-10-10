@@ -8,6 +8,17 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('mostra fonte, consulta separada, ação e adicional incluído no custo', () => {
+    const text = describeCharacterActivity({ ...event({ ritualName: 'Amaldiçoar Arma', peCost: 2, situationalResolution: 'server_checked', castingSource: 'grimoire', execution: 'Movimento', bladeExtraPE: 1, grimoirePreparation: { readingConfirmed: true } }), category: 'ritual' });
+    expect(text).toContain('Fonte: Grimório Ritualístico');
+    expect(text).toContain('consulta sem PE');
+    expect(text).toContain('Execução: Movimento');
+    expect(text).toContain('+1 PE para movimento (incluído no total)');
+    expect(describeCharacterActivity({ ...event({ ritualName: 'Arma Atroz' }), category: 'ritual' })).not.toContain('Fonte:');
+  });
+  it('mostra a conferência do mestre como evento sem custo', () => {
+    expect(describeCharacterActivity(event({ kind: 'ritual_knowledge', source: 'memorized', knownBeforeBlade: true, note: 'Histórico conferido' }))).toContain('confirmado · Histórico conferido · Sem gasto de PE ou SAN');
+  });
   it('mostra custo, temporários e orçamento no mesmo recibo do ataque', () => {
     const text = describeCharacterActivity({ ...event({ kind: 'combat_attack', peCost: 2, peBefore: 8, peAfter: 7,
       temporaryPEUsed: 1, peBudget: { mode: 'manual', number: 3, tracked: true, spentAfter: 4 },

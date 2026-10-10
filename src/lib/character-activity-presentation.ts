@@ -2,6 +2,7 @@ import type { CharacterActivityEvent } from '@/types/character-activity';
 import type { Json } from '@/integrations/supabase/types';
 import { resolveConditionId } from '@/lib/conditions/condition-identity';
 import { RITUAL_END_REASONS } from '@/lib/rituals/ritual-ending';
+import { getRitualById } from '@/lib/rituals/ritual-registry';
 
 /** Explica o orçamento salvo na operação, sem aplicar o estado atual a eventos antigos. */
 function describePETurnBudget(value: Json | undefined): string {
@@ -61,6 +62,9 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}`;
   }
   if (event.category === 'ritual') {
+    const preparation = payload.grimoirePreparation;
+    const situationalDetails = payload.situationalResolution === 'server_checked'
+      ? ` · Fonte: ${payload.castingSource === 'grimoire' ? 'Grimório Ritualístico' : 'memorizado'}${preparation && typeof preparation === 'object' && !Array.isArray(preparation) && preparation.readingConfirmed === true ? ' · Empunhar e consulta de ação completa declarados; consulta sem PE' : ''} · Execução: ${payload.execution}${payload.bladeExtraPE === 1 ? ' · Lâmina Maldita: +1 PE para movimento (incluído no total)' : ''}` : '';
     const cost = payload.paranormalCost;
     const costDetails = cost && typeof cost === 'object' && !Array.isArray(cost)
       ? ` · Custo do Paranormal: ${typeof cost.total === 'number' ? `Ocultismo ${cost.total} / DT ${cost.dt}` : cost.skipped ? 'não executado: concentração falhou' : 'Medo'} · SAN ${payload.sanBefore} → ${payload.sanAfter} · SAN máxima ${payload.sanMaxBefore} → ${payload.sanMaxAfter}` : '';
@@ -69,8 +73,9 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
       ? concentration.tests : [];
     const details = tests.map(test => test && typeof test === 'object' && !Array.isArray(test)
       ? `Vontade (${test.trigger}) · dados [${Array.isArray(test.dice) ? test.dice.join(', ') : 'conferir'}] · ${test.kept} + bônus ${test.bonus} = ${test.total} vs DT ${test.dt} · ${test.success ? 'sucesso' : 'falha'}${Array.isArray(test.bonuses) ? ` · Fontes: ${test.bonuses.map(source => source && typeof source === 'object' && !Array.isArray(source) ? `${source.name}: ${source.value}` : 'conferir').join('; ')}` : ''}` : 'Teste antigo: conferir').join('; ');
-    return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}${temporaryPE}${details ? ` · ${details}` : ''}${payload.castingOutcome === 'failed_concentration' ? ' · Concentração falhou; efeitos bloqueados, sem estorno de PE' : ''}${costDetails}${peBudgetDetails}`;
+    return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}${temporaryPE}${situationalDetails}${details ? ` · ${details}` : ''}${payload.castingOutcome === 'failed_concentration' ? ' · Concentração falhou; efeitos bloqueados, sem estorno de PE' : ''}${costDetails}${peBudgetDetails}`;
   }
+  if (payload.kind === 'ritual_knowledge') return `Conferência histórica do mestre · ${typeof payload.ritualId === 'string' ? getRitualById(payload.ritualId)?.name ?? 'Ritual legado' : 'Ritual'} · Fonte: ${payload.source === 'grimoire' ? 'Grimório Ritualístico' : 'memorizado'} · Conhecimento anterior à Lâmina Maldita: ${payload.knownBeforeBlade === true ? 'confirmado' : 'não confirmado'} · ${payload.note} · Sem gasto de PE ou SAN`;
   if (payload.kind === 'scene_expiry') return `Cena ${payload.sceneNumber} encerrada · ${payload.expiredEffectsCount} efeito(s) expirado(s)${describeConditionChanges((payload.before as { conditions?: Json })?.conditions, (payload.after as { conditions?: Json })?.conditions)}`;
   if (payload.kind === 'manual_turn') return `Turno manual confirmado: ${payload.turnBefore} → ${payload.turnAfter} · Sem gasto de PE`;
   if (payload.kind === 'manual_turn_pause') return `Controle manual pausado no turno ${payload.turnNumber} · Saldo e efeitos preservados`;

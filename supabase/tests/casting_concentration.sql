@@ -1,14 +1,16 @@
 BEGIN;
 INSERT INTO auth.users(id) VALUES ('00000000-0000-4000-8000-000000000511');
 -- Recursos explícitos correspondem aos snapshots usados nas RPCs abaixo.
-INSERT INTO public.characters(id,user_id,name,origin,class,hp_current,hp_max,pe_current,pe_max)
-VALUES ('00000000-0000-4000-8000-000000000501','00000000-0000-4000-8000-000000000511','QA concentração','Vítima','Ocultista',20,20,10,10);
+INSERT INTO public.characters(id,user_id,name,origin,class,hp_current,hp_max,pe_current,pe_max,san_current,san_max)
+VALUES ('00000000-0000-4000-8000-000000000501','00000000-0000-4000-8000-000000000511','QA concentração','Vítima','Ocultista',20,20,10,10,30,30);
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000511',true);
 DO $$
 DECLARE c uuid:='00000000-0000-4000-8000-000000000501'; operation uuid:=gen_random_uuid(); result public.character_activity_events; saved_payload jsonb;
  input jsonb:='{"ritualId":"qa","ritualName":"QA","concentration":{"source":"system_roll","tests":[{"trigger":"ruim","attribute":1,"dicePenalty":0,"dice":[1],"bonuses":[{"name":"Treinamento","value":0}],"bonus":0,"total":1}]}}';
 BEGIN
+ -- Mantém o contrato atual do Custo do Paranormal sem alterar os casos de concentração.
+ input:=input||'{"ritualElement":"conhecimento","requirementsConfirmed":true,"expectedSan":30,"expectedSanMax":30,"paranormalCost":{"source":"system_roll","element":"conhecimento","test":{"attribute":1,"dicePenalty":0,"dice":[20],"bonuses":[{"name":"QA","value":20}],"bonus":20,"total":40}}}';
  result:=public.cast_character_ritual(operation,c,10,2,input);
  IF result.status<>'confirmed' OR result.payload->>'castingOutcome'<>'failed_concentration'
  OR result.payload->'concentration'->'tests'->0->>'dt'<>'17'
@@ -31,6 +33,7 @@ BEGIN
  IF result.payload->>'castingOutcome'<>'failed_concentration' THEN RAISE EXCEPTION '20 virou sucesso automático'; END IF;
  -- Situação e dano são resolvidos separadamente; bônus somado pelo servidor.
  input:='{"ritualId":"qa","ritualName":"QA","concentration":{"source":"system_roll","tests":[{"trigger":"ruim","attribute":1,"dicePenalty":0,"dice":[20],"bonuses":[{"name":"Treinamento","value":5}],"bonus":5,"total":25},{"trigger":"dano","damage":30,"attribute":1,"dicePenalty":0,"dice":[20],"bonuses":[{"name":"Treinamento","value":5}],"bonus":5,"total":25}]}}';
+ input:=input||'{"ritualElement":"conhecimento","requirementsConfirmed":true,"expectedSan":30,"expectedSanMax":30,"paranormalCost":{"source":"system_roll","element":"conhecimento","test":{"attribute":1,"dicePenalty":0,"dice":[20],"bonuses":[{"name":"QA","value":20}],"bonus":20,"total":40}}}';
  result:=public.cast_character_ritual(gen_random_uuid(),c,7,1,input);
  IF result.payload->'concentration'->'tests'->0->>'success'<>'true'
  OR result.payload->'concentration'->'tests'->1->>'dt'<>'30'
