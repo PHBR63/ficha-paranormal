@@ -41,3 +41,12 @@ export function getInstalledItemModifications(item: object): string[] {
     Array.isArray(fields[field]) ? fields[field].filter((id): id is string => typeof id === 'string') : []
   ))];
 }
+
+/** Não permite que melhorias excedentes sejam silenciosamente achatadas para categoria IV. */
+export function getModificationCategoryError(baseCategory: string, modificationCount: number): string | null {
+  const categories = ['0', 'I', 'II', 'III', 'IV'];
+  const base = categories.indexOf(baseCategory);
+  if (base < 0) return 'A categoria base deste item precisa ser conferida antes de modificá-lo.';
+  if (base + modificationCount > 4) return 'As melhorias ultrapassam a categoria IV suportada pelo inventário. Reduza a seleção; a categoria não será limitada silenciosamente.';
+  return null;
+}

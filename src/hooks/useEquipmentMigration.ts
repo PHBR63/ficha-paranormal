@@ -1,3 +1,4 @@
+import { repairLegacyCatalogArmor } from '@/lib/legacy-modification-repair';
 /**
  * Hook para migração automática de equipamentos no inventário
  * Corrige armaduras, armas e itens existentes que estejam com dados incompletos
@@ -241,6 +242,8 @@ export function useEquipmentMigration() {
     let itemCount = 0;
     
     const migratedInventory = inventory.map(item => {
+      const repaired = repairLegacyCatalogArmor(item);
+      if (repaired !== item) { needsMigration = true; armorCount++; return repaired; }
       if (needsArmorMigration(item)) {
         needsMigration = true;
         armorCount++;

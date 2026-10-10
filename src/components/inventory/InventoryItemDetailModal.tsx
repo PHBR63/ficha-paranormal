@@ -1,3 +1,7 @@
+import { SKILLS } from '@/lib/character-data';
+import { getInstalledItemModifications } from '@/lib/inventory-modifications';
+import { ACCESSORY_MODIFICATIONS } from '@/lib/accessory-modifications';
+import { ARMOR_MODIFICATIONS } from '@/lib/catalogs/armor-catalog';
 /**
  * Modal de Detalhes do Item de Inventário
  * Exibe informações completas de qualquer item do inventário
@@ -108,7 +112,8 @@ export function InventoryItemDetailModal({
   const isWeapon = itemType === 'weapon';
   const isArmor = itemType === 'armor';
   const isConsumable = item.consumable;
-  const hasModifications = extendedItem.appliedModifications && extendedItem.appliedModifications.length > 0;
+  const installedModifications = getInstalledItemModifications(item);
+  const hasModifications = installedModifications.length > 0;
 
   return (
     <MobileModal open={open} onOpenChange={onOpenChange}>
@@ -306,9 +311,9 @@ export function InventoryItemDetailModal({
                     Modificações Aplicadas
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {extendedItem.appliedModifications!.map(mod => (
+                    {installedModifications.map(mod => (
                       <Badge key={mod} variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30 text-purple-400">
-                        {MODIFICATION_LABELS[mod]?.label || mod}
+                        {MODIFICATION_LABELS[mod as WeaponModification]?.label || ARMOR_MODIFICATIONS.find(entry => entry.id === mod)?.name || ACCESSORY_MODIFICATIONS.find(entry => entry.id === mod)?.name || mod}
                       </Badge>
                     ))}
                   </div>
@@ -316,6 +321,11 @@ export function InventoryItemDetailModal({
               </>
             )}
 
+            {item.accessoryConfiguration && <section className="p-3 rounded border border-border text-sm space-y-2">
+              <p className="font-semibold">Funções do acessório</p>
+              {Object.entries(item.accessoryConfiguration).map(([key, value]) => <p key={key}>{key === 'primarySkill' ? 'Função principal' : key === 'additionalSkill' ? 'Função adicional' : 'Kit'}: {SKILLS.find(skill => skill.id === value)?.name ?? value}</p>)}
+              <p className="text-muted-foreground">Bônus sujeitos à conferência do mestre; equipamentos não acumulam bônus na mesma perícia.</p>
+            </section>}
             {/* Especial / Efeito */}
             {(extendedItem.special || extendedItem.effect) && (
               <>

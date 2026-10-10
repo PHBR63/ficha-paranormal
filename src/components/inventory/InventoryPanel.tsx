@@ -10,7 +10,9 @@
  */
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { mergeItemModifications, canModifyAmmunition, getInstalledItemModifications } from '@/lib/inventory-modifications';
+import { mergeItemModifications, canModifyAmmunition, getInstalledItemModifications, getModificationCategoryError } from '@/lib/inventory-modifications';
+import { calculateAccessorySkillBonuses, validateAccessoryModifications, type AccessoryConfiguration } from '@/lib/accessory-modifications';
+import { canApplyModification } from '@/lib/catalogs/weapons-catalog';
 import { getArmorModificationConflict } from '@/lib/catalogs/armor-catalog';
 import { useIsMobile } from '@/hooks';
 import { useCharacterCategoryReductions, type ExtendedInventoryItemWithReduction } from '@/hooks/useCharacterCategoryReductions';
@@ -178,6 +180,7 @@ export interface ExtendedInventoryItem extends InventoryItem {
   catalogType?: string;
   catalogId?: string;
   ammoType?: string;
+  accessoryConfiguration?: AccessoryConfiguration;
   // Campos para redução de categoria (A Favorita, Ferramenta Favorita, etc.)
   favoriteAbilityId?: string;  // ID da habilidade que está sendo aplicada
   effectiveCategory?: InventoryItem['category'];  // Categoria efetiva após redução
@@ -807,6 +810,8 @@ export function InventoryPanel({
       catalogId: catalogItem.id,
       catalogType: catalogItem.type, // Preserva tipo original do catálogo (ex: 'acessorio')
       description: catalogItem.description,
+      // Soqueira recebe melhorias de arma corpo a corpo e afeta ataques desarmados (Base, p. 66).
+      ...(catalogItem.id === 'soqueira' ? { itemType: 'weapon' as const, weaponType: 'melee', damage: '1d3+1', damageType: 'Impacto', critical: 20, criticalMultiplier: 2, proficiency: 'simples', properties: ['Desarmado'], appliedModifications: [] } : {}),
       // Dados extras para itens gerais
       effect: catalogItem.effect,
       uses: catalogItem.uses,
@@ -878,14 +883,20 @@ export function InventoryPanel({
       damageType: (weaponToModify as any).damageType || 'Corte',
       critical: (weaponToModify as any).baseCritical || (weaponToModify as any).critical || 20,
       criticalMultiplier: (weaponToModify as any).criticalMultiplier || 2,
-      range: (weaponToModify as any).range,
+      range: (weaponToModify as any).baseRange ?? (weaponToModify as any).range,
       spaces: (weaponToModify as any).baseSpaces ?? weaponToModify.slots,
       proficiency: (weaponToModify as any).proficiency || 'simples',
-      properties: (weaponToModify as any).properties,
+      properties: (weaponToModify as any).baseProperties ?? (weaponToModify as any).properties,
       special: (weaponToModify as any).special,
       ammoType: (weaponToModify as any).ammoType,
     };
 
+    if (modifications.some(id => !canApplyModification({ ...baseWeapon, appliedModifications: modifications }, id))) {
+      toast({ title: 'Modificação incompatível', description: 'Confira o tipo da arma e os requisitos das melhorias.', variant: 'destructive' });
+      throw new Error('Modificação incompatível com a arma');
+    }
+    const categoryError = getModificationCategoryError(baseWeapon.category, modifications.length);
+    if (categoryError) { toast({ title: 'Categoria incompatível', description: categoryError, variant: 'destructive' }); throw new Error(categoryError); }
     // Calcular estatísticas modificadas
     const modifiedStats = calculateModifiedWeaponStats(baseWeapon, modifications);
     const hasModifications = modifications.length > 0;
@@ -916,11 +927,16 @@ export function InventoryPanel({
           effectiveCategory, // Categoria efetiva recalculada
           appliedModifications: modifications,
           // Preservar dados base para recálculo futuro
+          weaponType: baseWeapon.type,
           baseCategory: baseWeapon.category,
           baseDamage: baseWeapon.damage,
           baseCritical: baseWeapon.critical,
           // Reabrir o modal deve recalcular a partir da ocupação original.
           baseSpaces: baseWeapon.spaces,
+          baseRange: baseWeapon.range,
+          baseProperties: baseWeapon.properties ?? [],
+          range: modifiedStats.range,
+          properties: [...new Set([...(baseWeapon.properties ?? []), ...modifiedStats.addedProperties])],
           slots: modifiedStats.finalSpaces,
           // Aplicar estatísticas modificadas
           damage: modifiedStats.damage,
@@ -960,6 +976,10 @@ export function InventoryPanel({
   const handleApplyArmorModifications = async (modifications: ArmorModification[]) => {
     if (!armorToModify || !onInventoryChange) return;
     modifications = mergeItemModifications((armorToModify as any).appliedArmorModifications || [], modifications);
+    if (modifications.some(id => !ARMOR_MODIFICATIONS.find(mod => mod.id === id)?.applicableTo.includes((armorToModify as any).armorType ?? 'leve'))) {
+      toast({ title: 'Modificação incompatível', description: 'Confira o tipo de proteção exigido pela melhoria.', variant: 'destructive' });
+      throw new Error('Modificação incompatível com a proteção');
+    }
     if (modifications.some(mod => getArmorModificationConflict(mod, modifications))) {
       toast({ title: 'Modificações incompatíveis', description: 'A mesma proteção não pode ser Reforçada e Discreta. Escolha uma delas.', variant: 'destructive' });
       throw new Error('Reforçada e Discreta não podem coexistir');
@@ -972,6 +992,8 @@ export function InventoryPanel({
     // Calcular categoria final (cada mod nova = +1 categoria)
     const CATEGORY_ORDER_LOCAL = ['0', 'I', 'II', 'III', 'IV'] as const;
     const baseCategory = (armorToModify as any).baseArmorCategory || armorToModify.category;
+    const categoryError = getModificationCategoryError(baseCategory, modifications.length);
+    if (categoryError) { toast({ title: 'Categoria incompatível', description: categoryError, variant: 'destructive' }); throw new Error(categoryError); }
     const baseCatIndex = CATEGORY_ORDER_LOCAL.indexOf(baseCategory as typeof CATEGORY_ORDER_LOCAL[number]);
     const finalCatIndex = Math.min(baseCatIndex + modifications.length, CATEGORY_ORDER_LOCAL.length - 1);
     const finalCategory = CATEGORY_ORDER_LOCAL[finalCatIndex] as ExtendedInventoryItem['category'];
@@ -999,7 +1021,9 @@ export function InventoryPanel({
           slots: spaces,
           defenseBonus,
           rd,
+          effectiveCategory: item.favoriteAbilityId ? getEffectiveCategory(finalCategory, getCategoryReductionAbility(item.favoriteAbilityId)?.reductionAmount ?? 0) : finalCategory,
           appliedArmorModifications: modifications,
+          specialEffects: modifications.map(id => ARMOR_MODIFICATIONS.find(mod => mod.id === id)?.effect).filter(Boolean),
           baseArmorCategory: baseCategory,
           baseDefenseBonus: (armorToModify as any).baseDefenseBonus ?? (armorToModify as any).defenseBonus,
           baseRd: (armorToModify as any).baseRd ?? (armorToModify as any).rd,
@@ -1032,16 +1056,23 @@ export function InventoryPanel({
   };
 
   // Handler para aplicar modificações em acessório
-  const handleApplyAccessoryModifications = async (modifications: AccessoryModification[]) => {
+  const handleApplyAccessoryModifications = async (modifications: AccessoryModification[], configuration: AccessoryConfiguration = {}) => {
     if (!accessoryToModify || !onInventoryChange) return;
     modifications = mergeItemModifications((accessoryToModify as any).appliedAccessoryModifications || [], modifications);
 
+    const configurationError = validateAccessoryModifications(modifications, configuration, accessoryToModify.catalogId);
+    if (configurationError) {
+      toast({ title: 'Escolhas incompletas', description: configurationError, variant: 'destructive' });
+      throw new Error(configurationError);
+    }
     const hasModifications = modifications.length > 0;
     const baseName = accessoryToModify.name.replace(/\s*\(Mod\.\)$/, '');
 
     // Calcular categoria final
     const CATEGORY_ORDER_LOCAL = ['0', 'I', 'II', 'III', 'IV'] as const;
     const baseCategory = (accessoryToModify as any).baseAccessoryCategory || accessoryToModify.category;
+    const categoryError = getModificationCategoryError(baseCategory, modifications.length);
+    if (categoryError) { toast({ title: 'Categoria incompatível', description: categoryError, variant: 'destructive' }); throw new Error(categoryError); }
     const baseCatIndex = CATEGORY_ORDER_LOCAL.indexOf(baseCategory as typeof CATEGORY_ORDER_LOCAL[number]);
     const finalCatIndex = Math.min(baseCatIndex + modifications.length, CATEGORY_ORDER_LOCAL.length - 1);
     const finalCategory = CATEGORY_ORDER_LOCAL[finalCatIndex] as ExtendedInventoryItem['category'];
@@ -1060,7 +1091,10 @@ export function InventoryPanel({
           name: hasModifications ? `${baseName} (Mod.)` : baseName,
           category: finalCategory,
           slots: spaces,
+          effectiveCategory: item.favoriteAbilityId ? getEffectiveCategory(finalCategory, getCategoryReductionAbility(item.favoriteAbilityId)?.reductionAmount ?? 0) : finalCategory,
           appliedAccessoryModifications: modifications,
+          accessoryConfiguration: configuration,
+          accessorySkillBonuses: calculateAccessorySkillBonuses(modifications, configuration),
           baseAccessoryCategory: baseCategory,
           baseAccessorySpaces: (accessoryToModify as any).baseAccessorySpaces ?? accessoryToModify.slots,
         } as ExtendedInventoryItem;
@@ -1095,7 +1129,7 @@ export function InventoryPanel({
   };
 
   // Handler para aplicar modificações em munição
-  const handleApplyAmmoModifications = async (modifications: AmmoModification[]) => {
+  const handleApplyAmmoModifications = async (modifications: AmmoModification[], calibreGrosso = false) => {
     if (!ammoToModify || !onInventoryChange) return;
     if (!canModifyAmmunition(ammoToModify) || modifications.some(id => !AMMO_MODIFICATION_IDS.has(id))) {
       toast({ title: 'Modificação inválida', description: 'Use Dum dum ou Explosiva somente em balas curtas e longas.', variant: 'destructive' });
@@ -1109,6 +1143,8 @@ export function InventoryPanel({
     // Calcular categoria final (cada mod = +1 categoria)
     const CATEGORY_ORDER_LOCAL = ['0', 'I', 'II', 'III', 'IV'] as const;
     const baseCategory = (ammoToModify as any).baseAmmoCategory || ammoToModify.category;
+    const categoryError = getModificationCategoryError(baseCategory, modifications.length);
+    if (categoryError) { toast({ title: 'Categoria incompatível', description: categoryError, variant: 'destructive' }); throw new Error(categoryError); }
     const baseCatIndex = CATEGORY_ORDER_LOCAL.indexOf(baseCategory as typeof CATEGORY_ORDER_LOCAL[number]);
     const finalCatIndex = Math.min(baseCatIndex + modifications.length, CATEGORY_ORDER_LOCAL.length - 1);
     const finalCategory = CATEGORY_ORDER_LOCAL[finalCatIndex] as ExtendedInventoryItem['category'];
@@ -1119,7 +1155,9 @@ export function InventoryPanel({
           ...item,
           name: hasModifications ? `${baseName} (Mod.)` : baseName,
           category: finalCategory,
+          effectiveCategory: item.favoriteAbilityId ? getEffectiveCategory(finalCategory, getCategoryReductionAbility(item.favoriteAbilityId)?.reductionAmount ?? 0) : finalCategory,
           appliedAmmoModifications: modifications,
+          calibreGrosso,
           baseAmmoCategory: baseCategory,
         } as ExtendedInventoryItem;
       }
@@ -1417,10 +1455,10 @@ export function InventoryPanel({
             damageType: (weaponToModify as any).damageType || 'Corte',
             critical: (weaponToModify as any).baseCritical || (weaponToModify as any).critical || 20,
             criticalMultiplier: (weaponToModify as any).criticalMultiplier || 2,
-            range: (weaponToModify as any).range,
+            range: (weaponToModify as any).baseRange ?? (weaponToModify as any).range,
             spaces: (weaponToModify as any).baseSpaces ?? weaponToModify.slots,
             proficiency: (weaponToModify as any).proficiency || 'simples',
-            properties: (weaponToModify as any).properties,
+            properties: (weaponToModify as any).baseProperties ?? (weaponToModify as any).properties,
             special: (weaponToModify as any).special,
             ammoType: (weaponToModify as any).ammoType,
           }}
@@ -1465,6 +1503,8 @@ export function InventoryPanel({
           itemName={accessoryToModify.name.replace(/\s*\(Mod\.\)$/, '')}
           itemCategory={(accessoryToModify as any).baseAccessoryCategory || accessoryToModify.category || '0'}
           itemSpaces={(accessoryToModify as any).baseAccessorySpaces ?? accessoryToModify.slots ?? 1}
+          catalogId={accessoryToModify.catalogId}
+          currentConfiguration={accessoryToModify.accessoryConfiguration}
           currentModifications={(accessoryToModify as any).appliedAccessoryModifications || []}
           onApplyModifications={handleApplyAccessoryModifications}
         />
@@ -1477,6 +1517,7 @@ export function InventoryPanel({
           onOpenChange={setAmmoModModalOpen}
           itemName={ammoToModify.name.replace(/\s*\(Mod\.\)$/, '')}
           itemCategory={(ammoToModify as any).baseAmmoCategory || ammoToModify.category || '0'}
+          currentCalibreGrosso={(ammoToModify as any).calibreGrosso === true}
           currentModifications={(ammoToModify as any).appliedAmmoModifications || []}
           onApplyModifications={handleApplyAmmoModifications}
         />

@@ -1,9 +1,9 @@
 /**
  * Catálogo de Proteções - Ordem Paranormal RPG
- * Baseado EXATAMENTE no livro de regras oficial (Tabela 3.6, pg. 93)
+ * Baseado EXATAMENTE no livro de regras oficial (Tabela 3.6, p. 62)
  * 
  * IMPORTANTE: O livro tem apenas 3 tipos de proteção base:
- * - Proteção Leve (+5 Defesa, Cat I, 5 espaços)
+ * - Proteção Leve (+5 Defesa, Cat I, 2 espaços)
  * - Proteção Pesada (+10 Defesa, Cat II, 5 espaços) 
  * - Escudo (+2 Defesa, Cat I, 2 espaços)
  * 
@@ -33,7 +33,7 @@ export interface CatalogArmor {
   defenseBonus: number; // Bônus de Defesa fornecido pela proteção
   rd?: number; // Resistência a Dano (apenas Proteção Pesada tem RD 2 contra balístico, corte, impacto e perfuração)
   agilityPenalty: number; // Penalidade em testes de perícias que sofrem penalidade de carga
-  category: 'I' | 'II';
+  category: 'I' | 'II' | 'III' | 'IV';
   spaces: number;
   description: string;
   special?: string;
@@ -41,7 +41,7 @@ export interface CatalogArmor {
 }
 
 // ==================== MODIFICAÇÕES PARA PROTEÇÕES ====================
-// Tabela 3.7: Modificações para Proteções (pg. 93)
+// Tabela 3.7: Modificações para Proteções (p. 62)
 
 export const ARMOR_MODIFICATIONS: ArmorModificationData[] = [
   {
@@ -73,14 +73,14 @@ export const ARMOR_MODIFICATIONS: ArmorModificationData[] = [
     name: 'Reforçada',
     description: 'Aumenta a Defesa fornecida em +2 e o espaço ocupado em +1. Uma proteção não pode ser reforçada e discreta ao mesmo tempo.',
     effect: 'Aumenta a Defesa em +2 e o espaço em +1',
-    applicableTo: ['leve', 'pesada'],
+    applicableTo: ['leve', 'pesada', 'escudo'],
     defenseBonus: 2,
     spacesModifier: 1,
   },
 ];
 
 // ==================== PROTEÇÕES BASE ====================
-// Conforme Tabela 3.6: Proteções (pg. 93)
+// Conforme Tabela 3.6: Proteções (p. 62)
 
 export const BASE_ARMORS: CatalogArmor[] = [
   {
@@ -90,7 +90,7 @@ export const BASE_ARMORS: CatalogArmor[] = [
     defenseBonus: 5,
     agilityPenalty: 0,
     category: 'I',
-    spaces: 5,
+    spaces: 2,
     description: 'Jaqueta de couro pesada ou um colete de kevlar. Essa proteção é tipicamente usada por seguranças e policiais.',
   },
   {
@@ -130,7 +130,7 @@ export const MODIFIED_ARMORS: CatalogArmor[] = [
     defenseBonus: 5,
     agilityPenalty: 0,
     category: 'II', // Modificação aumenta categoria em 1
-    spaces: 4, // 5 - 1
+    spaces: 1,
     description: 'Colete compacto feito com kevlar denso para reduzir o volume. Pode ser ocultado sob roupas.',
     special: '+5 em testes de Crime para ocultar, mesmo sem treinamento.',
     modifications: ['discreta'],
@@ -143,7 +143,7 @@ export const MODIFIED_ARMORS: CatalogArmor[] = [
     defenseBonus: 7, // 5 + 2
     agilityPenalty: 0,
     category: 'II',
-    spaces: 6, // 5 + 1
+    spaces: 3,
     description: 'Colete de kevlar com placas adicionais para maior proteção.',
     modifications: ['reforcada'],
   },
@@ -155,7 +155,7 @@ export const MODIFIED_ARMORS: CatalogArmor[] = [
     defenseBonus: 10,
     rd: 2,
     agilityPenalty: -5,
-    category: 'II', // Nota: no livro modificações aumentam categoria em I
+    category: 'III',
     spaces: 5,
     description: 'Armadura pesada tratada quimicamente para resistir ao calor e estilhaços. Inclui capacete com viseira.',
     special: 'Resistência a balístico, corte, impacto e perfuração 2. +5 em testes de resistência contra efeitos de área.',
@@ -169,7 +169,7 @@ export const MODIFIED_ARMORS: CatalogArmor[] = [
     defenseBonus: 10,
     rd: 5, // 2 + 3
     agilityPenalty: -5,
-    category: 'II',
+    category: 'III',
     spaces: 6, // 5 + 1
     description: 'Armadura pesada reforçada com placas de aço e cerâmica. Proteção máxima.',
     special: 'Resistência a balístico, corte, impacto e perfuração 5.',
@@ -183,7 +183,7 @@ export const MODIFIED_ARMORS: CatalogArmor[] = [
     defenseBonus: 12, // 10 + 2
     rd: 2,
     agilityPenalty: -5,
-    category: 'II',
+    category: 'III',
     spaces: 6, // 5 + 1
     description: 'Armadura pesada com camadas extras de proteção.',
     special: 'Resistência a balístico, corte, impacto e perfuração 2.',
@@ -245,14 +245,14 @@ export function calculateModifiedStats(
 
   [...new Set(modifications)].forEach(modId => {
     const mod = getModificationById(modId);
-    if (mod) {
+    if (mod && mod.applicableTo.includes(baseArmor.type)) {
       if (mod.defenseBonus) defenseBonus += mod.defenseBonus;
       if (mod.rdBonus) rd += mod.rdBonus;
       if (mod.spacesModifier) spaces += mod.spacesModifier;
     }
   });
 
-  return { defenseBonus, rd, spaces };
+  return { defenseBonus, rd, spaces: Math.max(0, spaces) };
 }
 
 // Labels para UI

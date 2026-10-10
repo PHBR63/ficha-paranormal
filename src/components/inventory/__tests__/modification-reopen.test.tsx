@@ -129,7 +129,7 @@ describe('Munições separadas das armas', () => {
     fireEvent.click(screen.getByText('Explosiva', { exact: true }));
     expect(screen.getByText('→ Cat I')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Aplicar Modificações' }));
-    await waitFor(() => expect(save).toHaveBeenCalledWith(['explosiva']));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(['explosiva'], false));
     view.rerender(<AmmoModificationModal {...props} currentModifications={['explosiva']} />);
     expect(screen.getAllByRole('checkbox')[1]).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Aplicar Modificações' })).toBeDisabled();
@@ -137,6 +137,37 @@ describe('Munições separadas das armas', () => {
     fireEvent.click(screen.getByText('Dum dum', { exact: true }));
     expect(screen.getByText('→ Cat II')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Aplicar Modificações' }));
-    await waitFor(() => expect(save).toHaveBeenLastCalledWith(['explosiva', 'dum_dum']));
+    await waitFor(() => expect(save).toHaveBeenLastCalledWith(['explosiva', 'dum_dum'], false));
+  });
+});
+
+
+describe('Escolhas de acessórios conforme o Livro Base', () => {
+  const checkbox = (name: string) => within(screen.getByText(name, { exact: true }).closest('.flex.items-start')!).getByRole('checkbox');
+  it('bloqueia função adicional sem perícia e libera Aprimorado separado por função', async () => {
+    const save = vi.fn();
+    render(<AccessoryModificationModal open itemName="Utensílio" catalogId="utensilio" itemCategory="I" itemSpaces={1}
+      currentModifications={['aprimorado']} currentConfiguration={{ primarySkill: 'atualidades' }} onOpenChange={vi.fn()} onApplyModifications={save} />);
+    expect(checkbox('Aprimorado')).toBeDisabled();
+    expect(checkbox('Aprimorado — função adicional')).toBeDisabled();
+    fireEvent.click(checkbox('Função Adicional'));
+    expect(checkbox('Aprimorado — função adicional')).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Aplicar Modificações' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Perícia de Função Adicional'), { target: { value: 'tecnologia' } });
+    fireEvent.click(checkbox('Aprimorado — função adicional'));
+    expect(screen.getByText('→ Cat IV')).toBeInTheDocument();
+    expect(screen.getByText(/Tecnologia: \+5 previsto/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar Modificações' }));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(['aprimorado', 'funcao_adicional', 'aprimorado_adicional'], { primarySkill: 'atualidades', additionalSkill: 'tecnologia' }));
+  });
+  it('Instrumental exige kit válido e não oferece perícias sem kit', () => {
+    render(<AccessoryModificationModal open itemName="Kit" catalogId="kit_pericia" itemCategory="0" itemSpaces={1}
+      currentModifications={[]} onOpenChange={vi.fn()} onApplyModifications={vi.fn()} />);
+    expect(checkbox('Aprimorado')).toBeDisabled();
+    fireEvent.click(checkbox('Instrumental'));
+    expect(screen.getByRole('button', { name: 'Aplicar Modificações' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Kit de Instrumental'), { target: { value: 'enganacao' } });
+    expect(screen.getByRole('button', { name: 'Aplicar Modificações' })).toBeEnabled();
+    expect(screen.queryByRole('option', { name: 'Sobrevivência' })).not.toBeInTheDocument();
   });
 });

@@ -6,6 +6,9 @@ import type { WeaponEntry } from './MobileCombatPanel';
 type MobileWeaponInventoryData = Parameters<typeof normalizeWeaponTypeForDisplay>[0] &
   Pick<InventoryItem, 'id' | 'name' | 'ammoCurrent' | 'ammoMax' | 'favoriteAbilityId'> & {
     damage?: string;
+    appliedModifications?: string[];
+    attackBonus?: number;
+    specialEffects?: string[];
     critical?: number | string;
     criticalRange?: number | string;
     criticalMultiplier?: number | string;
@@ -28,6 +31,9 @@ export function toMobileWeaponEntry(item: MobileWeaponInventoryData): WeaponEntr
       ? `x${item.criticalMultiplier}`
       : item.criticalMultiplier || 'x2',
     range: item.range,
+    appliedModifications: item.appliedModifications,
+    modificationAttackBonus: item.attackBonus,
+    modificationEffects: item.specialEffects,
     ammoCurrent: item.ammoCurrent,
     ammoMax: item.ammoMax,
     ammoType: item.ammoType,

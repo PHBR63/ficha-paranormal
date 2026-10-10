@@ -6,6 +6,7 @@ import { rollSkillTest } from '@/lib/dice-roller';
 import { CombatWeaponsTable } from '../CombatWeaponsTable';
 import { getTrackEffects } from '@/lib/effects/track-effects-adapter';
 import { consolidateEffects } from '@/lib/unified-effects-engine';
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 vi.mock('@/hooks/useCombatFeedback', () => ({ useCombatFeedback: () => ({ triggerRoll: vi.fn(), triggerFumble: vi.fn(), triggerCriticalMiss: vi.fn(), triggerCritical: vi.fn(), triggerHit: vi.fn(), triggerMiss: vi.fn() }) }));
 
 vi.mock('../SpecialAttackSelector', () => ({
@@ -187,5 +188,45 @@ describe.each([
     expect(confirm.mock.calls[0][0]).toBe(confirm.mock.calls[1][0]);
     expect(confirm.mock.calls[0][0]).toEqual(expect.objectContaining({ expectedPE: 0, expectedCost: 2,
       selection: expect.objectContaining({ weaponId: 'test', specialAttackIncrements: 1 }) }));
+  });
+});
+
+
+describe.each([['desktop', CombatRollModal], ['mobile', MobileCombatRollModal]] as const)('Modificações e munição no combate: %s', (_name, Modal) => {
+  it('inclui Alongada no ataque e o pacote escolhido no dano/histórico', async () => {
+    const complete = vi.fn();
+    render(<Modal {...props} weapon={{ ...props.weapon, type: 'Disparo', damage: '2d6', ammoType: 'balas_longas', modificationAttackBonus: 2 }}
+      ammunition={[{ id: 'ammo', name: 'Balas modificadas', catalogType: 'municao', catalogId: 'municao_longa', appliedAmmoModifications: ['dum_dum', 'explosiva'] }]}
+      onConfirmAttack={vi.fn().mockResolvedValue(true)} onPEChange={vi.fn()} onRollComplete={complete} />);
+    fireEvent.change(screen.getByLabelText('Munição usada neste ataque'), { target: { value: 'ammo' } });
+    expect(screen.getByText(/Dum dum: \+1/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(rollSkillTest).toHaveBeenCalledWith(expect.objectContaining({ otherBonuses: expect.any(Number) })));
+    // O teste valida o bônus sem depender do resultado aleatório do d20.
+    const config = vi.mocked(rollSkillTest).mock.calls.at(-1)![0];
+    expect(config.otherBonuses).toBe(7);
+    await waitFor(() => expect(screen.getByRole('button', { name: /rolar dano/i })).toBeEnabled(), { timeout: 5000 });
+    fireEvent.click(screen.getByRole('button', { name: /rolar dano/i }));
+    await waitFor(() => expect(complete).toHaveBeenCalledWith(expect.objectContaining({ type: 'damage', label: expect.stringContaining('Balas modificadas'), extraDice: 2 })));
+  });
+  it('Calibre Grosso bloqueia ataque sem pacote compatível', () => {
+    render(<Modal {...props} weapon={{ ...props.weapon, type: 'Disparo', ammoType: 'balas_longas', appliedModifications: ['calibre_grosso'] }}
+      ammunition={[{ id: 'normal', name: 'Normais', catalogId: 'municao_longa', catalogType: 'municao' }]} onConfirmAttack={vi.fn()} onPEChange={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /rolar ataque/i })).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent('Calibre Grosso exige');
+  });
+  it('Dum dum aumenta o crítico e Explosiva mantém apenas dois dados extras', async () => {
+    vi.mocked(rollSkillTest).mockImplementationOnce(() => ({ dice: [20], total: 25, keptDice: 20, skillBonus: 5, otherBonuses: 0, extraDice: 0, isDisadvantage: false, timestamp: new Date(), type: 'attack', label: 'Ataque', isCritical: true }));
+    const complete = vi.fn();
+    render(<Modal {...props} weapon={{ ...props.weapon, type: 'Disparo', damage: '2d6', critical: '20', criticalMultiplier: '2', ammoType: 'balas_longas' }}
+      ammunition={[{ id: 'crit-ammo', name: 'Pacote crítico', catalogType: 'municao', catalogId: 'municao_longa', appliedAmmoModifications: ['dum_dum', 'explosiva'] }]}
+      onConfirmAttack={vi.fn().mockResolvedValue(true)} onPEChange={vi.fn()} onRollComplete={complete} />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Munição usada neste ataque' }), { target: { value: 'crit-ammo' } });
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /rolar dano/i })).toBeEnabled(), { timeout: 5000 });
+    fireEvent.click(screen.getByRole('button', { name: /rolar dano/i }));
+    await waitFor(() => expect(complete).toHaveBeenCalledWith(expect.objectContaining({ type: 'damage', extraDice: 2, isCritical: true })));
+    const damage = complete.mock.calls.map(([event]) => event).find(event => event.type === 'damage');
+    expect(damage.dice).toHaveLength(8); // 2d6 ×3, mais 2d6 que não multiplicam.
   });
 });

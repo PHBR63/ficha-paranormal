@@ -1,3 +1,4 @@
+import { getModificationCategoryError } from '@/lib/inventory-modifications';
 import { getArmorModificationConflict } from '@/lib/catalogs/armor-catalog';
 /**
  * Modal de Modificações para Proteções
@@ -66,6 +67,8 @@ export function ArmorModificationModal({
 }: ArmorModificationModalProps) {
   const [selectedMods, setSelectedMods] = useState<ArmorModification[]>(() => [...new Set(currentModifications)]);
 
+  const categoryError = getModificationCategoryError(armor.category, selectedMods.length);
+
   const [isApplying, setIsApplying] = useState(false);
   // Abrir de novo ou receber a ficha atualizada deve refletir o registro persistido.
   useEffect(() => {
@@ -113,7 +116,7 @@ export function ArmorModificationModal({
   // Aplicar modificações
   const handleApply = async () => {
     if (hasConflict) return;
-    if (isApplying || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))) return;
+    if (categoryError || isApplying || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))) return;
     setIsApplying(true);
     try {
       await onApplyModifications([...new Set([...currentModifications, ...selectedMods])]);
@@ -140,6 +143,7 @@ export function ArmorModificationModal({
         </MobileModalHeader>
 
         <MobileModalBody className="px-4 sm:px-6 py-4 flex-1 overflow-y-auto">
+          {categoryError && <p role="alert" className="text-amber-300 text-sm mb-3">{categoryError}</p>}
           {/* Resumo da proteção */}
           <div className="p-3 rounded-lg bg-muted/30 border border-border mb-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -163,7 +167,7 @@ export function ArmorModificationModal({
               <div className="text-center">
                 <div className="text-muted-foreground text-xs mb-1">Defesa</div>
                 <div className="flex items-center justify-center gap-1">
-                  <span className="font-bold text-primary">+{modifiedStats.defenseBonus}</span>
+                  <span className="font-bold text-foreground">+{modifiedStats.defenseBonus}</span>
                   {modifiedStats.defenseBonus !== armor.defenseBonus && (
                     <ArrowUp className="w-3 h-3 text-green-400" />
                   )}
@@ -255,7 +259,7 @@ export function ArmorModificationModal({
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground mt-1">{mod.description}</p>
-                      <p className="text-xs text-primary/80 mt-1 font-medium">Efeito: {mod.effect}</p>
+                      <p className="text-xs text-foreground mt-1 font-medium">Efeito: {mod.effect}</p>
                     </div>
                   </div>
                 </div>
@@ -277,7 +281,7 @@ export function ArmorModificationModal({
             </Button>
             <Button
               onClick={handleApply}
-              disabled={isApplying || !hasNewMods || hasConflict}
+              disabled={!!categoryError || isApplying || !hasNewMods || hasConflict}
               className="flex-1"
             >
               <Wrench className="w-4 h-4 mr-2" />

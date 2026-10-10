@@ -1,3 +1,4 @@
+import { getModificationCategoryError } from '@/lib/inventory-modifications';
 /**
  * Modal de Modificações para Munições
  * Baseado na Tabela 3.5 do livro oficial - Ordem Paranormal RPG
@@ -42,7 +43,8 @@ interface AmmoModificationModalProps {
   itemName: string;
   itemCategory: string;
   currentModifications: AmmoModification[];
-  onApplyModifications: (modifications: AmmoModification[]) => void | Promise<void>;
+  currentCalibreGrosso?: boolean;
+  onApplyModifications: (modifications: AmmoModification[], calibreGrosso?: boolean) => void | Promise<void>;
 }
 
 export function AmmoModificationModal({
@@ -51,9 +53,16 @@ export function AmmoModificationModal({
   itemName,
   itemCategory,
   currentModifications,
+  currentCalibreGrosso = false,
   onApplyModifications,
 }: AmmoModificationModalProps) {
   const [selectedMods, setSelectedMods] = useState<AmmoModification[]>(() => [...new Set(currentModifications)]);
+
+  const [calibreGrosso, setCalibreGrosso] = useState(currentCalibreGrosso);
+  useEffect(() => { if (open) setCalibreGrosso(currentCalibreGrosso); }, [open, currentCalibreGrosso]);
+  const calibreChanged = calibreGrosso !== currentCalibreGrosso;
+
+  const categoryError = getModificationCategoryError(itemCategory, selectedMods.length);
 
   const [isApplying, setIsApplying] = useState(false);
   // Abrir de novo ou receber a ficha atualizada deve refletir o registro persistido.
@@ -88,10 +97,10 @@ export function AmmoModificationModal({
 
   // Aplicar
   const handleApply = async () => {
-    if (isApplying || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))) return;
+    if (categoryError || isApplying || (!calibreChanged && !selectedMods.some(mod => !alreadyAppliedMods.has(mod)))) return;
     setIsApplying(true);
     try {
-      await onApplyModifications([...new Set([...currentModifications, ...selectedMods])]);
+      await onApplyModifications([...new Set([...currentModifications, ...selectedMods])], calibreGrosso);
       onOpenChange(false);
     } catch {
       // O painel apresenta a falha; manter a seleção aberta permite repetir.
@@ -114,6 +123,7 @@ export function AmmoModificationModal({
         </MobileModalHeader>
 
         <MobileModalBody className="px-4 sm:px-6 py-4 flex-1 overflow-y-auto">
+          {categoryError && <p role="alert" className="text-amber-300 text-sm mb-3">{categoryError}</p>}
           {/* Resumo da munição */}
           <div className="p-3 rounded-lg bg-muted/30 border border-border mb-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -195,6 +205,10 @@ export function AmmoModificationModal({
               );
             })}
           </div>
+          <label className="flex items-start gap-2 text-sm text-foreground mb-4">
+            <input aria-label="Munição de calibre grosso" type="checkbox" checked={calibreGrosso} onChange={event => setCalibreGrosso(event.target.checked)} />
+            <span>Munição de calibre grosso. Mesma categoria da normal; somente para armas com Calibre Grosso. Não conta como uma melhoria adicional.</span>
+          </label>
         </MobileModalBody>
 
         <MobileModalFooter className="p-4 sm:p-6 shrink-0">
@@ -204,7 +218,7 @@ export function AmmoModificationModal({
             </Button>
             <Button
               onClick={handleApply}
-              disabled={isApplying || !hasNewMods}
+              disabled={!!categoryError || isApplying || (!hasNewMods && !calibreChanged)}
               className="flex-1"
             >
               <Wrench className="w-4 h-4 mr-2" />
