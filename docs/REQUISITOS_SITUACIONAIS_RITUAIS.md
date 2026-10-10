@@ -63,6 +63,7 @@ Para a fonte, registros preservados e verificáveis da criação distinguem o gr
 | `src/lib/character-audit-engine.ts` | Usa o mesmo limite da ficha, sem exigir remoção de extras legítimos. Recebe também a proveniência preservada. |
 | `src/components/character/mobile/MobilePowersTab.tsx` | Mostra a parcela de extras registrados no contador móvel. |
 | `src/lib/__tests__/known-ritual-limit.test.ts` | Confere ausência de proveniência, fontes inválidas, duplicação, capacidade e excesso real na auditoria. |
+| `src/lib/__tests__/sanity-audit-protection.test.ts` | Garante conferência manual e bloqueio de seleção antiga antes de escrita que restauraria SAN indevidamente. |
 
 ## Fluxo e dados
 
@@ -82,6 +83,8 @@ O gatilho protege `characters.creation_data` de inserção/alteração direta pe
 ## Como testar
 
 Conferência visual complementar: o resumo de Lâmina deve mencionar o conhecimento anterior confirmado, inclusive fora do modal. O contador e a auditoria da ficha do Graduado devem reconhecer somente rituais extras com fonte preservada, ainda conhecidos e compatíveis com trilha, NEX, círculo e capacidade; metadados ausentes ou adulterados não concedem uma cota genérica. A correção não remove rituais nem amplia o limite comum de aprendizagem.
+
+Proteção localizada durante a UAT: a auditoria não pode restaurar automaticamente SAN máxima divergente da fórmula de criação. Um valor inferior pode decorrer de perdas permanentes legítimas (inclusive do Custo do Paranormal). Sem reconciliação completa do histórico, mostrar conferência manual e bloquear a correção automática, também para um pedido antigo já selecionado. Um valor superior continua sendo apontado como divergência, mas exige revisão manual. Re-auditar não modifica recursos.
 
 Executar a suíte dos modais, serviços, hooks e histórico; verificar tipos e build. No banco, executar a migration em transação de ensaio junto de `ritual_situational_requirements.sql`, revertendo inclusive as definições ao final. Repetir os contratos de orçamento, concentração, sustentação de arma e criação validada.
 
