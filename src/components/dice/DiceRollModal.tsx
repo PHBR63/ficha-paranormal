@@ -18,6 +18,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { getSkillTrainingBonus } from '@/lib/skill-training';
+import { getSkillTrainingRequirement } from '@/lib/skill-test-requirements';
 import { getAttributeDicePool } from '@/lib/attribute-dice-pool';
 import { getConditionTestDicePenalty, resolveConditionTestAttribute } from '@/lib/conditions/condition-test-penalty';
 import confetti from 'canvas-confetti';
@@ -89,6 +91,8 @@ interface DiceRollModalProps {
   currentSkillTrainingLevel?: SkillTrainingLevel;
   // Bônus de perícias do personagem (para swapToSkill como Impostor/Motor de Busca)
   characterSkills?: Record<string, number>;
+  // Graus persistidos 0–3, separados dos bônus numéricos de characterSkills.
+  characterSkillTraining?: Record<string, number>;
   // Conhecimento Aplicado: se ativo, próximo teste usa Intelecto (exceto Luta/Pontaria)
   conhecimentoAplicadoAtivo?: boolean;
   onConhecimentoAplicadoUsed?: () => void;
@@ -158,6 +162,7 @@ export function DiceRollModal({
   onPEChange,
   currentSkill,
   currentSkillTrainingLevel, // Nível de treinamento atual (para filtrar Eclético)
+  characterSkillTraining,
   characterSkills = {}, // Bônus de perícias do personagem
   // Conhecimento Aplicado
   conhecimentoAplicadoAtivo = false,
@@ -167,14 +172,16 @@ export function DiceRollModal({
   activeConditions = [],
 }: DiceRollModalProps) {
   const sourceTrainingBonus = useMemo(() => {
+    if (characterSkillTraining) return getSkillTrainingBonus(characterSkillTraining, currentSkill || label);
     const trainingSources = bonusSources.filter(source => source.type === 'skill' && Number.isFinite(source.value));
     return trainingSources.length > 0 ? trainingSources.reduce((sum, source) => sum + source.value, 0) : undefined;
-  }, [bonusSources]);
+  }, [bonusSources, characterSkillTraining, currentSkill, label]);
   // Bônus de poder não eleva o treinamento usado para os requisitos do Eclético.
   const effectiveTrainingLevel: SkillTrainingLevel = useMemo(() => {
     if (currentSkillTrainingLevel) return currentSkillTrainingLevel;
+    if (characterSkillTraining) return bonusToTrainingLevel(getSkillTrainingBonus(characterSkillTraining, currentSkill || label));
     return bonusToTrainingLevel(sourceTrainingBonus ?? skillBonus);
-  }, [currentSkillTrainingLevel, sourceTrainingBonus, skillBonus]);
+  }, [currentSkillTrainingLevel, characterSkillTraining, currentSkill, label, sourceTrainingBonus, skillBonus]);
   // === FASE DE ROLAGEM ===
   // 'preparing' = modal aberto, aguardando seleção de poderes
   // 'rolling' = animação de dados
@@ -310,6 +317,7 @@ export function DiceRollModal({
   }, [shouldUseConhecimentoAplicado, activatedPowerEffects.skillSwap, activatedPowerEffects.attributeSwap, intellect, strength, agility, presence, vigor, attributeValue]);
   
   const testedSkill = activatedPowerEffects.skillSwap || currentSkill || label;
+  const trainingRequirement = getSkillTrainingRequirement(testedSkill, characterSkillTraining ?? {}, activatedPowerEffects.ecleticoBonus);
   const testedAttribute = resolveConditionTestAttribute(testedSkill, SKILL_ATTRIBUTE_MAP, (shouldUseConhecimentoAplicado ? 'intellect' : undefined) || activatedPowerEffects.attributeSwap);
   const dicePenalty = getConditionTestDicePenalty(characterConfig?.activeConditions ?? activeConditions, testedAttribute as keyof SkillRollCharacterConfig['attributes'], testedSkill);
   const dicePool = getAttributeDicePool(effectiveAttribute > 0 ? effectiveAttribute + extraDice : effectiveAttribute, dicePenalty);
@@ -319,6 +327,7 @@ export function DiceRollModal({
   const executeRoll = useCallback(() => {
     if (confirmingPE) return;
     if (pendingConfirmation) { void confirmRoll(); return; }
+    if (trainingRequirement) return;
     // Limpa qualquer animação anterior
     if (animationRef.current) {
       clearInterval(animationRef.current);
@@ -438,6 +447,7 @@ export function DiceRollModal({
     presence,
     vigor,
     label, 
+    trainingRequirement,
     onRollComplete, 
     activatedPowerEffects, 
     getTotalPECost, 
@@ -587,6 +597,7 @@ export function DiceRollModal({
             >
               <Button 
                 onClick={handleStartRoll}
+                disabled={Boolean(trainingRequirement)}
                 size="lg"
                 className="w-full max-w-xs gap-2 font-display text-lg tracking-wider"
               >
@@ -751,6 +762,7 @@ export function DiceRollModal({
             </div>
           )}
 
+          {trainingRequirement && <p role="alert" className="px-4 text-sm text-destructive">{trainingRequirement}</p>}
           {confirmationError && <p role="alert" className="text-sm text-destructive">{confirmationError}</p>}
           {/* Botões de ação */}
           <div className="flex gap-3 pt-4">

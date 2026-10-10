@@ -30,7 +30,7 @@ interface MobileSkillsTabProps {
 }
 
 // Altura fixa de cada item para virtualização (em pixels)
-const SKILL_ITEM_HEIGHT = 52;
+const SKILL_ITEM_HEIGHT = 64;
 
 // Item de perícia memoizado - agora com suporte a níveis de treinamento
 const SkillItem = memo(function SkillItem({
@@ -82,6 +82,7 @@ const SkillItem = memo(function SkillItem({
             !isTrained && "text-muted-foreground"
           )}>
             {SKILLS.find(entry => entry.id === skill)?.name ?? skill}
+            {SKILLS.find(entry => entry.id === skill)?.requiresTraining && !isTrained && <span className="block text-[10px] text-destructive normal-case">Exige treinamento</span>}
           </span>
           {isTrained && (
             <span className={cn(

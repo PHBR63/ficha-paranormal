@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { Filter, Info } from '@/components/icons/ordem-icons';
 import { ChevronDown, Search, X } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
+import { getSkillTrainingLevel } from '@/lib/skill-training';
 import { SKILLS, TRAINING_BONUS_MAP, TRAINING_LABELS } from '@/lib/character-data';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -130,7 +131,7 @@ function SkillsByAttributeComponent({
         if (!name.includes(query)) return;
       }
       // Filtrar apenas treinadas
-      if (showOnlyTrained && !(skills[skill.id] > 0)) return;
+      if (showOnlyTrained && !(getSkillTrainingLevel(skills, skill.id) > 0)) return;
       
       if (grouped[skill.attribute]) {
         grouped[skill.attribute].push(skill);
@@ -240,7 +241,7 @@ function SkillsByAttributeComponent({
           const isOpen = openGroups[attr] || searchQuery.length > 0;
           
           // Contar perícias treinadas
-          const trainedCount = attrSkills.filter(s => skills[s.id] > 0).length;
+          const trainedCount = attrSkills.filter(s => getSkillTrainingLevel(skills, s.id) > 0).length;
           
           return (
             <Collapsible
@@ -297,7 +298,7 @@ function SkillsByAttributeComponent({
                 <TooltipProvider delayDuration={300}>
                   {attrSkills.map((skill) => {
                     // Nível de treinamento: 0=Destreinado, 1=Treinado, 2=Veterano, 3=Expert
-                    const trainingLevel = skills[skill.id] || 0;
+                    const trainingLevel = getSkillTrainingLevel(skills, skill.id);
                     const isTrained = trainingLevel > 0;
                     // Bônus de treinamento baseado no nível real (0, 5, 10, 15)
                     const trainingBonus = TRAINING_BONUS_MAP[trainingLevel] || 0;
@@ -343,10 +344,12 @@ function SkillsByAttributeComponent({
                     return (
                       <Tooltip key={skill.id}>
                         <TooltipTrigger asChild>
-                          <div
+                          <button
+                            type="button"
+                            aria-label={`Testar ${skill.name}${skill.requiresTraining && !isTrained ? ": exige treinamento" : ""}`}
                             className={cn(
                               "group flex items-center justify-between",
-                              "p-2 rounded-lg cursor-pointer",
+                              "w-full min-h-11 text-left p-2 rounded-lg cursor-pointer",
                               "transition-all duration-200",
                               isExpert
                                 ? "bg-amber-500/20 hover:bg-amber-500/30"
@@ -372,6 +375,7 @@ function SkillsByAttributeComponent({
                                 (isTrained || classPowerBonus > 0) ? "font-medium" : "text-muted-foreground"
                               )}>
                                 {skill.name}
+                                {skill.requiresTraining && !isTrained && <span className="block text-[10px] text-destructive">Exige treinamento</span>}
                               </span>
                               {isTrained && (
                                 <span 
@@ -422,7 +426,7 @@ function SkillsByAttributeComponent({
                                 <D20Icon className="w-4 h-4 text-destructive" />
                               </div>
                             </div>
-                          </div>
+                          </button>
                         </TooltipTrigger>
                         <TooltipContent side="left" className="max-w-[200px]">
                           <div className="space-y-1">

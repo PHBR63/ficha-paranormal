@@ -2518,6 +2518,7 @@ export function MobileCharacterSheet({
         presence={character.presence}
         vigor={character.vigor}
         currentSkill={rollTestedAttribute}
+        characterSkillTraining={character.skills || {}}
         characterSkills={Object.fromEntries(
           Object.entries(bonusSummary.skills).map(([k, v]) => [k, v.total])
         )}
