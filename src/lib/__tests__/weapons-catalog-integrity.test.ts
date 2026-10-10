@@ -1117,3 +1117,20 @@ it('Dum dum e Explosiva não são modificações aplicáveis à arma', () => {
   expect(canApplyModification(weapon, 'explosiva')).toBe(false);
   expect(getAvailableModifications(weapon).map(mod => mod.id)).not.toContain('explosiva');
 });
+
+// Livro Base v1.3, p. 60: Discreta segue o aumento geral de categoria em I.
+describe('Discreta: categoria e ocupação', () => {
+  it.each([
+    ['katana', 'discreta_melee'],
+    ['fuzil_assalto', 'discreta_firearm'],
+  ] as const)('%s aumenta uma categoria e reduz um espaço, sem acumular repetições', (id, mod) => {
+    const base = { ...requireWeapon(id), category: 'II' as const, spaces: 2 };
+    const once = calculateModifiedWeaponStats(base, [mod]);
+    const twice = calculateModifiedWeaponStats(base, [mod, mod]);
+    expect(once.finalCategory).toBe('III');
+    expect(once.finalSpaces).toBe(1);
+    expect(twice).toEqual(once);
+    expect(calculateModifiedWeaponStats({ ...base, spaces: 1 }, [mod]).finalSpaces).toBe(0);
+    expect(calculateModifiedWeaponStats({ ...base, category: 'IV' }, [mod]).finalCategory).toBe('IV');
+  });
+});

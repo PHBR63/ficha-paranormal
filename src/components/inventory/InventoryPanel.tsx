@@ -879,7 +879,7 @@ export function InventoryPanel({
       critical: (weaponToModify as any).baseCritical || (weaponToModify as any).critical || 20,
       criticalMultiplier: (weaponToModify as any).criticalMultiplier || 2,
       range: (weaponToModify as any).range,
-      spaces: weaponToModify.slots,
+      spaces: (weaponToModify as any).baseSpaces ?? weaponToModify.slots,
       proficiency: (weaponToModify as any).proficiency || 'simples',
       properties: (weaponToModify as any).properties,
       special: (weaponToModify as any).special,
@@ -919,6 +919,9 @@ export function InventoryPanel({
           baseCategory: baseWeapon.category,
           baseDamage: baseWeapon.damage,
           baseCritical: baseWeapon.critical,
+          // Reabrir o modal deve recalcular a partir da ocupação original.
+          baseSpaces: baseWeapon.spaces,
+          slots: modifiedStats.finalSpaces,
           // Aplicar estatísticas modificadas
           damage: modifiedStats.damage,
           critical: modifiedStats.criticalMargin,
@@ -1415,7 +1418,7 @@ export function InventoryPanel({
             critical: (weaponToModify as any).baseCritical || (weaponToModify as any).critical || 20,
             criticalMultiplier: (weaponToModify as any).criticalMultiplier || 2,
             range: (weaponToModify as any).range,
-            spaces: weaponToModify.slots,
+            spaces: (weaponToModify as any).baseSpaces ?? weaponToModify.slots,
             proficiency: (weaponToModify as any).proficiency || 'simples',
             properties: (weaponToModify as any).properties,
             special: (weaponToModify as any).special,
