@@ -1,3 +1,4 @@
+import { getArmorModificationConflict } from '@/lib/catalogs/armor-catalog';
 /**
  * Modal de Modificações para Proteções
  * Baseado na Tabela 3.7 do livro oficial - Ordem Paranormal RPG
@@ -100,7 +101,7 @@ export function ArmorModificationModal({
 
   // Toggle de modificação
   const toggleModification = (modId: ArmorModification) => {
-    if (alreadyAppliedMods.has(modId)) return;
+    if (alreadyAppliedMods.has(modId) || (!selectedMods.includes(modId) && getArmorModificationConflict(modId, selectedMods))) return;
 
     setSelectedMods(prev =>
       prev.includes(modId)
@@ -206,6 +207,8 @@ export function ArmorModificationModal({
             {availableMods.map(mod => {
               const isSelected = selectedMods.includes(mod.id);
               const isLocked = alreadyAppliedMods.has(mod.id);
+              const incompatibleWith = !isSelected ? getArmorModificationConflict(mod.id, selectedMods) : undefined;
+              const isUnavailable = isLocked || !!incompatibleWith;
               const Icon = MOD_ICONS[mod.id];
 
               return (
@@ -215,19 +218,21 @@ export function ArmorModificationModal({
                     p-3 rounded-lg border transition-all
                     ${isLocked
                       ? 'bg-green-500/10 border-green-500/50 opacity-75 cursor-default'
+                      : incompatibleWith
+                        ? 'bg-warning/10 border-warning/40 cursor-not-allowed'
                       : isSelected
                         ? 'bg-primary/10 border-primary/50 cursor-pointer'
                         : 'bg-muted/20 border-border hover:border-primary/30 cursor-pointer'
                     }
                   `}
-                  onClick={isLocked ? undefined : () => toggleModification(mod.id)}
+                  onClick={isUnavailable ? undefined : () => toggleModification(mod.id)}
                 >
                   <div className="flex items-start gap-3">
                     <Checkbox
                       onClick={event => event.stopPropagation()}
                       checked={isSelected}
-                      onCheckedChange={isLocked ? undefined : () => toggleModification(mod.id)}
-                      disabled={isLocked}
+                      onCheckedChange={isUnavailable ? undefined : () => toggleModification(mod.id)}
+                      disabled={isUnavailable}
                       className="mt-1"
                     />
                     <div className="flex-1 min-w-0">
@@ -244,6 +249,11 @@ export function ArmorModificationModal({
                           </Badge>
                         )}
                       </div>
+                      {incompatibleWith && (
+                        <p className="text-xs text-warning mt-1" role="status">
+                          Incompatível com {incompatibleWith === 'reforcada' ? 'Reforçada' : 'Discreta'}. Escolha somente uma delas.
+                        </p>
+                      )}
                       <p className="text-xs text-muted-foreground mt-1">{mod.description}</p>
                       <p className="text-xs text-primary/80 mt-1 font-medium">Efeito: {mod.effect}</p>
                     </div>
