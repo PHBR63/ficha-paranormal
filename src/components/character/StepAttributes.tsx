@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Minus, Plus, AlertTriangle, Info, Heart, Zap, Brain } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { calculateDerivedStats, calculateDefense, getExtraAttributePoints } from '@/lib/character-data';
+import { getExtraAttributePoints } from '@/lib/character-data';
+import { inspectCharacterCreation } from '@/lib/character-creation-rules';
 import { getMaxAttributeByNex } from '@/lib/character-builder-engine';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import {
@@ -75,7 +76,7 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
     return entry ? entry[0] : null;
   });
 
-  // Limite máximo de atributo baseado no NEX (3 para NEX 5-15%, 4 para 20-35%, 5 para 40%+)
+  // Teto alcançável: 3 até NEX 15%, 4 de 20% a 45%, 5 a partir de 50%.
   const maxAttribute = getMaxAttributeByNex(formData.nex);
 
   // Cálculo de pontos disponíveis incluindo bônus por NEX
@@ -109,21 +110,10 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
 
   const hasMultipleZeros = zeroAttributes.length > 1;
 
-  // Preview stats based on current attributes
-  const previewStats = useMemo(() => {
-    if (!formData.characterClass) {
-      return null;
-    }
-    return calculateDerivedStats(
-      formData.characterClass,
-      formData.attributes.vigor,
-      formData.attributes.presence,
-      formData.nex,
-      formData.origin
-    );
-  }, [formData.characterClass, formData.attributes, formData.nex, formData.origin]);
-
-  const defense = calculateDefense(formData.attributes.agility);
+  // A edição de atributos preserva os bônus de origem, trilha e poderes da revisão.
+  const inspection = useMemo(() => inspectCharacterCreation(formData), [formData]);
+  const previewStats = formData.characterClass ? inspection.displayStats : null;
+  const defense = inspection.displayDefense;
 
   const updateAttribute = (attr: keyof typeof formData.attributes, delta: number) => {
     const currentValue = formData.attributes[attr];
@@ -407,13 +397,13 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ scale: 1.01, x: 4 }}
                 className={cn(
-                  'ordo-panel p-4 flex items-center justify-between transition-all',
+                  'ordo-panel p-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between transition-all',
                   isZero && 'border-paranormal/50 bg-paranormal/5',
                   exceedsLimit && 'border-destructive/50 bg-destructive/5 animate-pulse'
                 )}
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                     <span className="font-display text-lg tracking-wider">{attr.name}</span>
                     <span 
                       className="text-sm font-display font-bold px-2.5 py-1 rounded tracking-wider"
@@ -428,7 +418,7 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                     {/* Info tooltip */}
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button className="text-muted-foreground hover:text-foreground transition-colors">
+                        <button type="button" aria-label={`Como ${attr.name} funciona`} className="min-w-11 min-h-11 inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
                           <Info className="w-4 h-4" />
                         </button>
                       </TooltipTrigger>
@@ -460,15 +450,16 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                   <p className="text-xs text-muted-foreground">{attr.description}</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 self-end sm:self-auto">
                   <Button
                     variant="outline"
                     size="icon"
                     className={cn(
-                      'w-8 h-8 border-border',
+                      'w-11 h-11 shrink-0 border-border',
                       value === 1 && canReduceToZero && 'border-paranormal/50 hover:border-paranormal'
                     )}
                     onClick={() => updateAttribute(attr.id as keyof typeof formData.attributes, -1)}
+                    aria-label={`Reduzir ${attr.name}`}
                     disabled={value <= minValue}
                   >
                     <Minus className="w-4 h-4" />
@@ -514,7 +505,8 @@ export function StepAttributes({ formData, updateFormData }: StepAttributesProps
                   <Button
                     variant="outline"
                     size="icon"
-                    className="w-8 h-8 border-border"
+                    className="w-11 h-11 shrink-0 border-border"
+                    aria-label={`Aumentar ${attr.name}`}
                     onClick={() => updateAttribute(attr.id as keyof typeof formData.attributes, 1)}
                     disabled={value >= maxAttribute || remainingPoints <= 0}
                   >

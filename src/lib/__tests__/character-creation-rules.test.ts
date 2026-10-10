@@ -4,6 +4,7 @@ import {
   creationSteps,
   creationParanormalPowers,
   creationInventory,
+  creationNameIssue,
 } from "../character-creation-rules";
 import { calculateDerivedStats } from "../character-data";
 import {
@@ -16,6 +17,14 @@ import { characterCreationPayload } from "@/services/character-creation-service"
 import { validCreation } from "@/test/fixtures/characterCreation";
 import { ALL_RITUALS } from "@/lib/rituals/legacy-exports";
 describe("Contrato de criação Base", () => {
+  it.each([
+    ['QA — Especialista', null],
+    ["D'Angelo", null],
+    ['A', 'Informe um nome com 2 a 100 caracteres.'],
+    ['a'.repeat(101), 'Informe um nome com 2 a 100 caracteres.'],
+  ])('valida o nome livre %s com limites do contrato', (name, issue) => {
+    expect(creationNameIssue(name)).toBe(issue);
+  });
   it.each(["Combatente", "Especialista"])(
     "aceita uma criação completa de %s em NEX 5",
     (id) =>

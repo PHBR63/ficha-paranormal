@@ -29,6 +29,8 @@ Todos os caminhos desta tabela são relativos à raiz do repositório. Arquivos 
 | `src/components/character/StepOrigin.tsx`, `StepClass.tsx`, `StepSkills.tsx`, `StepAbilities.tsx`, `StepRituals.tsx` | Integram os novos painéis ao formulário. A mudança de classe pede confirmação antes de limpar escolhas dependentes. |
 | `src/components/character/CharacterCreationStepper.tsx` | Recebe etapa/estado; fornece navegação com nomes acessíveis e alvos móveis de 44 px. |
 | `src/components/character/StatsPreviewWidget.tsx` | Recebe recursos e fontes de bônus; mostra prévia explicável da ficha. |
+| `src/components/character/StepAttributes.tsx`, `__tests__/StepAttributesCreation.test.tsx` | Usa a mesma prévia da revisão ao editar atributos, com ações rotuladas de 44 px; os testes conferem atualização e bônus paranormal exibido. |
+| `src/components/character/StepConcept.tsx` | Usa os limites do contrato para nomes livres, sem advertências contraditórias sobre pontuação. |
 | `src/components/character/StepReview.tsx` | Consome o contrato; exibe perícias, poderes, subescolhas, rituais e equipamentos efetivamente salvos. O comando de editar retorna à etapa correta. |
 | `src/hooks/useCharacterAutoSave.ts` | Recebe formulário, conta, campanha e estado ativo. Salva rascunho validado/específico por contexto; retorna restauração e erros de armazenamento. Não persiste arquivo/foto temporária. |
 | `src/services/character-creation-service.ts` | Converte formulário válido em payload canônico e chama `create_character_base`. Retorna ficha confirmada ou erro; não informa sucesso com vínculo incompleto. |

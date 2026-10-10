@@ -288,7 +288,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
                 {label}
               </Button>
             ))}
-            <Button
+            {ORIGINS.some(origin => (SUPPLEMENT_ORIGINS_LIST as readonly string[]).includes(origin.id)) && <Button
               variant={showOnlySupplement ? "default" : "outline"}
               size="sm"
               onClick={() => {
@@ -299,7 +299,7 @@ export function StepOrigin({ formData, updateFormData }: StepOriginProps) {
             >
               <BookMarked className="w-3 h-3" />
               Suplemento
-            </Button>
+            </Button>}
           </div>
         </div>
 

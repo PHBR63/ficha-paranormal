@@ -10,6 +10,7 @@ import type { CharacterFormData } from '@/pages/CharacterCreate';
 import { RuleBookTip } from './RuleBookTip';
 import { getRulebookContent } from '@/lib/rulebook-content';
 import { conceptFieldsSchema, type ConceptFields } from '@/lib/validation-schemas';
+import { creationNameIssue } from '@/lib/character-creation-rules';
 
 type FieldErrors = Partial<Record<keyof ConceptFields, string>>;
 
@@ -37,12 +38,12 @@ export function StepConcept({ formData, updateFormData, onOpenTemplateGallery }:
     field: keyof ConceptFields,
     value: string
   ) => {
-    // Valida apenas o campo específico
-    const fieldSchema = conceptFieldsSchema.shape[field];
-    const result = fieldSchema.safeParse(value);
-    
-    if (!result.success) {
-      const errorMessage = result.error.errors[0]?.message || 'Campo inválido';
+    // O nome usa o contrato da revisão; os outros campos preservam sua validação atual.
+    const result = conceptFieldsSchema.shape[field].safeParse(value);
+    const errorMessage = field === 'name'
+      ? creationNameIssue(value)
+      : result.success ? null : result.error.errors[0]?.message || 'Campo inválido';
+    if (errorMessage) {
       setFieldErrors(prev => ({ ...prev, [field]: errorMessage }));
     } else {
       setFieldErrors(prev => {
