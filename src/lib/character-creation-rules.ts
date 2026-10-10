@@ -63,6 +63,13 @@ export const creationSteps = (classId: string) => {
   return steps;
 };
 const validSkill = (id: string) => SKILLS.some((s) => s.id === id);
+
+/** Valida o nome livre da ficha com os mesmos limites aceitos pelo servidor. */
+export function creationNameIssue(name: string): string | null {
+  return name.trim().length < 2 || name.length > 100
+    ? "Informe um nome com 2 a 100 caracteres."
+    : null;
+}
 const distinct = (ids: string[]) => [...new Set(ids)];
 export function creationPowerMilestones(form: CharacterFormData): number[] {
   return [
@@ -267,8 +274,8 @@ export function inspectCharacterCreation(form: CharacterFormData) {
   const skills = creationSkillLevels(form);
   const issues: CreationIssue[] = [];
   const add = (step: string, message: string) => issues.push({ step, message });
-  if (form.name.trim().length < 2 || form.name.length > 100)
-    add("concept", "Informe um nome com 2 a 100 caracteres.");
+  const nameIssue = creationNameIssue(form.name);
+  if (nameIssue) add("concept", nameIssue);
   const attrs = validateAttributes(form.attributes, form.nex);
   if (!attrs.valid)
     add(
