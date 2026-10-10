@@ -22,3 +22,22 @@ export function preserveInventoryModifications<T extends object>(item: T): T {
 export function mergeItemModifications<T extends string>(installed: readonly T[], selected: readonly T[]): T[] {
   return [...new Set([...installed, ...selected])];
 }
+
+/** Identifica balas pelo catálogo; nomes exatos mantêm compatibilidade com itens antigos. */
+export function canModifyAmmunition(item: {
+  name: string; itemType?: string; catalogType?: string; catalogId?: string; ammoType?: string;
+}): boolean {
+  if (item.catalogType !== 'municao' && item.itemType !== 'consumable') return false;
+  if (item.catalogId) return ['municao_curta', 'municao_longa'].includes(item.catalogId);
+  if (item.ammoType) return ['balas_curtas', 'balas_longas'].includes(item.ammoType);
+  const name = item.name.replace(/\s*\(Mod\.\)$/, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  return ['municao curta', 'municao longa', 'balas curtas', 'balas longas'].includes(name);
+}
+
+/** Reúne IDs instalados para os indicadores de arma, proteção, equipamento e munição. */
+export function getInstalledItemModifications(item: object): string[] {
+  const fields = item as Record<string, unknown>;
+  return [...new Set(MODIFICATION_FIELDS.flatMap(field =>
+    Array.isArray(fields[field]) ? fields[field].filter((id): id is string => typeof id === 'string') : []
+  ))];
+}

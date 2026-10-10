@@ -114,3 +114,29 @@ describe('Compensador visível com requisito', () => {
     expect(checkbox('Compensador')).toHaveAttribute('data-state', 'checked');
   });
 });
+
+describe('Munições separadas das armas', () => {
+  it('não oferece Dum dum ou Explosiva no modal da arma de fogo', () => {
+    render(<WeaponModificationModal open weapon={ALL_WEAPONS.find(w => w.id === 'fuzil_assalto')!}
+      currentModifications={[]} onOpenChange={vi.fn()} onApplyModifications={vi.fn()} />);
+    expect(screen.queryByText('Explosiva', { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText('Dum dum', { exact: true })).not.toBeInTheDocument();
+  });
+  it('Explosiva aumenta a categoria da munição uma vez; reabrir mantém bloqueada e permite somente Dum dum', async () => {
+    const save = vi.fn();
+    const props = { open: true, itemName: 'Balas Curtas', itemCategory: '0', onOpenChange: vi.fn(), onApplyModifications: save };
+    const view = render(<AmmoModificationModal {...props} currentModifications={[]} />);
+    fireEvent.click(screen.getByText('Explosiva', { exact: true }));
+    expect(screen.getByText('→ Cat I')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar Modificações' }));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(['explosiva']));
+    view.rerender(<AmmoModificationModal {...props} currentModifications={['explosiva']} />);
+    expect(screen.getAllByRole('checkbox')[1]).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Aplicar Modificações' })).toBeDisabled();
+    expect(screen.getByText('→ Cat I')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Dum dum', { exact: true }));
+    expect(screen.getByText('→ Cat II')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar Modificações' }));
+    await waitFor(() => expect(save).toHaveBeenLastCalledWith(['explosiva', 'dum_dum']));
+  });
+});

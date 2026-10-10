@@ -1110,3 +1110,10 @@ describe('Sincronização Catálogo ↔ Sistema de Combate', () => {
     });
   });
 });
+
+it('Dum dum e Explosiva não são modificações aplicáveis à arma', () => {
+  const weapon = requireWeapon('fuzil_assalto');
+  expect(canApplyModification(weapon, 'dum_dum')).toBe(false);
+  expect(canApplyModification(weapon, 'explosiva')).toBe(false);
+  expect(getAvailableModifications(weapon).map(mod => mod.id)).not.toContain('explosiva');
+});

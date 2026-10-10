@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { preserveInventoryModifications, mergeItemModifications } from '../inventory-modifications';
+import { preserveInventoryModifications, mergeItemModifications, canModifyAmmunition, getInstalledItemModifications } from '../inventory-modifications';
 import { ALL_WEAPONS, calculateModifiedWeaponStats, getModifiedCategory } from '../catalogs/weapons-catalog';
 import { BASE_ARMORS, calculateModifiedStats } from '../catalogs/armor-catalog';
 
@@ -23,5 +23,24 @@ describe('Modificações únicas por equipamento', () => {
     const weapon = ALL_WEAPONS.find(w => w.type === 'melee' && w.category !== 'especial')!;
     expect(calculateModifiedWeaponStats(weapon, ['certeira', 'certeira'])).toEqual(calculateModifiedWeaponStats(weapon, ['certeira']));
     expect(getModifiedCategory('0', ['alongada', 'alongada'])).toBe('I');
+  });
+});
+
+describe('Munição modificável e indicadores', () => {
+  it.each(['municao_curta', 'municao_longa'])('permite %s pelo catálogo mesmo com nome editado', catalogId => {
+    expect(canModifyAmmunition({ name: 'Nome personalizado', catalogType: 'municao', catalogId })).toBe(true);
+  });
+  it.each(['cartuchos', 'flechas', 'combustivel', 'foguete'])('bloqueia %s mesmo com nome de bala', catalogId => {
+    expect(canModifyAmmunition({ name: 'Balas Curtas', catalogType: 'municao', catalogId })).toBe(false);
+  });
+  it.each(['Munição Curta', 'Munição Longa (Mod.)', 'Balas Curtas', 'Balas Longas'])('reconhece item legado %s', name => {
+    expect(canModifyAmmunition({ name, itemType: 'consumable' })).toBe(true);
+  });
+  it('não confunde arma que usa balas com o pacote de munição', () => {
+    expect(canModifyAmmunition({ name: 'Pistola', itemType: 'weapon', ammoType: 'balas_curtas' })).toBe(false);
+    expect(canModifyAmmunition({ name: 'Munição desconhecida', catalogType: 'municao' })).toBe(false);
+  });
+  it('mostra todos os tipos de melhoria sem repetir IDs', () => {
+    expect(getInstalledItemModifications({ appliedAmmoModifications: ['explosiva', 'explosiva'], appliedArmorModifications: ['reforcada'] })).toEqual(['reforcada', 'explosiva']);
   });
 });

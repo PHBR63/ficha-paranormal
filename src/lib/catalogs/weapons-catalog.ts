@@ -1052,6 +1052,8 @@ export function getWeaponModificationById(id: WeaponModification): WeaponModific
 export function canApplyModification(weapon: CatalogWeapon, modId: WeaponModification): boolean {
   const mod = getWeaponModificationById(modId);
   if (!mod) return false;
+  // Dum dum e Explosiva pertencem à munição, nunca à arma.
+  if (AMMO_MODIFICATION_IDS.has(modId)) return false;
   
   // Verifica se o tipo da arma é compatível
   if (weapon.type === 'thrown') return false; // Explosivos não podem ser modificados

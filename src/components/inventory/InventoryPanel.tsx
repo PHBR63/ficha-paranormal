@@ -10,7 +10,7 @@
  */
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { mergeItemModifications } from '@/lib/inventory-modifications';
+import { mergeItemModifications, canModifyAmmunition, getInstalledItemModifications } from '@/lib/inventory-modifications';
 import { getArmorModificationConflict } from '@/lib/catalogs/armor-catalog';
 import { useIsMobile } from '@/hooks';
 import { useCharacterCategoryReductions, type ExtendedInventoryItemWithReduction } from '@/hooks/useCharacterCategoryReductions';
@@ -103,6 +103,7 @@ import {
   getModifiedCategory, 
   MODIFICATION_LABELS,
   getWeaponModificationById,
+  AMMO_MODIFICATION_IDS,
   ARMOR_MODIFICATIONS,
   BASE_ARMORS,
 } from '@/lib/catalogs';
@@ -175,6 +176,8 @@ export interface ExtendedInventoryItem extends InventoryItem {
   equipSlot?: EquipmentSlotType;
   /** Tipo original do catálogo (preservado antes da normalização, ex: 'acessorio') */
   catalogType?: string;
+  catalogId?: string;
+  ammoType?: string;
   // Campos para redução de categoria (A Favorita, Ferramenta Favorita, etc.)
   favoriteAbilityId?: string;  // ID da habilidade que está sendo aplicada
   effectiveCategory?: InventoryItem['category'];  // Categoria efetiva após redução
@@ -801,6 +804,7 @@ export function InventoryPanel({
       slots: catalogItem.spaces,
       quantity: 1,
       itemType: mappedItemType, // Usa tipo mapeado corretamente
+      catalogId: catalogItem.id,
       catalogType: catalogItem.type, // Preserva tipo original do catálogo (ex: 'acessorio')
       description: catalogItem.description,
       // Dados extras para itens gerais
@@ -857,7 +861,12 @@ export function InventoryPanel({
   // Handler para aplicar modificações em arma
   const handleApplyWeaponModifications = async (modifications: WeaponModification[]) => {
     if (!weaponToModify || !onInventoryChange) return;
-    modifications = mergeItemModifications((weaponToModify as any).appliedModifications || [], modifications);
+    const installed = (weaponToModify as any).appliedModifications || [];
+    if (modifications.some(id => AMMO_MODIFICATION_IDS.has(id) && !installed.includes(id))) {
+      toast({ title: 'Modificação pertence à munição', description: 'Abra as modificações das balas curtas ou longas no inventário.', variant: 'destructive' });
+      throw new Error('Modificação de munição não pode ser adicionada à arma');
+    }
+    modifications = mergeItemModifications(installed, modifications);
 
     // Criar objeto CatalogWeapon a partir do item
     const baseWeapon: CatalogWeapon = {
@@ -1074,6 +1083,10 @@ export function InventoryPanel({
 
   // Handler para abrir modal de modificação de munição
   const handleOpenAmmoMod = (item: ExtendedInventoryItem) => {
+    if (!canModifyAmmunition(item)) {
+      toast({ title: 'Munição incompatível', description: 'Somente balas curtas e longas podem receber modificações.', variant: 'destructive' });
+      return;
+    }
     setAmmoToModify(item);
     setAmmoModModalOpen(true);
   };
@@ -1081,6 +1094,10 @@ export function InventoryPanel({
   // Handler para aplicar modificações em munição
   const handleApplyAmmoModifications = async (modifications: AmmoModification[]) => {
     if (!ammoToModify || !onInventoryChange) return;
+    if (!canModifyAmmunition(ammoToModify) || modifications.some(id => !AMMO_MODIFICATION_IDS.has(id))) {
+      toast({ title: 'Modificação inválida', description: 'Use Dum dum ou Explosiva somente em balas curtas e longas.', variant: 'destructive' });
+      throw new Error('Modificação de munição inválida');
+    }
     modifications = mergeItemModifications((ammoToModify as any).appliedAmmoModifications || [], modifications);
 
     const hasModifications = modifications.length > 0;
@@ -1130,7 +1147,7 @@ export function InventoryPanel({
       handleOpenArmorMod(item);
     } else if (item.catalogType === 'acessorio') {
       handleOpenAccessoryMod(item);
-    } else if (item.catalogType === 'municao') {
+    } else if (canModifyAmmunition(item)) {
       handleOpenAmmoMod(item);
     }
   };
@@ -1797,7 +1814,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio' || item.catalogType === 'municao') ? handleOpenModification : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio' || canModifyAmmunition(item)) ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
@@ -1813,7 +1830,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio' || item.catalogType === 'municao') ? handleOpenModification : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio' || canModifyAmmunition(item)) ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
@@ -1835,7 +1852,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio' || item.catalogType === 'municao') ? handleOpenModification : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio' || canModifyAmmunition(item)) ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
@@ -1851,7 +1868,7 @@ export function InventoryPanel({
                           onEquip={!readOnly && canEquipItem(item) ? handleEquipItem : undefined}
                           onUnequip={!readOnly && item.isEquipped ? handleUnequipItem : undefined}
                           onUse={!readOnly && canUseItem(item) ? handleRequestUseItem : undefined}
-                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio' || item.catalogType === 'municao') ? handleOpenModification : undefined}
+                          onModify={!readOnly && (item.itemType === 'weapon' || item.itemType === 'armor' || item.catalogType === 'acessorio' || canModifyAmmunition(item)) ? handleOpenModification : undefined}
                           onToggleFavorite={!readOnly && categoryAbilities.length > 0 && item.itemType === 'weapon' ? handleToggleFavorite : undefined}
                           availableAbilities={categoryAbilities}
                           onViewDetails={(itemToView) => {
@@ -1900,7 +1917,7 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
   const isConsumable = item.consumable && (item.uses ?? 0) > 0;
   const usesDisplay = item.consumable ? `${item.uses ?? 0}/${item.maxUses ?? item.uses ?? 0}` : null;
   // Verificar se arma tem modificações aplicadas
-  const appliedMods = (item as any).appliedModifications as WeaponModification[] | undefined;
+  const appliedMods = getInstalledItemModifications(item);
   const hasModifications = appliedMods && appliedMods.length > 0;
   // Obter nome da habilidade de redução
   const reductionAbility = item.favoriteAbilityId 
@@ -2109,12 +2126,12 @@ function InventoryItemRow({ item, onRemove, onEquip, onUnequip, onUse, onModify,
                 </Button>
               </TooltipTrigger>
               <TooltipContent className="bg-popover border-border max-w-xs hidden sm:block">
-                <p className="text-xs font-medium mb-1">Modificar Arma</p>
+                <p className="text-xs font-medium mb-1">{canModifyAmmunition(item) ? 'Modificar Munição' : 'Modificar Item'}</p>
                 {hasModifications && (
                   <div className="flex flex-wrap gap-1">
                     {appliedMods!.map(mod => (
                       <Badge key={mod} variant="secondary" className="text-[10px]">
-                        {MODIFICATION_LABELS[mod]?.label || mod}
+                        {MODIFICATION_LABELS[mod as WeaponModification]?.label || mod}
                       </Badge>
                     ))}
                   </div>

@@ -109,7 +109,7 @@ export function AmmoModificationModal({
             Modificações: {itemName}
           </MobileModalTitle>
           <MobileModalDescription>
-            Tabela 3.5 — Cada modificação aumenta a categoria em I. Cada uma só pode ser aplicada uma vez.
+            Apenas balas curtas e longas. Tabela 3.5 — Cada modificação aumenta a categoria em I. Cada uma só pode ser aplicada uma vez.
           </MobileModalDescription>
         </MobileModalHeader>
 
@@ -180,12 +180,12 @@ export function AmmoModificationModal({
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">{mod.description}</p>
                       {mod.criticalMultiplierBonus && (
-                        <p className="text-xs text-primary/80 mt-1 font-medium">
+                        <p className="text-xs text-foreground mt-1 font-medium">
                           Efeito: +{mod.criticalMultiplierBonus} multiplicador de crítico
                         </p>
                       )}
                       {mod.damageBonus && (
-                        <p className="text-xs text-primary/80 mt-1 font-medium">
+                        <p className="text-xs text-foreground mt-1 font-medium">
                           Efeito: {mod.damageBonus} dano adicional
                         </p>
                       )}
