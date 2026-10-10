@@ -38,7 +38,7 @@ export const GRADUADO_ABILITIES: GraduadoAbility[] = [
     id: 'grimorio-ritualistico',
     name: 'Grimório Ritualístico', 
     minNex: 40, 
-    effect: 'Armazena rituais 1º/2º círculo = INT. Ação completa para conjurar.',
+    effect: 'Armazena rituais 1º/2º círculo = INT. Empunhe e consulte por uma ação completa; depois use a execução do ritual.',
     icon: BookMarked,
   },
   { 
