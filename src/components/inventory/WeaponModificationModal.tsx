@@ -3,7 +3,7 @@
  * Baseado na Tabela 3.5 do livro oficial de Ordem Paranormal
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   MobileModal,
   MobileModalContent,
@@ -51,7 +51,7 @@ interface WeaponModificationModalProps {
   onOpenChange: (open: boolean) => void;
   weapon: CatalogWeapon;
   currentModifications: WeaponModification[];
-  onApplyModifications: (modifications: WeaponModification[]) => void;
+  onApplyModifications: (modifications: WeaponModification[]) => void | Promise<void>;
   /** Redução de categoria por habilidade de favorita (1, 2 ou 3) */
   favoriteReduction?: number;
   /** Se a arma está marcada como favorita */
@@ -86,8 +86,14 @@ export function WeaponModificationModal({
   isFavorite,
 }: WeaponModificationModalProps) {
   // Estado local para modificações selecionadas
-  const [selectedMods, setSelectedMods] = useState<WeaponModification[]>(currentModifications);
+  const [selectedMods, setSelectedMods] = useState<WeaponModification[]>(() => [...new Set(currentModifications)]);
   
+  const [isApplying, setIsApplying] = useState(false);
+  // Abrir de novo ou receber a ficha atualizada deve refletir o registro persistido.
+  useEffect(() => {
+    if (open) setSelectedMods([...new Set(currentModifications)]);
+  }, [open, currentModifications]);
+
   // Modificações já aplicadas (para exibir com indicador visual)
   const alreadyAppliedMods = useMemo(() => new Set(currentModifications), [currentModifications]);
   
@@ -156,15 +162,21 @@ export function WeaponModificationModal({
   // Resetar seleção ao abrir
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
-      setSelectedMods(currentModifications);
+      setSelectedMods([...new Set(currentModifications)]);
     }
     onOpenChange(isOpen);
   };
   
   // Aplicar modificações
-  const handleApply = () => {
-    onApplyModifications(selectedMods);
-    onOpenChange(false);
+  const handleApply = async () => {
+    if (isApplying || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))) return;
+    setIsApplying(true);
+    try {
+      await onApplyModifications([...new Set([...currentModifications, ...selectedMods])]);
+      onOpenChange(false);
+    } catch {
+      // O painel apresenta a falha; manter a seleção aberta permite repetir.
+    } finally { setIsApplying(false); }
   };
   
   // Verificar se categoria mudou
@@ -390,6 +402,7 @@ export function WeaponModificationModal({
           </Button>
           <Button 
             onClick={handleApply}
+            disabled={isApplying || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))}
             className="bg-primary hover:bg-primary/90"
           >
             Aplicar Modificações
@@ -433,7 +446,8 @@ function ModificationCard({
       onClick={isLocked ? undefined : onToggle}
     >
       <div className="flex items-start gap-3">
-        <Checkbox 
+        <Checkbox
+          onClick={event => event.stopPropagation()}
           checked={isSelected}
           onCheckedChange={isLocked ? undefined : onToggle}
           disabled={isLocked}

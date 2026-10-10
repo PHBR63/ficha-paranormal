@@ -10,7 +10,7 @@
  * Cada modificação só pode ser aplicada uma vez.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   MobileModal,
   MobileModalContent,
@@ -42,7 +42,7 @@ interface AmmoModificationModalProps {
   itemName: string;
   itemCategory: string;
   currentModifications: AmmoModification[];
-  onApplyModifications: (modifications: AmmoModification[]) => void;
+  onApplyModifications: (modifications: AmmoModification[]) => void | Promise<void>;
 }
 
 export function AmmoModificationModal({
@@ -53,7 +53,13 @@ export function AmmoModificationModal({
   currentModifications,
   onApplyModifications,
 }: AmmoModificationModalProps) {
-  const [selectedMods, setSelectedMods] = useState<AmmoModification[]>(currentModifications);
+  const [selectedMods, setSelectedMods] = useState<AmmoModification[]>(() => [...new Set(currentModifications)]);
+
+  const [isApplying, setIsApplying] = useState(false);
+  // Abrir de novo ou receber a ficha atualizada deve refletir o registro persistido.
+  useEffect(() => {
+    if (open) setSelectedMods([...new Set(currentModifications)]);
+  }, [open, currentModifications]);
 
   // Modificações já aplicadas previamente (permanentes, bloqueadas)
   const alreadyAppliedMods = useMemo(
@@ -81,9 +87,15 @@ export function AmmoModificationModal({
   };
 
   // Aplicar
-  const handleApply = () => {
-    onApplyModifications(selectedMods);
-    onOpenChange(false);
+  const handleApply = async () => {
+    if (isApplying || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))) return;
+    setIsApplying(true);
+    try {
+      await onApplyModifications([...new Set([...currentModifications, ...selectedMods])]);
+      onOpenChange(false);
+    } catch {
+      // O painel apresenta a falha; manter a seleção aberta permite repetir.
+    } finally { setIsApplying(false); }
   };
 
   const hasNewMods = selectedMods.some(m => !alreadyAppliedMods.has(m));
@@ -146,6 +158,7 @@ export function AmmoModificationModal({
                 >
                   <div className="flex items-start gap-3">
                     <Checkbox
+                      onClick={event => event.stopPropagation()}
                       checked={isSelected}
                       onCheckedChange={isLocked ? undefined : () => toggleModification(modId)}
                       disabled={isLocked}
@@ -191,7 +204,7 @@ export function AmmoModificationModal({
             </Button>
             <Button
               onClick={handleApply}
-              disabled={!hasNewMods}
+              disabled={isApplying || !hasNewMods}
               className="flex-1"
             >
               <Wrench className="w-4 h-4 mr-2" />

@@ -13,7 +13,7 @@
  * Uma proteção não pode ser reforçada e discreta ao mesmo tempo.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   MobileModal,
   MobileModalContent,
@@ -53,7 +53,7 @@ interface ArmorModificationModalProps {
   onOpenChange: (open: boolean) => void;
   armor: CatalogArmor;
   currentModifications: ArmorModification[];
-  onApplyModifications: (modifications: ArmorModification[]) => void;
+  onApplyModifications: (modifications: ArmorModification[]) => void | Promise<void>;
 }
 
 export function ArmorModificationModal({
@@ -63,7 +63,13 @@ export function ArmorModificationModal({
   currentModifications,
   onApplyModifications,
 }: ArmorModificationModalProps) {
-  const [selectedMods, setSelectedMods] = useState<ArmorModification[]>(currentModifications);
+  const [selectedMods, setSelectedMods] = useState<ArmorModification[]>(() => [...new Set(currentModifications)]);
+
+  const [isApplying, setIsApplying] = useState(false);
+  // Abrir de novo ou receber a ficha atualizada deve refletir o registro persistido.
+  useEffect(() => {
+    if (open) setSelectedMods([...new Set(currentModifications)]);
+  }, [open, currentModifications]);
 
   // Modificações já aplicadas previamente (permanentes)
   const alreadyAppliedMods = useMemo(
@@ -104,10 +110,16 @@ export function ArmorModificationModal({
   };
 
   // Aplicar modificações
-  const handleApply = () => {
+  const handleApply = async () => {
     if (hasConflict) return;
-    onApplyModifications(selectedMods);
-    onOpenChange(false);
+    if (isApplying || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))) return;
+    setIsApplying(true);
+    try {
+      await onApplyModifications([...new Set([...currentModifications, ...selectedMods])]);
+      onOpenChange(false);
+    } catch {
+      // O painel apresenta a falha; manter a seleção aberta permite repetir.
+    } finally { setIsApplying(false); }
   };
 
   // Há novas modificações para aplicar?
@@ -212,6 +224,7 @@ export function ArmorModificationModal({
                 >
                   <div className="flex items-start gap-3">
                     <Checkbox
+                      onClick={event => event.stopPropagation()}
                       checked={isSelected}
                       onCheckedChange={isLocked ? undefined : () => toggleModification(mod.id)}
                       disabled={isLocked}
@@ -254,7 +267,7 @@ export function ArmorModificationModal({
             </Button>
             <Button
               onClick={handleApply}
-              disabled={!hasNewMods || hasConflict}
+              disabled={isApplying || !hasNewMods || hasConflict}
               className="flex-1"
             >
               <Wrench className="w-4 h-4 mr-2" />

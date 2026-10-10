@@ -10,6 +10,7 @@
  */
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { mergeItemModifications } from '@/lib/inventory-modifications';
 import { useIsMobile } from '@/hooks';
 import { useCharacterCategoryReductions, type ExtendedInventoryItemWithReduction } from '@/hooks/useCharacterCategoryReductions';
 import { MobileInventoryCard } from './MobileInventoryCard';
@@ -102,6 +103,7 @@ import {
   MODIFICATION_LABELS,
   getWeaponModificationById,
   ARMOR_MODIFICATIONS,
+  BASE_ARMORS,
 } from '@/lib/catalogs';
 import { ProtectionWidget } from './ProtectionWidget';
 import { InventoryItemDetailModal } from './InventoryItemDetailModal';
@@ -206,7 +208,7 @@ interface InventoryPanelProps {
   inventory: ExtendedInventoryItem[];
   strength: number;
   patent: string;
-  onInventoryChange?: (newInventory: ExtendedInventoryItem[]) => void;
+  onInventoryChange?: (newInventory: ExtendedInventoryItem[]) => void | Promise<void>;
   readOnly?: boolean;
   showEquipment?: boolean;
   /** Dados do personagem para detecção automática de habilidades de redução de categoria */
@@ -688,6 +690,7 @@ export function InventoryPanel({
       proficiency: weapon.proficiency,
       properties: weapon.properties,
       weaponType: weapon.type,
+      appliedModifications: [...new Set(weapon.appliedModifications || [])],
     };
 
     // Valida e normaliza o item antes de adicionar
@@ -726,6 +729,8 @@ export function InventoryPanel({
   // Handler para adicionar proteção do catálogo
   const handleAddArmorFromCatalog = (armor: CatalogArmor) => {
     if (!onInventoryChange) return;
+    // Proteções pré-modificadas do catálogo já chegam com a melhoria instalada.
+    const baseArmor = BASE_ARMORS.find(base => base.type === armor.type) || armor;
 
     // Cria o item base com todos os campos obrigatórios
     const baseItem = {
@@ -742,6 +747,11 @@ export function InventoryPanel({
       agilityPenalty: armor.agilityPenalty,
       armorType: armor.type,
       special: armor.special,
+      appliedArmorModifications: [...new Set(armor.modifications || [])],
+      baseArmorCategory: baseArmor.category,
+      baseDefenseBonus: baseArmor.defenseBonus,
+      baseRd: baseArmor.rd || 0,
+      baseSpaces: baseArmor.spaces,
     };
 
     // Valida e normaliza o item antes de adicionar
@@ -844,8 +854,9 @@ export function InventoryPanel({
   };
 
   // Handler para aplicar modificações em arma
-  const handleApplyWeaponModifications = (modifications: WeaponModification[]) => {
+  const handleApplyWeaponModifications = async (modifications: WeaponModification[]) => {
     if (!weaponToModify || !onInventoryChange) return;
+    modifications = mergeItemModifications((weaponToModify as any).appliedModifications || [], modifications);
 
     // Criar objeto CatalogWeapon a partir do item
     const baseWeapon: CatalogWeapon = {
@@ -910,7 +921,11 @@ export function InventoryPanel({
       return item;
     });
 
-    onInventoryChange(updatedInventory);
+    try { await onInventoryChange(updatedInventory); }
+    catch {
+      toast({ title: 'Modificações não salvas', description: 'Não houve confirmação da gravação. Tente novamente.', variant: 'destructive' });
+      throw new Error('Modificações não salvas');
+    }
     setWeaponModModalOpen(false);
     setWeaponToModify(null);
 
@@ -929,8 +944,9 @@ export function InventoryPanel({
   };
 
   // Handler para aplicar modificações em proteção
-  const handleApplyArmorModifications = (modifications: ArmorModification[]) => {
+  const handleApplyArmorModifications = async (modifications: ArmorModification[]) => {
     if (!armorToModify || !onInventoryChange) return;
+    modifications = mergeItemModifications((armorToModify as any).appliedArmorModifications || [], modifications);
 
     const hasModifications = modifications.length > 0;
     const baseName = armorToModify.name.replace(/\s*\(Mod\.\)$/, '');
@@ -975,7 +991,11 @@ export function InventoryPanel({
       return item;
     });
 
-    onInventoryChange(updatedInventory);
+    try { await onInventoryChange(updatedInventory); }
+    catch {
+      toast({ title: 'Modificações não salvas', description: 'Não houve confirmação da gravação. Tente novamente.', variant: 'destructive' });
+      throw new Error('Modificações não salvas');
+    }
     setArmorModModalOpen(false);
     setArmorToModify(null);
 
@@ -994,8 +1014,9 @@ export function InventoryPanel({
   };
 
   // Handler para aplicar modificações em acessório
-  const handleApplyAccessoryModifications = (modifications: AccessoryModification[]) => {
+  const handleApplyAccessoryModifications = async (modifications: AccessoryModification[]) => {
     if (!accessoryToModify || !onInventoryChange) return;
+    modifications = mergeItemModifications((accessoryToModify as any).appliedAccessoryModifications || [], modifications);
 
     const hasModifications = modifications.length > 0;
     const baseName = accessoryToModify.name.replace(/\s*\(Mod\.\)$/, '');
@@ -1029,7 +1050,11 @@ export function InventoryPanel({
       return item;
     });
 
-    onInventoryChange(updatedInventory);
+    try { await onInventoryChange(updatedInventory); }
+    catch {
+      toast({ title: 'Modificações não salvas', description: 'Não houve confirmação da gravação. Tente novamente.', variant: 'destructive' });
+      throw new Error('Modificações não salvas');
+    }
     setAccessoryModModalOpen(false);
     setAccessoryToModify(null);
 
@@ -1048,8 +1073,9 @@ export function InventoryPanel({
   };
 
   // Handler para aplicar modificações em munição
-  const handleApplyAmmoModifications = (modifications: AmmoModification[]) => {
+  const handleApplyAmmoModifications = async (modifications: AmmoModification[]) => {
     if (!ammoToModify || !onInventoryChange) return;
+    modifications = mergeItemModifications((ammoToModify as any).appliedAmmoModifications || [], modifications);
 
     const hasModifications = modifications.length > 0;
     const baseName = ammoToModify.name.replace(/\s*\(Mod\.\)$/, '');
@@ -1074,7 +1100,11 @@ export function InventoryPanel({
       return item;
     });
 
-    onInventoryChange(updatedInventory);
+    try { await onInventoryChange(updatedInventory); }
+    catch {
+      toast({ title: 'Modificações não salvas', description: 'Não houve confirmação da gravação. Tente novamente.', variant: 'destructive' });
+      throw new Error('Modificações não salvas');
+    }
     setAmmoModModalOpen(false);
     setAmmoToModify(null);
 

@@ -1,3 +1,4 @@
+import { preserveInventoryModifications } from '@/lib/inventory-modifications';
 import { confirmCombatAttack } from '@/services/combat-attack-service';
 import { useRitualSituationalContext } from '@/hooks/character/useRitualSituationalContext';
 import { PETurnBudgetPanel } from './PETurnBudgetPanel';
@@ -804,18 +805,19 @@ export function MobileCharacterSheet({
   // Handler para atualização de inventário no mobile
   const handleInventoryChange = useCallback(async (newInventory: ExtendedInventoryItem[]) => {
     try {
-      const inventoryJson = newInventory.map(item => ({ ...item }));
+      const inventoryJson = newInventory.map(preserveInventoryModifications);
       
-      await supabase
+      const { error } = await supabase
         .from('characters')
         .update({ inventory: inventoryJson as unknown as import('@/integrations/supabase/types').Json })
         .eq('id', character.id);
       
-      if (onRefetch) {
-        await onRefetch();
-      }
+      if (error) throw new Error('Não foi possível salvar o inventário. Tente novamente.');
+      try { await onRefetch?.(); }
+      catch { toast.error('Inventário salvo. Recarregue para conferir os itens.'); }
     } catch (error) {
-      console.error('Erro ao atualizar inventário:', error);
+      toast.error('Inventário não salvo. Tente novamente.');
+      throw error;
     }
   }, [character.id, onRefetch]);
 
@@ -823,6 +825,7 @@ export function MobileCharacterSheet({
   // IMPORTANTE: Propaga TODOS os campos de armas, armaduras e itens para inferência correta de tipo
   const normalizedInventory: ExtendedInventoryItem[] = useMemo(() => 
     (character.inventory || []).map(item => ({
+      ...preserveInventoryModifications(item),
       id: item.id || crypto.randomUUID(),
       name: item.name,
       category: item.category as '0' | 'I' | 'II' | 'III' | 'IV',
