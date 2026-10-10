@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { getAttributeDicePool } from "@/lib/attribute-dice-pool";
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
@@ -122,7 +123,7 @@ export function DiceRoller3D({
             {/* Rolling animation */}
             {isRolling && (
               <div className="flex justify-center gap-2">
-                {Array.from({ length: Math.max(1, attributeValue) }).map((_, i) => (
+                {Array.from({ length: getAttributeDicePool(attributeValue).count }).map((_, i) => (
                   <motion.div
                     key={i}
                     className="w-12 h-12 bg-secondary border-2 border-primary/50 rounded-lg flex items-center justify-center text-2xl font-bold"

@@ -1,3 +1,4 @@
+import { rollAttributeDicePool } from "./attribute-dice-pool";
 // Ordem Paranormal RPG v1.3 - Motor de Regras Automatizado
 // Sistema completo de combate, PE, condições e inventário
 // Atualizado com sistema de morrendo, aplicação automática e modificadores contextuais
@@ -1026,9 +1027,9 @@ export function createCombatState(): CombatState {
 }
 
 export function rollInitiative(agility: number, conditions: string[] = []): { total: number; rolls: number[] } {
-  const diceCount = Math.max(1, agility);
-  const rolls = Array.from({ length: diceCount }, () => Math.floor(Math.random() * 20) + 1);
-  let total = agility <= 0 ? Math.min(...rolls) : Math.max(...rolls);
+  // Compartilha a regra de atributo zero com os demais testes da ficha.
+  const { dice: rolls, kept } = rollAttributeDicePool(agility);
+  let total = kept;
   
   // Aplicar modificadores de iniciativa de condições (ex: Surdo -2)
   total += getInitiativeModifierFromConditions(conditions);

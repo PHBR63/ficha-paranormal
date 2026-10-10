@@ -171,7 +171,7 @@ export const TemplateCard = memo(function TemplateCard({
           <div className="mb-3">
             <div className="grid grid-cols-5 gap-1">
               {ATTRIBUTE_ORDER.map(attr => {
-                const value = attributes[attr] || 1;
+                const value = attributes[attr] ?? 1;
                 return (
                   <Tooltip key={attr}>
                     <TooltipTrigger asChild>
