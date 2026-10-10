@@ -77,7 +77,7 @@ export const MELEE_WEAPON_MODIFICATIONS: WeaponModificationData[] = [
     name: 'Discreta',
     description: '+5 em testes para ser ocultada e reduz o espaço em –1.',
     applicableTo: ['melee', 'ranged'],
-    categoryIncrease: 0,
+    categoryIncrease: 1,
     spaceReduction: 1,
     special: '+5 em testes para ser ocultada e reduz o espaço em –1',
   },
@@ -130,7 +130,7 @@ export const FIREARM_MODIFICATIONS: WeaponModificationData[] = [
     name: 'Discreta',
     description: '+5 em testes para ser ocultada e reduz o espaço em –1.',
     applicableTo: ['firearm'],
-    categoryIncrease: 0,
+    categoryIncrease: 1,
     spaceReduction: 1,
     special: '+5 em testes para ser ocultada e reduz o espaço em –1',
   },
@@ -223,6 +223,7 @@ export interface ModifiedWeaponStats {
   baseWeapon: CatalogWeapon;
   modifications: WeaponModification[];
   finalCategory: CatalogWeapon['category'];
+  finalSpaces: number;
   attackBonus: number;
   criticalMargin: number;
   criticalMultiplier: number;
@@ -1142,6 +1143,7 @@ export function calculateModifiedWeaponStats(
   // Uma melhoria repetida no payload não pode multiplicar categoria ou efeitos.
   modifications = [...new Set(modifications)];
   let attackBonus = 0;
+  let spaceReduction = 0;
   let criticalMargin = baseWeapon.critical;
   let criticalMultiplier = baseWeapon.criticalMultiplier;
   let damage = baseWeapon.damage;
@@ -1167,6 +1169,9 @@ export function calculateModifiedWeaponStats(
     const mod = getWeaponModificationById(modId);
     if (!mod) continue;
     
+    // Discreta reduz a ocupação uma vez, pois a lista já foi deduplicada.
+    spaceReduction += mod.spaceReduction ?? 0;
+
     // Bônus de ataque (Certeira, Alongada)
     if (mod.attackBonus) {
       attackBonus += mod.attackBonus;
@@ -1216,6 +1221,7 @@ export function calculateModifiedWeaponStats(
     baseWeapon,
     modifications,
     finalCategory: getModifiedCategory(baseWeapon.category, modifications),
+    finalSpaces: Math.max(0, baseWeapon.spaces - spaceReduction),
     attackBonus,
     criticalMargin: Math.max(criticalMargin, 1), // Mínimo 1
     criticalMultiplier,

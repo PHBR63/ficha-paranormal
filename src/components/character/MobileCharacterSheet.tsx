@@ -829,7 +829,7 @@ export function MobileCharacterSheet({
       id: item.id || crypto.randomUUID(),
       name: item.name,
       category: item.category as '0' | 'I' | 'II' | 'III' | 'IV',
-      slots: item.slots || 1,
+      slots: item.slots ?? 1,
       quantity: item.quantity || 1,
       itemType: (item.itemType as 'weapon' | 'armor' | 'consumable' | 'misc') || 'misc',
       isEquipped: item.isEquipped,

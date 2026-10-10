@@ -291,6 +291,14 @@ export function WeaponModificationModal({
                 
                 <Separator />
                 
+                <StatRow
+                  label="Espaços"
+                  original={`${weapon.spaces}`}
+                  modified={`${modifiedStats.finalSpaces}`}
+                  changed={weapon.spaces !== modifiedStats.finalSpaces}
+                  icon={<Maximize2 className="h-4 w-4" />}
+                />
+
                 {/* Dano */}
                 <StatRow
                   label="Dano"
