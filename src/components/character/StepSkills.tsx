@@ -45,6 +45,7 @@ import {
 } from '@/components/ui/collapsible';
 import type { CharacterFormData } from '@/pages/CharacterCreate';
 import type { RebuildResult } from '@/lib/character-builder-engine';
+import { CreationTrainingPanel } from './CreationTrainingPanel';
 
 interface StepSkillsProps {
   formData: CharacterFormData;
@@ -593,6 +594,7 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
           })}
         </div>
 
+        <CreationTrainingPanel formData={formData} updateFormData={updateFormData} />
         {/* Info */}
         <div className="ordo-panel p-4 bg-primary/5 border-primary/20">
           <p className="text-sm text-muted-foreground">

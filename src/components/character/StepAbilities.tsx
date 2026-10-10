@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { CreationPeritoPanel } from './CreationTrainingPanel';
 import { CharacterFormData } from '@/pages/CharacterCreate';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,7 @@ import { AbilityDetailModal } from './AbilityDetailModal';
 import { VersatilitySection, VersatilityChoice, isVersatilityChoiceComplete } from './VersatilitySection';
 import { SkillTrainingSelectModal, SkillTrainingResult, SkillTrainingChoice } from './SkillTrainingSelectModal';
 import { ParanormalPowerSelectModal } from './ParanormalPowerSelectModal';
+import { CreationPowerChoices } from './CreationPowerChoices';
 import { PowerSubchoiceModal } from './PowerSubchoiceModal';
 import { ClassPowerSubchoiceModal, ClassPowerSubchoice } from './ClassPowerSubchoiceModal';
 import { calculateDerivedStats, SKILLS } from '@/lib/character-data';
@@ -758,6 +760,7 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
   return (
     <TooltipProvider>
       <div className="space-y-6">
+        <CreationPeritoPanel formData={formData} updateFormData={updateFormData} />
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-2">
@@ -1277,6 +1280,7 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
         )}
         
         {/* Modal de seleção de poder paranormal para Transcender */}
+        <CreationPowerChoices formData={formData} updateFormData={updateFormData} />
         <ParanormalPowerSelectModal
           open={transcenderModalOpen}
           onOpenChange={(open) => {
@@ -1287,8 +1291,8 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
           }}
           onSelectPower={handleTranscenderPowerSelect}
           characterPowers={characterParanormalPowers}
-          elementalAffinity={null}
-          affinityActive={false}
+          elementalAffinity={formData.elementalAffinity as import('@/lib/paranormal-powers').ParanormalElement}
+          affinityActive={formData.nex >= 50 && !!formData.elementalAffinity}
         />
         
         {/* Modal de sub-escolhas para poderes paranormais que requerem escolha adicional */}
@@ -1305,7 +1309,7 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
             }}
             onConfirm={handleSubchoiceConfirm}
             power={pendingPowerForSubchoice}
-            hasAffinity={false}
+            hasAffinity={formData.nex >= 50 && !!formData.elementalAffinity}
           />
         )}
         
@@ -1324,6 +1328,7 @@ export function StepAbilities({ formData, updateFormData }: StepAbilitiesProps) 
             existingWeaponGroups={existingWeaponGroups}
             // Para poderes como Perito que exigem perícias treinadas
             trainedSkillIds={characterDataForPrereqs.trainedSkills || []}
+            knownRitualIds={formData.rituals}
           />
         )}
       </div>

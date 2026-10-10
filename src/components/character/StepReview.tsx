@@ -4,10 +4,11 @@ import { ConhecimentoSymbol, EnergiaSymbol, MedoSymbol, MorteSymbol, SangueSymbo
 // Inclui painel educativo do livro de regras e validação final Zod
 
 import { useMemo } from 'react';
-import { ORIGINS, CLASSES, SKILLS, getPatentByNex, getTrackById, TRAINING_LABELS } from '@/lib/character-data';
-import { CLASS_PROFICIENCIES, CLASS_INITIAL_ABILITIES, validateAttributes } from '@/lib/character-builder-engine';
+import { ORIGINS, CLASSES, SKILLS,  getTrackById, TRAINING_LABELS } from '@/lib/character-data';
+import { creationSteps, inspectCharacterCreation, creationInventory } from '@/lib/character-creation-rules';
+import { getPowerById } from '@/lib/class-powers/power-registry';
+import { ALL_ITEMS } from '@/lib/catalogs/items-catalog';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
-import { validateCharacterForm, type FinalValidationResult } from '@/lib/validation-schemas';
 import { Shield, Footprints, Swords, Edit2, Route, Sparkles, Droplets, AlertCircle } from '@/components/icons/ordem-icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,18 +39,18 @@ const ELEMENT_CONFIG: Record<string, {
   },
   morte: {
     icon: MorteSymbol,
-    color: 'text-purple-400',
-    bg: 'bg-purple-500/20'
+    color: 'text-zinc-300',
+    bg: 'bg-zinc-500/20'
   },
   conhecimento: {
     icon: ConhecimentoSymbol,
-    color: 'text-blue-400',
-    bg: 'bg-blue-500/20'
+    color: 'text-amber-400',
+    bg: 'bg-amber-500/20'
   },
   energia: {
     icon: EnergiaSymbol,
-    color: 'text-yellow-400',
-    bg: 'bg-yellow-500/20'
+    color: 'text-purple-400',
+    bg: 'bg-purple-500/20'
   },
   medo: {
     icon: MedoSymbol,
@@ -64,11 +65,10 @@ export function StepReview({
 }: StepReviewProps) {
   const origin = ORIGINS.find(o => o.id === formData.origin);
   const characterClass = CLASSES.find(c => c.id === formData.characterClass);
-  const patent = getPatentByNex(formData.nex);
+  const patent = formData.patent;
+  const inspection = useMemo(() => inspectCharacterCreation(formData), [formData]);
   const track = formData.classTrack ? getTrackById(formData.classTrack) : null;
   const {
-    derivedStats,
-    defense,
     movement,
     allTrainedSkills,
     proficiencies,
@@ -76,23 +76,25 @@ export function StepReview({
     powers,
     canFinalize
   } = buildResult;
+  const derivedStats=inspection.displayStats;
+  const defense=inspection.displayDefense;
 
   // Separar habilidades de classe e de trilha
-  const trackAbilities = formData.trackAbilities || [];
+  const trackAbilities = track?.abilities.filter(a => a.minNex <= formData.nex).map(a => a.name) || [];
   const classAbilities = abilities.filter(a => !trackAbilities.includes(a));
 
   // Obter rituais selecionados com detalhes
-  const selectedRituals = (formData.rituals || []).map(id => ALL_RITUALS.find(r => r.id === id)).filter(Boolean);
+  const selectedRituals = inspection.rituals.map(id => ALL_RITUALS.find(r => r.id === id)).filter(Boolean);
   const trainedSkillNames = allTrainedSkills.map(id => {
     const skill = SKILLS.find(s => s.id === id);
-    return skill?.name || id;
+    return `${skill?.name || id} (${TRAINING_LABELS[inspection.skills[id] || 1]})`;
   });
 
   // Coletar todas as perícias treinadas via poder "Treinamento em Perícia"
   const skillTrainingFromPowers = useMemo(() => {
     const choices = formData.skillTrainingChoices || {};
     const result: Array<{ skillName: string; fromLevel: number; toLevel: number; instanceKey: string }> = [];
-    
+
     Object.entries(choices).forEach(([instanceKey, skillChoices]) => {
       skillChoices.forEach(choice => {
         const skill = SKILLS.find(s => s.id === choice.skillId);
@@ -106,51 +108,11 @@ export function StepReview({
         }
       });
     });
-    
+
     return result;
   }, [formData.skillTrainingChoices]);
 
-  // Função para calcular step index baseado no id (considerando steps dinâmicos)
-  const isOcultist = formData.characterClass === 'Ocultista';
-  const getStepIndex = (stepId: string): number => {
-    const baseSteps = ['concept', 'nex', 'attributes', 'origin', 'class', 'track'];
-    const afterTrack = isOcultist ? ['rituals', 'skills', 'abilities', 'review'] : ['skills', 'abilities', 'review'];
-    const allSteps = [...baseSteps, ...afterTrack];
-    return allSteps.indexOf(stepId);
-  };
-
-  // VALIDAÇÃO FINAL ZOD: Executa validação completa do formulário
-  const finalValidation: FinalValidationResult = useMemo(() => {
-    const attrValidation = validateAttributes(formData.attributes, formData.nex);
-    
-    return validateCharacterForm(
-      {
-        name: formData.name,
-        playerName: formData.playerName,
-        concept: formData.concept,
-        age: formData.age,
-        gender: formData.gender,
-        appearance: formData.appearance,
-        personality: formData.personality,
-        background: formData.background,
-        photoUrl: formData.photoUrl,
-        nex: formData.nex,
-        origin: formData.origin?.toLowerCase(),
-        characterClass: formData.characterClass?.toLowerCase(),
-        classTrack: formData.classTrack,
-        attributes: formData.attributes,
-        freeSkills: formData.freeSkills || [],
-        classSkillChoices: formData.classSkillChoices || {},
-        conflictResolutions: formData.conflictResolutions || {},
-      },
-      {
-        isOcultist,
-        pendingChoicesCount: buildResult.pendingChoices?.length || 0,
-        pendingConflicts: buildResult.pendingConflicts,
-        attributePointsRemaining: attrValidation.remainingPoints,
-      }
-    );
-  }, [formData, buildResult.pendingChoices, buildResult.pendingConflicts, isOcultist]);
+  const getStepIndex = (id:string) => creationSteps(formData.characterClass).findIndex(step => step.id === id);
   // Conteúdo educativo do livro
   const rulebookContent = getRulebookContent('review');
 
@@ -158,7 +120,7 @@ export function StepReview({
     stepId
   }: {
     stepId: string;
-  }) => <Button variant="ghost" size="sm" onClick={() => onStepClick?.(getStepIndex(stepId))} className="opacity-0 group-hover:opacity-100 transition-opacity">
+  }) => <Button variant="ghost" size="sm" onClick={() => onStepClick?.(getStepIndex(stepId))} aria-label={`Editar ${creationSteps(formData.characterClass).find(s=>s.id===stepId)?.title.toLocaleLowerCase('pt-BR') || stepId}`} className="min-h-11 min-w-11 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity">
       <Edit2 className="w-3 h-3" />
     </Button>;
 
@@ -256,8 +218,8 @@ export function StepReview({
             <p className="text-xs text-muted-foreground">ATAQUE</p>
           </div>
           <p className="font-display text-xl">
-            {allTrainedSkills.includes('luta') ? '+5' : '+0'} / 
-            {allTrainedSkills.includes('pontaria') ? '+5' : '+0'}
+            {`+${(inspection.skills.luta || 0)*5}`} /
+            {`+${(inspection.skills.pontaria || 0)*5}`}
           </p>
           <p className="text-xs text-muted-foreground">Luta / Pont.</p>
         </div>
@@ -326,14 +288,14 @@ export function StepReview({
               const toLabel = TRAINING_LABELS[training.toLevel];
               const isExpert = training.toLevel === 3;
               const isVeteran = training.toLevel === 2;
-              
+
               return (
-                <div 
+                <div
                   key={`${training.instanceKey}-${training.skillName}-${idx}`}
                   className={`flex items-center justify-between p-2 rounded-md ${
-                    isExpert 
-                      ? 'bg-amber-500/20 border border-amber-500/30' 
-                      : isVeteran 
+                    isExpert
+                      ? 'bg-amber-500/20 border border-amber-500/30'
+                      : isVeteran
                         ? 'bg-purple-500/20 border border-purple-500/30'
                         : 'bg-primary/10 border border-primary/20'
                   }`}
@@ -368,7 +330,7 @@ export function StepReview({
             <EditButton stepId="abilities" />
           </div>
           <div className="flex flex-wrap gap-2">
-            {classAbilities.map(ability => <span key={ability} className="px-3 py-1 bg-primary/20 text-primary text-sm rounded-sm">
+            {classAbilities.map((ability,index) => <span key={`${ability}-${index}`} className="px-3 py-1 bg-primary/20 text-primary text-sm rounded-sm">
                 {ability}
               </span>)}
           </div>
@@ -386,7 +348,7 @@ export function StepReview({
             <EditButton stepId="track" />
           </div>
           <p className="text-sm text-muted-foreground mb-4">{track.description}</p>
-          
+
           {trackAbilities.length > 0 && <div className="space-y-2">
               <p className="text-xs text-primary/70 uppercase tracking-wider">
                 Habilidades Desbloqueadas (NEX {formData.nex}%)
@@ -412,7 +374,7 @@ export function StepReview({
                 RITUAIS ({selectedRituals.length})
               </h4>
             </div>
-            <EditButton stepId="rituals" />
+            <EditButton stepId={formData.characterClass==='Ocultista'?'rituals':'abilities'} />
           </div>
           <div className="grid md:grid-cols-2 gap-2">
             {selectedRituals.map(ritual => {
@@ -448,6 +410,15 @@ export function StepReview({
               </div>)}
           </div>
         </div>}
+
+      <section className="ordo-panel p-4 space-y-3" aria-label="Escolhas e associações">
+        <div className="flex items-center justify-between"><h4 className="font-display text-lg">ESCOLHAS E ASSOCIAÇÕES</h4><EditButton stepId="abilities" /></div>
+        {Object.entries(formData.classPowerChoices).map(([key,choice])=><p key={key} className="text-sm"><strong>{getPowerById(choice.powerId)?.name || choice.powerId}:</strong>{' '}{choice.chosenValues.map(id=>SKILLS.find(s=>s.id===id)?.name || ALL_ITEMS.find(i=>i.id===id)?.name || ALL_RITUALS.find(r=>r.id===id)?.name || id).join(', ')}</p>)}
+        {inspection.paranormalPowers.map((power,index)=><div key={`${power.id}-${index}`} className="text-sm space-y-1"><p><strong>{power.name}</strong> — {power.element}</p><p className="text-muted-foreground">{power.description}</p>{power.choices?.ritualId && <p>Ritual: {ALL_RITUALS.find(r=>r.id===power.choices?.ritualId)?.name}</p>}{power.choices?.classPowerIds?.map(id=><p key={id}>Poder concedido: {getPowerById(id)?.name}</p>)}</div>)}
+        {creationInventory(formData).map(item=><p key={item.id} className="text-sm"><strong>{item.name}</strong> — categoria {item.category}{item.effectiveCategory!==item.category?` → ${item.effectiveCategory}`:''}; {Math.max(0,item.slots-item.spaceReduction)} espaço(s). Benefício: {item.creationSource==='grimorio'?'Criar Grimório':item.creationSource==='a-favorita'?'A Favorita':item.creationSource==='ferramenta-de-trabalho'?'Ferramenta de Trabalho':item.creationSource==='ferramenta-favorita'?'Ferramenta Favorita':'Mochila de Utilidades'}.</p>)}
+        {formData.classTrack==='graduado' && formData.nex>=40 && <p className="text-sm text-muted-foreground">Rituais do grimório exigem segurá-lo e uma ação completa para folhear. O item ocupa 1 espaço.</p>}
+        {formData.elementalAffinity && <p className="text-sm">Afinidade escolhida: {formData.elementalAffinity}. A ativação exige Transcender a partir de NEX 50%.</p>}
+      </section>
 
       {/* Aparência & Personalidade */}
       {(formData.appearance || formData.personality) && <div className="grid md:grid-cols-2 gap-4">
@@ -486,212 +457,13 @@ export function StepReview({
             <p className="text-sm text-center">
               <span className="text-warning font-medium">⚠ Complete todas as escolhas pendentes</span>
             </p>
-            {/* Lista detalhada de pendências */}
-            <div className="space-y-2">
-              {/* Verificar nome */}
-              {(!formData.name || formData.name.trim().length < 2) && (
-                <motion.div 
-                  className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
-                  onClick={() => onStepClick?.(0)}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  </motion.div>
-                  <span>Defina um <strong>nome</strong> para o personagem (mínimo 2 caracteres)</span>
-                </motion.div>
-              )}
-              {/* Verificar origem */}
-              {!formData.origin && (
-                <motion.div 
-                  className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
-                  onClick={() => onStepClick?.(3)}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 }}
-                >
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
-                  >
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  </motion.div>
-                  <span>Escolha uma <strong>origem</strong> para o personagem</span>
-                </motion.div>
-              )}
-              {/* Verificar classe */}
-              {!formData.characterClass && (
-                <motion.div 
-                  className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
-                  onClick={() => onStepClick?.(4)}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-                  >
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  </motion.div>
-                  <span>Escolha uma <strong>classe</strong> para o personagem</span>
-                </motion.div>
-              )}
-              {/* Verificar atributos - só mostra pendência se restar pontos a distribuir */}
-              {(() => {
-                const attrValidation = validateAttributes(formData.attributes, formData.nex);
-                if (attrValidation.remainingPoints > 0) {
-                  return (
-                    <motion.div 
-                      className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
-                      onClick={() => onStepClick?.(2)}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.25 }}
-                    >
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
-                      >
-                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                      </motion.div>
-                      <span>
-                        Distribua todos os <strong>pontos de atributo</strong>{' '}
-                        <span className="inline-flex items-center justify-center bg-warning/30 text-warning font-bold px-2 py-0.5 rounded-full text-xs ml-1">
-                          {attrValidation.remainingPoints} restante{attrValidation.remainingPoints > 1 ? 's' : ''}
-                        </span>
-                      </span>
-                    </motion.div>
-                  );
-                }
-                return null;
-              })()}
-              {/* Verificar escolhas de perícias pendentes */}
-              {buildResult.pendingChoices && buildResult.pendingChoices.length > 0 && (
-                <motion.div 
-                  className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
-                  onClick={() => onStepClick?.(getStepIndex('skills'))}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
-                  >
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  </motion.div>
-                  <span>
-                    Resolva as <strong>escolhas de perícias</strong> pendentes{' '}
-                    <span className="inline-flex items-center justify-center bg-warning/30 text-warning font-bold px-2 py-0.5 rounded-full text-xs ml-1">
-                      {buildResult.pendingChoices.length} escolha{buildResult.pendingChoices.length > 1 ? 's' : ''}
-                    </span>
-                  </span>
-                </motion.div>
-              )}
-              {/* Verificar erros de atributo (ex: acima do limite) */}
-              {(() => {
-                // Recalcula validação apenas para mostrar mensagens detalhadas
-                const attrValidation = validateAttributes(formData.attributes, formData.nex);
-                if (attrValidation.errors.length === 0) return null;
-
-                return (
-                  <motion.div 
-                    className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
-                    onClick={() => onStepClick?.(2)}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.34 }}
-                  >
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                    >
-                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    </motion.div>
-                    <span>
-                      Ajuste os <strong>atributos</strong>{' '}
-                      <span className="inline-flex items-center justify-center bg-destructive/30 text-destructive font-bold px-2 py-0.5 rounded-full text-xs ml-1">
-                        {attrValidation.errors.length} erro{attrValidation.errors.length > 1 ? 's' : ''}
-                      </span>
-                    </span>
-                  </motion.div>
-                );
-              })()}
-
-              {/* Verificar conflitos de perícias - usa pendingConflicts (o que realmente impede finalizar) */}
-              {buildResult.pendingConflicts && buildResult.pendingConflicts.length > 0 && (
-                <motion.div 
-                  className="flex items-center gap-2 text-sm text-warning bg-warning/10 p-2 rounded-md cursor-pointer hover:bg-warning/20 transition-colors" 
-                  onClick={() => onStepClick?.(getStepIndex('skills'))}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.35 }}
-                >
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                  >
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  </motion.div>
-                  <span>
-                    Resolva os <strong>conflitos de perícias</strong>{' '}
-                    <span className="inline-flex items-center justify-center bg-destructive/30 text-destructive font-bold px-2 py-0.5 rounded-full text-xs ml-1">
-                      {buildResult.pendingConflicts.length} conflito{buildResult.pendingConflicts.length > 1 ? 's' : ''}
-                    </span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      ({buildResult.pendingConflicts.slice(0, 3).join(', ')}{buildResult.pendingConflicts.length > 3 ? '…' : ''})
-                    </span>
-                  </span>
-                </motion.div>
-              )}
-
-              {/* Bloco de diagnóstico - aparece APENAS em dev quando não há pendências visíveis mas canFinalize é false */}
-              {import.meta.env.DEV && (() => {
-                const attrValidation = validateAttributes(formData.attributes, formData.nex);
-                const hasVisibleIssues = 
-                  (!formData.name || formData.name.trim().length < 2) ||
-                  !formData.origin ||
-                  !formData.characterClass ||
-                  attrValidation.remainingPoints > 0 ||
-                  attrValidation.errors.length > 0 ||
-                  (buildResult.pendingChoices && buildResult.pendingChoices.length > 0) ||
-                  (buildResult.pendingConflicts && buildResult.pendingConflicts.length > 0);
-
-                // Se não há pendências visíveis mas ainda não pode finalizar, mostra diagnóstico
-                if (!hasVisibleIssues && !canFinalize) {
-                  return (
-                    <motion.div 
-                      className="mt-4 p-3 bg-muted/50 border border-dashed border-muted-foreground/30 rounded-md text-xs text-muted-foreground"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.5 }}
-                    >
-                      <p className="font-semibold mb-2 text-foreground/70">🔍 Diagnóstico (debug):</p>
-                      <ul className="space-y-1 font-mono">
-                        <li>• nome: "{formData.name}" (min 2 chars: {formData.name.trim().length >= 2 ? '✓' : '✗'})</li>
-                        <li>• origem: {formData.origin || '(vazia)'} {formData.origin ? '✓' : '✗'}</li>
-                        <li>• classe: {formData.characterClass || '(vazia)'} {formData.characterClass ? '✓' : '✗'}</li>
-                        <li>• atributos válidos: {attrValidation.valid ? '✓' : '✗'}</li>
-                        <li>• pontos restantes: {attrValidation.remainingPoints} {attrValidation.remainingPoints === 0 ? '✓' : '✗'}</li>
-                        <li>• erros de atributo: {attrValidation.errors.length > 0 ? attrValidation.errors.join(', ') : 'nenhum ✓'}</li>
-                        <li>• escolhas pendentes: {buildResult.pendingChoices?.length || 0} {buildResult.pendingChoices?.length === 0 ? '✓' : '✗'}</li>
-                        <li>• conflitos pendentes: {buildResult.pendingConflicts?.length || 0} {buildResult.pendingConflicts?.length === 0 ? '✓' : '✗'}</li>
-                        {buildResult.pendingConflicts && buildResult.pendingConflicts.length > 0 && (
-                          <li className="text-warning">  → {buildResult.pendingConflicts.join(', ')}</li>
-                        )}
-                      </ul>
-                    </motion.div>
-                  );
-                }
-                return null;
-              })()}
-            </div>
+            <ul className="space-y-2">
+              {inspection.issues.map((issue,index) => <li key={`${issue.step}-${index}`}>
+                <Button variant="ghost" className="h-auto min-h-11 w-full justify-start whitespace-normal text-left text-warning" onClick={() => onStepClick?.(getStepIndex(issue.step))}>
+                  <AlertCircle className="mr-2 h-4 w-4 shrink-0" />{issue.message}
+                </Button>
+              </li>)}
+            </ul>
           </div>
         )}
       </motion.div>

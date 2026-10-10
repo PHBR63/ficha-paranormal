@@ -352,7 +352,7 @@ export interface PowerMechanics {
   
   // === ESCOLHAS DO JOGADOR ===
   requiresChoice?: {
-    type: 'element' | 'skill' | 'ritual' | 'power' | 'attribute' | 'weaponGroup';
+    type: 'element' | 'skill' | 'ritual' | 'power' | 'attribute' | 'weaponGroup' | 'item';
     count?: number;
     options?: string[];
   };

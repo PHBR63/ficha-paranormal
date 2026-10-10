@@ -411,7 +411,7 @@ export const ESPECIALISTA_POWERS: UnifiedClassPower[] = [
       base: {
         kind: 'passive',
         requiresChoice: {
-          type: 'skill', // Item
+          type: 'item',
           count: 1,
         },
       },

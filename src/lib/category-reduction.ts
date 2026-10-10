@@ -7,7 +7,7 @@
  * - "Técnica Secreta" (Aniquilador NEX 40%): reduz categoria da arma favorita em II
  * - "Máquina de Matar" (Aniquilador NEX 99%): reduz categoria da arma favorita em III
  * - "Ferramenta Favorita" (Engenheiro - Origem): reduz categoria de 1 item não-arma em I
- * - "Mochila de Utilidades" (Especialista - Poder): reduz categoria e espaço de até 3 itens não-arma
+ * - "Mochila de Utilidades" (Especialista - Poder): reduz categoria e espaço de um item não-arma
  */
 
 import type { InventoryItem } from './inventory-system';
@@ -97,10 +97,10 @@ export const CATEGORY_REDUCTION_ABILITIES: CategoryReductionConfig[] = [
     reductionAmount: 1,
     spaceReduction: 1,
     isWeaponExcluded: true,
-    maxItems: 3,
+    maxItems: 1,
     requiresChoice: true,
     minNex: 15,
-    description: 'Escolha até 3 equipamentos (exceto armas). Cada um ocupa 1 espaço a menos e é considerado uma categoria abaixo.',
+    description: 'Escolha um equipamento (exceto armas). Ele ocupa 1 espaço a menos e é considerado uma categoria abaixo.',
   },
   
   // ===== TÉCNICO (ESPECIALISTA) =====

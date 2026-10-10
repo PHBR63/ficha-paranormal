@@ -4,6 +4,7 @@ import { ConhecimentoSymbol, EnergiaSymbol, MedoSymbol, MorteSymbol, SangueSymbo
 // Inclui painel educativo do livro de regras
 
 import { useState, useMemo } from 'react';
+import { CreationRitualExtras } from './CreationRitualExtras';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -719,6 +720,7 @@ export function StepRituals({ formData, updateFormData }: StepRitualsProps) {
       </ScrollArea>
 
       {/* Resumo dos rituais selecionados */}
+      <CreationRitualExtras formData={formData} updateFormData={updateFormData} />
       {selectedRituals.length > 0 && (
         <div className="space-y-2 border-t border-border pt-4">
           <label className="text-sm font-medium text-muted-foreground">

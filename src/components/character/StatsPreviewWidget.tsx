@@ -12,6 +12,7 @@ import { Heart, Zap, Brain, Shield, Footprints, ChevronDown, ChevronUp } from '@
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { CLASSES } from '@/lib/character-data';
+import { getNexLevel } from '@/lib/rules/nex-progression';
 import { CORE_ORIGIN_IDS } from '@/lib/constants/game-ids';
 import {
   Tooltip,
@@ -41,7 +42,7 @@ function getHpBreakdown(classId: string, vigor: number, nex: number) {
   const classData = CLASSES.find(c => c.id === classId);
   if (!classData) return null;
   
-  const nexMultiplier = Math.max(0, Math.floor(nex / 5) - 1);
+  const nexMultiplier = Math.max(0, getNexLevel(nex) - 1);
   const baseHp = classData.pvBase;
   const fromVigor = vigor;
   const fromNex = nexMultiplier * (classData.pvPerNex + vigor);
@@ -54,7 +55,7 @@ function getPeBreakdown(classId: string, presence: number, nex: number) {
   const classData = CLASSES.find(c => c.id === classId);
   if (!classData) return null;
   
-  const nexMultiplier = Math.max(0, Math.floor(nex / 5) - 1);
+  const nexMultiplier = Math.max(0, getNexLevel(nex) - 1);
   const basePe = classData.peBase;
   const fromPresence = presence;
   const fromNex = nexMultiplier * (classData.pePerNex + presence);
@@ -67,10 +68,10 @@ function getSanBreakdown(classId: string, nex: number, originId?: string) {
   const classData = CLASSES.find(c => c.id === classId);
   if (!classData) return null;
   
-  const nexMultiplier = Math.max(0, Math.floor(nex / 5) - 1);
+  const nexMultiplier = Math.max(0, getNexLevel(nex) - 1);
   const baseSan = classData.sanBase;
   const fromNex = nexMultiplier * classData.sanPerNex;
-  const originMod = originId === 'cultista-arrependido' ? -5 : 0;
+  const originMod = originId === 'cultista-arrependido' ? -Math.floor(baseSan/2) : 0;
   
   return { base: baseSan, fromNex, originMod, formula: `${baseSan} + ${nexMultiplier}×${classData.sanPerNex}${originMod ? ` ${originMod}` : ''}` };
 }
@@ -221,7 +222,7 @@ export function StatsPreviewWidget({
               </div>
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="p-1 rounded hover:bg-muted/50 transition-colors"
+                aria-label={expanded?'Recolher detalhes dos atributos':'Expandir detalhes dos atributos'} aria-expanded={expanded} className="min-h-11 min-w-11 p-1 rounded hover:bg-muted/50 transition-colors"
               >
                 {expanded ? (
                   <ChevronUp className="w-3 h-3 text-muted-foreground" />
@@ -252,6 +253,7 @@ export function StatsPreviewWidget({
                         { label: 'Base Classe', value: hpBreakdown.base },
                         { label: 'Vigor', value: hpBreakdown.fromVigor, prefix: '+' },
                         { label: 'Progressão NEX', value: hpBreakdown.fromNex, prefix: '+' },
+                        {label:'Origem, trilha e poderes',value:hp-hpBreakdown.base-hpBreakdown.fromVigor-hpBreakdown.fromNex},
                       ] : undefined}
                     />
                   </motion.div>
@@ -278,6 +280,7 @@ export function StatsPreviewWidget({
                         { label: 'Base Classe', value: peBreakdown.base },
                         { label: 'Presença', value: peBreakdown.fromPresence, prefix: '+' },
                         { label: 'Progressão NEX', value: peBreakdown.fromNex, prefix: '+' },
+                        {label:'Origem, trilha e poderes',value:pe-peBreakdown.base-peBreakdown.fromPresence-peBreakdown.fromNex},
                       ] : undefined}
                     />
                   </motion.div>
@@ -304,6 +307,7 @@ export function StatsPreviewWidget({
                         { label: 'Base Classe', value: sanBreakdown.base },
                         { label: 'Progressão NEX', value: sanBreakdown.fromNex, prefix: '+' },
                         ...(sanBreakdown.originMod !== 0 ? [{ label: 'Origem', value: sanBreakdown.originMod }] : []),
+                        {label:'Poderes e outros ajustes',value:san-sanBreakdown.base-sanBreakdown.fromNex-sanBreakdown.originMod},
                       ] : undefined}
                     />
                   </motion.div>

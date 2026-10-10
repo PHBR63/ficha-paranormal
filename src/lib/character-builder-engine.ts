@@ -5,7 +5,8 @@
  * IDs de classes são gerenciados centralmente em game-ids.ts
  */
 
-import { ORIGINS, CLASSES, SKILLS, calculateDerivedStats, getPatentByNex, calculateDefense, getExtraAttributePoints } from './character-data';
+import { ORIGINS, CORE_ORIGINS, CLASSES, SKILLS, calculateDerivedStats, calculateDefense, getExtraAttributePoints, getTrackById, countTranscender } from './character-data';
+import { getCoreAbilities, getChoosableAbilities } from './class-abilities';
 import { CLASS_IDS, isValidSkillId as isValidSkillIdFromConstants } from './constants/game-ids';
 
 // Set de IDs válidos de perícias para validação rápida (mantido para compatibilidade)
@@ -66,6 +67,9 @@ export interface CharacterBuildState {
   conflictResolutions: Record<string, string>;
   powers: Array<{ name: string; description: string }>;
   background: string;
+  abilities?: string[];
+  classTrack?: string;
+  trackAbilities?: string[];
 }
 
 export interface RebuildResult {
@@ -88,6 +92,7 @@ export interface RebuildResult {
   canFinalize: boolean;
   pendingChoices: SkillChoice[];
   pendingConflicts: string[];
+  validationErrors?: string[];
 }
 
 // ============= CLASS SKILL RULES =============
@@ -163,31 +168,32 @@ export const SKILLS_REQUIRING_TRAINING = [
 // ============= ORIGIN TABLE FOR 2d20 ROLL =============
 
 export const ORIGIN_TABLE: Array<{ min: number; max: number; originId: string }> = [
-  { min: 2, max: 2, originId: 'academico' },
-  { min: 3, max: 3, originId: 'agente-de-saude' },
-  { min: 4, max: 4, originId: 'amnesico' },
-  { min: 5, max: 5, originId: 'artista' },
-  { min: 6, max: 6, originId: 'atleta' },
-  { min: 7, max: 7, originId: 'chef' },
-  { min: 8, max: 9, originId: 'criminoso' },
-  { min: 10, max: 10, originId: 'cultista-arrependido' },
-  { min: 11, max: 11, originId: 'desgarrado' },
-  { min: 12, max: 12, originId: 'diplomata' },
-  { min: 13, max: 13, originId: 'engenheiro' },
-  { min: 14, max: 14, originId: 'executivo' },
-  { min: 15, max: 16, originId: 'investigador' },
-  { min: 17, max: 17, originId: 'lutador' },
-  { min: 18, max: 19, originId: 'militar' },
-  { min: 20, max: 20, originId: 'operario' },
-  { min: 21, max: 22, originId: 'policial' },
-  { min: 23, max: 23, originId: 'religioso' },
-  { min: 24, max: 24, originId: 'servidor-publico' },
-  { min: 25, max: 26, originId: 'teorico-da-conspiracao' },
-  { min: 27, max: 28, originId: 'ti' },
-  { min: 29, max: 29, originId: 'trabalhador-rural' },
-  { min: 30, max: 31, originId: 'trambiqueiro' },
-  { min: 32, max: 33, originId: 'universitario' },
-  { min: 34, max: 40, originId: 'vitima' },
+  { min: 2, max: 8, originId: 'academico' },
+  { min: 9, max: 10, originId: 'agente-de-saude' },
+  { min: 11, max: 11, originId: 'amnesico' },
+  { min: 12, max: 13, originId: 'artista' },
+  { min: 14, max: 15, originId: 'atleta' },
+  { min: 16, max: 16, originId: 'chef' },
+  { min: 17, max: 17, originId: 'criminoso' },
+  { min: 18, max: 18, originId: 'cultista-arrependido' },
+  { min: 19, max: 19, originId: 'desgarrado' },
+  { min: 20, max: 20, originId: 'engenheiro' },
+  { min: 21, max: 21, originId: 'executivo' },
+  { min: 22, max: 23, originId: 'investigador' },
+  { min: 24, max: 24, originId: 'lutador' },
+  { min: 25, max: 25, originId: 'magnata' },
+  { min: 26, max: 26, originId: 'mercenario' },
+  { min: 27, max: 27, originId: 'militar' },
+  { min: 28, max: 28, originId: 'operario' },
+  { min: 29, max: 30, originId: 'policial' },
+  { min: 31, max: 31, originId: 'religioso' },
+  { min: 32, max: 32, originId: 'servidor-publico' },
+  { min: 33, max: 33, originId: 'teorico-da-conspiracao' },
+  { min: 34, max: 34, originId: 'ti' },
+  { min: 35, max: 35, originId: 'trabalhador-rural' },
+  { min: 36, max: 36, originId: 'trambiqueiro' },
+  { min: 37, max: 38, originId: 'universitario' },
+  { min: 39, max: 40, originId: 'vitima' },
 ];
 
 // ============= VALIDATION FUNCTIONS =============
@@ -210,6 +216,9 @@ export function validateAttributes(allocation: AttributeAllocation, nex: number 
 } {
   const errors: string[] = [];
   const values = Object.values(allocation);
+  if (values.length !== 5 || values.some(v => !Number.isInteger(v))) {
+    errors.push('Informe cinco atributos com valores inteiros.');
+  }
   
   // Verificar se algum está abaixo de 0
   if (values.some(v => v < 0)) {
@@ -267,12 +276,7 @@ export function validateAttributes(allocation: AttributeAllocation, nex: number 
  * Exportada para uso em outros componentes
  */
 export function getMaxAttributeByNex(nex: number): number {
-  // Na criação (NEX 5%) o máximo é 3
-  // A cada avanço de NEX, o limite pode aumentar (regra do livro)
-  // Por simplicidade: NEX 5-15% = 3, NEX 20-35% = 4, NEX 40%+ = 5
-  if (nex <= 15) return 3;
-  if (nex <= 35) return 4;
-  return 5;
+  return Math.min(5, 3 + getExtraAttributePoints(nex));
 }
 
 /**
@@ -370,7 +374,9 @@ export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult
   const attrValidation = validateAttributes(state.attributes, state.nex);
   
   // 2. Obter perícias da origem
-  const originSkills = state.origin ? getOriginSkills(state.origin) : [];
+  const originSkills = state.origin === 'amnesico'
+    ? [...new Set((state.originSkills || []).filter(isValidSkillId))]
+    : state.origin ? getOriginSkills(state.origin) : [];
   
   // 3. Obter regras de perícias da classe
   const classRules = state.characterClass 
@@ -432,7 +438,9 @@ export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult
         state.attributes.vigor,
         state.attributes.presence,
         state.nex,
-        state.origin
+        state.origin,
+        [...(state.abilities || []), ...(getTrackById(state.classTrack || '')?.abilities || []).filter(a => a.minNex <= state.nex).map(a => a.name)],
+        countTranscender(state.abilities)
       )
     : { hp: 0, pe: 0, san: 0 };
   
@@ -440,7 +448,11 @@ export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult
   const proficiencies = CLASS_PROFICIENCIES[state.characterClass] || [];
   
   // 9. Habilidades iniciais
-  const abilities = CLASS_INITIAL_ABILITIES[state.characterClass] || [];
+  const abilities = [
+    ...getCoreAbilities(state.characterClass, state.nex).map(a => a.name),
+    ...(state.abilities || []).map(id => getChoosableAbilities(state.characterClass, state.nex).find(a => a.id === id)?.name).filter((a): a is string => !!a),
+    ...(getTrackById(state.classTrack || '')?.abilities || []).filter(a => a.minNex <= state.nex).map(a => a.name),
+  ];
   
   // 10. Poderes da origem
   const origin = ORIGINS.find(o => o.id === state.origin);
@@ -451,16 +463,30 @@ export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult
   
   // 11. Verificar choices pendentes
   const pendingChoices = classRules.choices.filter(
-    choice => !state.classSkillChoices[choice.id]
+    choice => !isValidSkillId(state.classSkillChoices[choice.id] || '')
   );
   
   // 12. Verificar conflitos pendentes
   const pendingConflicts = conflicts
-    .filter(c => c.needsResolution && !state.conflictResolutions[c.skillId])
+    .filter(c => c.needsResolution && !isValidSkillId(state.conflictResolutions[c.skillId] || ''))
     .map(c => c.skillId);
   
   // 13. Pode finalizar?
-  const canFinalize = 
+  const grantedSkills = new Set([...originSkills, ...classSkillsFromChoices, ...classRules.mandatory, ...Object.values(state.conflictResolutions)]);
+  const freeCount = new Set(state.freeSkills.filter(s => isValidSkillId(s) && !grantedSkills.has(s))).size;
+  const validationErrors = [
+    ...classRules.choices.filter(choice=>{
+      const selected=state.classSkillChoices[choice.id];
+      return selected && (!choice.options.includes(selected) && !choice.options.some(id=>originSkills.includes(id)) || originSkills.includes(selected));
+    }).map(choice=>`Escolha uma opção válida e distinta para ${choice.label}.`),
+    ...(!CORE_ORIGINS.some(o => o.id === state.origin) ? ['Escolha uma origem do Livro Base.'] : []),
+    ...(!CLASSES.some(c => c.id === state.characterClass) ? ['Escolha uma classe do Livro Base.'] : []),
+    ...(!(state.nex === 99 || state.nex >= 5 && state.nex <= 95 && state.nex % 5 === 0) ? ['NEX fora da progressão do Livro Base.'] : []),
+    ...(state.origin === 'amnesico' && originSkills.length !== 2 ? ['Defina as duas perícias do Amnésico com o mestre.'] : []),
+    ...(freeCount !== classRules.freePoints ? [`Escolha ${classRules.freePoints} perícias livres distintas; ${freeCount} selecionadas.`] : []),
+    ...(state.freeSkills.some(s => !isValidSkillId(s)) ? ['Há uma perícia inválida.'] : []),
+  ];
+  const canFinalize = validationErrors.length === 0 &&
     state.name.trim().length >= 2 &&
     state.origin !== '' &&
     state.characterClass !== '' &&
@@ -489,6 +515,7 @@ export function rebuildCharacterSheet(state: CharacterBuildState): RebuildResult
     canFinalize,
     pendingChoices,
     pendingConflicts,
+    validationErrors,
   };
 }
 

@@ -161,6 +161,7 @@ import {
 
 // Conversão do inventário para o contrato compartilhado pelo painel e modal de combate.
 import { toMobileWeaponEntry } from './mobile/weapon-entry';
+import { characterPowerInput } from '@/lib/effects/character-power-input';
 import { VersatilityAbilityCard } from './VersatilityAbilityCard';
 
 import { useWeaponBuffs, useUnifiedEffects, useRoundTracking, useActivatedEffects } from '@/hooks';
@@ -910,6 +911,8 @@ export function MobileCharacterSheet({
     conditions: parseConditions(character.conditions || []).map(condition => condition.id),
     activeRituals: activeRitualsForSUE,
     paranormalPowers: paranormalPowersForSUE,
+    abilities:character.abilities,
+    classPowers:characterPowerInput(character.abilities,character.class,character.nex,character.class_power_choices),
     activatedEffectIds: activatedEffects.activatedEffectIds,
   });
   

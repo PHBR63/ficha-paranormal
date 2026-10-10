@@ -27,22 +27,11 @@ import { ExitConfirmDialog } from '@/components/character/ExitConfirmDialog';
 import { CreationHelpButton } from '@/components/character/CreationHelpModal';
 import { TemplateGalleryModal } from '@/components/templates/TemplateGalleryModal';
 import { TemplateApplyWizard } from '@/components/templates/TemplateApplyWizard';
-import { 
-  ORIGINS, 
-  CLASSES, 
-  calculateDerivedStats, 
-  calculateDefense,
-  getOcultistRituals,
-  getAbilityChoicesByNex,
-  getExtraSkillsByNex
-} from '@/lib/character-data';
-import { rebuildCharacterSheet, buildStateToFormData, CLASS_PROFICIENCIES, getClassSkillRules, validateAttributes } from '@/lib/character-builder-engine';
-import { getCoreAbilities, getChoosableAbilities } from '@/lib/class-abilities';
 import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@/hooks';
-import { validateCharacter } from '@/lib/character-validation';
-import { CORE_ORIGIN_IDS, ALL_TRANSCENDER_IDS } from '@/lib/constants/game-ids';
 import confetti from 'canvas-confetti';
 import type { CharacterTemplate, TemplateWithAuthor } from '@/types/templates';
+import { creationSteps, inspectCharacterCreation } from '@/lib/character-creation-rules';
+import { createCharacter } from '@/services/character-creation-service';
 
 export type CharacterFormData = {
   // Conceito
@@ -112,6 +101,7 @@ export type CharacterFormData = {
       skills?: string[];
       ritualId?: string;
       resistElement?: string;
+      classPowerIds?: string[];
     };
   }>;
   
@@ -119,7 +109,7 @@ export type CharacterFormData = {
   // Mapa de "powerId-instanceIndex" para a escolha feita
   classPowerChoices: Record<string, {
     powerId: string;
-    choiceType: 'weaponGroup' | 'skill' | 'attribute' | 'power';
+    choiceType: 'weaponGroup' | 'skill' | 'attribute' | 'power' | 'element' | 'ritual' | 'item';
     chosenValues: string[];
     instanceIndex?: number;
   }>;
@@ -133,22 +123,13 @@ export type CharacterFormData = {
     abilityName?: string;
   } | null;
   secondaryTrackAbility?: string | null;
+  trainingAdvances?: Record<string, string[]>;
+  extraRituals?: Record<string, string[]>;
+  creationItemChoices?: Record<string, string>;
+  elementalAffinity?: string | null;
+  originParanormalChoices?: { skills?: string[]; ritualId?: string; resistElement?: string; classPowerIds?: string[] };
+  creationOperationId?: string;
 };
-
-// Base steps - rituais será inserido dinamicamente para Ocultistas
-const BASE_STEPS = [
-  { id: 'concept', title: 'CONCEITO' },
-  { id: 'nex', title: 'NEX' },
-  { id: 'patent', title: 'PATENTE' }, // Novo step de patente independente
-  { id: 'attributes', title: 'ATRIBUTOS' },
-  { id: 'origin', title: 'ORIGEM' },
-  { id: 'class', title: 'CLASSE' },
-  { id: 'track', title: 'TRILHA' },
-  // Rituais é inserido aqui para Ocultistas
-  { id: 'skills', title: 'PERÍCIAS' },
-  { id: 'abilities', title: 'HABILIDADES' },
-  { id: 'review', title: 'REVISÃO' },
-];
 
 const initialFormData: CharacterFormData = {
   name: '',
@@ -189,6 +170,9 @@ const initialFormData: CharacterFormData = {
   classPowerChoices: {},
   versatilityChoice: null,
   secondaryTrackAbility: null,
+  trainingAdvances: {},
+  extraRituals: {},
+  creationItemChoices: {},
 };
 
 export default function CharacterCreate() {
@@ -203,7 +187,7 @@ export default function CharacterCreate() {
   
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState<CharacterFormData>(initialFormData);
+  const [formData, setFormData] = useState<CharacterFormData>(() => ({...initialFormData, creationOperationId: crypto.randomUUID()}));
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
@@ -214,48 +198,45 @@ export default function CharacterCreate() {
   // Busca nome da campanha se houver campaignId
   useEffect(() => {
     if (campaignId) {
-      supabase
-        .from('campaigns')
-        .select('name')
-        .eq('id', campaignId)
-        .single()
-        .then(({ data }) => {
-          if (data) setCampaignName(data.name);
-        });
+      let active=true;
+      const loadCampaign=async()=>{
+        const v2=await supabase.from('campaigns_v2').select('name').eq('id',campaignId).maybeSingle();
+        const result=v2.data ? v2 : await supabase.from('campaigns').select('name').eq('id',campaignId).maybeSingle();
+        if (active) setCampaignName(result.data?.name || null);
+      };
+      void loadCampaign();
+      return ()=>{active=false;};
     }
   }, [campaignId]);
 
-  // Auto-save hook
-  useCharacterAutoSave(formData, currentStep, formData.name.length > 0);
+  const draftScope = useMemo(() => ({userId: user?.id || '', campaignId}), [user?.id, campaignId]);
+  const { error: draftError } = useCharacterAutoSave(formData, currentStep, !!user && !saving && !showRestoreDialog && formData.name.length > 0, draftScope);
 
   // Check for draft on mount
   useEffect(() => {
-    const draft = loadCharacterDraft();
+    const draft = loadCharacterDraft(draftScope);
     if (draft && draft.formData.name) {
       setDraftData(draft);
       setShowRestoreDialog(true);
     }
-  }, []);
+  }, [draftScope]);
 
   const handleRestoreDraft = useCallback(() => {
     if (draftData) {
-      setFormData({ ...draftData.formData, photoFile: null });
-      setCurrentStep(draftData.currentStep);
+      setFormData({ ...initialFormData, ...draftData.formData, photoFile: null, creationOperationId: draftData.formData.creationOperationId || crypto.randomUUID() });
+      setCurrentStep(Math.min(draftData.currentStep,creationSteps(draftData.formData.characterClass).length-1));
       toast({
         title: 'Rascunho restaurado',
-        description: 'Seu progresso anterior foi recuperado.',
+        description: draftData.photoNeedsReselect ? 'Seu progresso foi recuperado. Selecione novamente a foto antes de salvar.' : 'Seu progresso anterior foi recuperado.',
       });
     }
     setShowRestoreDialog(false);
   }, [draftData, toast]);
 
   const handleDiscardDraft = useCallback(() => {
-    clearCharacterDraft();
+    clearCharacterDraft(draftScope);
     setShowRestoreDialog(false);
-  }, []);
-
-  // Referência para o NEX anterior (para detectar mudanças)
-  const previousNexRef = useRef(formData.nex);
+  }, [draftScope]);
 
   const updateFormData = useCallback((updates: Partial<CharacterFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -279,7 +260,7 @@ export default function CharacterCreate() {
     setSelectedTemplate(null);
     
     // Ir para o step de revisão para o usuário verificar
-    const reviewStepIndex = STEPS.findIndex(s => s.id === 'review');
+    const reviewStepIndex = creationSteps(adjustedData.characterClass || formData.characterClass).findIndex(s => s.id === 'review');
     if (reviewStepIndex !== -1) {
       // Define direção ANTES de mudar o step para animação correta
       setTransitionDirection('forward');
@@ -333,7 +314,7 @@ export default function CharacterCreate() {
     setShowTemplateGallery(false);
     
     // Ir para o step de revisão para o usuário verificar/ajustar
-    const reviewStepIndex = STEPS.findIndex(s => s.id === 'review');
+    const reviewStepIndex = creationSteps(data.classId).findIndex(s => s.id === 'review');
     if (reviewStepIndex !== -1) {
       // Define direção ANTES de mudar o step para animação correta
       setTransitionDirection('forward');
@@ -347,185 +328,18 @@ export default function CharacterCreate() {
   }, [formData.name, toast]);
 
 
-  // Efeito para reset automático quando o NEX mudar
-  useEffect(() => {
-    const previousNex = previousNexRef.current;
-    const currentNex = formData.nex;
-
-    // Se o NEX mudou, verificar se precisa resetar seleções
-    if (previousNex !== currentNex) {
-      let needsUpdate = false;
-      const updates: Partial<CharacterFormData> = {};
-
-      // Verificar rituais (apenas Ocultista)
-      if (formData.characterClass === 'Ocultista') {
-        const ritualsAllowed = getOcultistRituals(currentNex);
-        if (ritualsAllowed && formData.rituals.length > ritualsAllowed.count) {
-          // Manter apenas os primeiros rituais permitidos
-          updates.rituals = formData.rituals.slice(0, ritualsAllowed.count);
-          needsUpdate = true;
-          toast({
-            title: 'Rituais ajustados',
-            description: `O novo NEX permite apenas ${ritualsAllowed.count} rituais. Alguns foram removidos.`,
-          });
-        }
-      }
-
-      // Verificar habilidades opcionais
-      const maxAbilities = getAbilityChoicesByNex(currentNex);
-      const currentAbilities = formData.abilities.length;
-      if (currentAbilities > maxAbilities) {
-        updates.abilities = formData.abilities.slice(0, maxAbilities);
-        needsUpdate = true;
-        toast({
-          title: 'Habilidades ajustadas',
-          description: `O novo NEX permite apenas ${maxAbilities} habilidades opcionais. Algumas foram removidas.`,
-        });
-      }
-
-      // Verificar perícias livres
-      if (formData.characterClass) {
-        const classRules = getClassSkillRules(formData.characterClass, formData.attributes.intellect);
-        const nexExtraSkills = getExtraSkillsByNex(currentNex);
-        const totalAllowed = classRules.freePoints + nexExtraSkills;
-        
-        if (formData.freeSkills.length > totalAllowed) {
-          updates.freeSkills = formData.freeSkills.slice(0, totalAllowed);
-          needsUpdate = true;
-          toast({
-            title: 'Perícias ajustadas',
-            description: `O novo NEX permite apenas ${totalAllowed} perícias livres. Algumas foram removidas.`,
-          });
-        }
-      }
-
-      // Aplicar atualizações se necessário
-      if (needsUpdate) {
-        setFormData(prev => ({ ...prev, ...updates }));
-      }
-
-      // Atualizar referência
-      previousNexRef.current = currentNex;
-    }
-  }, [formData.nex, formData.characterClass, formData.rituals.length, formData.abilities.length, formData.freeSkills.length, formData.attributes.intellect, toast]);
-
-  // Rebuild character sheet state
-  const buildState = useMemo(() => ({
-    ...formData,
-  }), [formData]);
-  
-  const buildResult = useMemo(() => rebuildCharacterSheet(buildState), [buildState]);
-
-  // Steps dinâmicos - inclui Rituais apenas para Ocultistas
-  const isOcultist = formData.characterClass === 'Ocultista';
-  const STEPS = useMemo(() => {
-    if (isOcultist) {
-      // Insere o step de Rituais após Trilha (índice 5 no BASE_STEPS)
-      const steps = [...BASE_STEPS];
-      steps.splice(6, 0, { id: 'rituals', title: 'RITUAIS' });
-      return steps;
-    }
-    return BASE_STEPS;
-  }, [isOcultist]);
-
-  // Obter quantidade de rituais permitidos para validação
-  const ocultistClass = CLASSES.find(c => c.id === 'Ocultista');
-  const ritualsPerNex = (ocultistClass as any)?.ritualsPerNex || {};
-  const requiredRituals = ritualsPerNex[formData.nex]?.count || 0;
-
-  // Calcula quantas vezes Transcender foi escolhido (IDs centralizados em game-ids.ts)
-  const transcenderCount = useMemo(() => {
-    return formData.abilities.filter(a => 
-      (ALL_TRANSCENDER_IDS as readonly string[]).includes(a)
-    ).length;
-  }, [formData.abilities]);
-
-  // Derived stats for preview - se monta progressivamente durante a criação
-  const previewStats = useMemo(() => {
-    // DEF e MOV podem ser calculados desde os atributos
-    const defense = calculateDefense(formData.attributes.agility);
-    const movement = formData.origin === CORE_ORIGIN_IDS.ATLETA ? 12 : 9;
-    
-    // PV, PE, SAN só podem ser calculados com classe
-    if (!formData.characterClass) {
-      return { hp: null, pe: null, san: null, defense, movement };
-    }
-    
-    const stats = calculateDerivedStats(
-      formData.characterClass,
-      formData.attributes.vigor,
-      formData.attributes.presence,
-      formData.nex,
-      formData.origin,
-      formData.abilities,
-      transcenderCount // Passa a contagem de Transcender para aplicar penalidade de SAN
-    );
-    return {
-      ...stats,
-      defense,
-      movement,
-    };
-  }, [formData.characterClass, formData.attributes, formData.nex, formData.origin, formData.abilities, transcenderCount]);
-
-  // Calcula completed steps baseado no step ID ao invés de índice fixo
-  const completedSteps = useMemo(() => {
-    const completed: number[] = [];
-    
-    STEPS.forEach((step, index) => {
-      switch (step.id) {
-        case 'concept':
-          if (formData.name.trim().length >= 2) completed.push(index);
-          break;
-        case 'nex':
-          // Sempre completo (tem valor padrão)
-          completed.push(index);
-          break;
-        case 'patent':
-          // Sempre completo (tem valor padrão)
-          completed.push(index);
-          break;
-        case 'attributes':
-          // Usa validateAttributes do engine para considerar NEX e regra do zero
-          const attrValidation = validateAttributes(formData.attributes, formData.nex);
-          // Válido se: sem erros, todos os pontos usados, e no máximo 1 atributo em 0
-          if (attrValidation.valid && attrValidation.remainingPoints === 0) {
-            completed.push(index);
-          }
-          break;
-        case 'origin':
-          if (formData.origin !== '') completed.push(index);
-          break;
-        case 'class':
-          if (formData.characterClass !== '') completed.push(index);
-          break;
-        case 'track':
-          if (formData.classTrack !== '') completed.push(index);
-          break;
-        case 'rituals':
-          // Completo se selecionou a quantidade correta de rituais
-          if (formData.rituals.length === requiredRituals) completed.push(index);
-          break;
-        case 'skills':
-          if (buildResult.pendingChoices.length === 0 && buildResult.pendingConflicts.length === 0 && formData.characterClass) {
-            completed.push(index);
-          }
-          break;
-        case 'abilities':
-          // Sempre completo se classe foi selecionada (escolhas são opcionais)
-          if (formData.characterClass !== '') completed.push(index);
-          break;
-        case 'review':
-          // Verifica se pode finalizar e, se for Ocultista, se rituais estão completos
-          const ritualsOk = !isOcultist || formData.rituals.length === requiredRituals;
-          if (buildResult.canFinalize && formData.classTrack !== '' && ritualsOk) {
-            completed.push(index);
-          }
-          break;
-      }
-    });
-    
-    return completed;
-  }, [formData, buildResult, STEPS, requiredRituals, isOcultist]);
+  // Revalidar preserva escolhas: reduzir NEX não apaga silenciosamente a progressão.
+  const inspection = useMemo(() => inspectCharacterCreation(formData), [formData]);
+  const buildResult = inspection.build;
+  const STEPS = useMemo(() => creationSteps(formData.characterClass), [formData.characterClass]);
+  const previewStats = {
+    ...inspection.displayStats, defense: inspection.displayDefense, movement: buildResult.movement,
+    ...(!formData.characterClass ? {hp:null, pe:null, san:null} : {}),
+  };
+  const completedSteps = useMemo(() => STEPS.flatMap((step,index) => {
+    const complete = step.id === 'review' ? inspection.issues.length === 0 : !inspection.issues.some(issue => issue.step === step.id);
+    return complete ? [index] : [];
+  }), [STEPS, inspection]);
 
   const canProceed = useCallback(() => {
     return completedSteps.includes(currentStep);
@@ -581,21 +395,10 @@ export default function CharacterCreate() {
   const handleSave = async () => {
     if (!user) return;
     
-    // Validar dados do personagem antes de salvar
-    const validation = validateCharacter({
-      name: formData.name,
-      class: formData.characterClass,
-      class_track: formData.classTrack,
-      origin: formData.origin,
-      nex: formData.nex,
-    });
-
-    if (!validation.valid) {
-      toast({
-        title: 'Dados inválidos',
-        description: validation.errors.join('\n'),
-        variant: 'destructive',
-      });
+    const checked = inspectCharacterCreation(formData);
+    if (checked.issues.length) {
+      toast({title:'Complete o dossiê',description:checked.issues[0].message,variant:'destructive'});
+      setCurrentStep(STEPS.findIndex(step => step.id === checked.issues[0].step));
       return;
     }
 
@@ -603,17 +406,17 @@ export default function CharacterCreate() {
 
     try {
       // Upload photo to Supabase Storage if exists
-      let photoUrl: string | null = null;
+      let photoUrl: string | null = formData.photoUrl?.startsWith('blob:') ? null : formData.photoUrl;
       
       if (formData.photoFile) {
         const fileExt = formData.photoFile.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        const fileName = `${user.id}/${formData.creationOperationId}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from('character-avatars')
           .upload(fileName, formData.photoFile, {
             cacheControl: '3600',
-            upsert: false,
+            upsert: true,
           });
 
         if (uploadError) {
@@ -632,133 +435,11 @@ export default function CharacterCreate() {
         }
       }
 
-      // Calcular contagem de Transcender para aplicar penalidade de SAN (IDs centralizados)
-      const transcenderCountForSave = formData.abilities.filter(a => 
-        (ALL_TRANSCENDER_IDS as readonly string[]).includes(a)
-      ).length;
-      
-      const derivedStats = calculateDerivedStats(
-        formData.characterClass,
-        formData.attributes.vigor,
-        formData.attributes.presence,
-        formData.nex,
-        formData.origin,
-        formData.abilities,
-        transcenderCountForSave // Penalidade de SAN por Transcender
-      );
-
-      const originData = ORIGINS.find(o => o.id === formData.origin);
-      const powers = [
-        ...(originData?.powers || []).map(p => ({ 
-          name: p, 
-          description: originData?.powerDescription || '' 
-        })),
-        ...formData.powers
-      ];
-
-      // Passa as escolhas de Treinamento em Perícia para aplicar níveis superiores
-      const allSkills = buildStateToFormData(buildState, formData.skillTrainingChoices);
-      const proficiencies = CLASS_PROFICIENCIES[formData.characterClass] || [];
-      
-      // Combine core abilities with user-selected abilities and track abilities
-      const coreAbilities = getCoreAbilities(formData.characterClass, formData.nex);
-      const choosableAbilities = getChoosableAbilities(formData.characterClass, formData.nex);
-      const allAbilities = [
-        ...coreAbilities.map(a => a.name),
-        ...formData.abilities
-          .filter(id => choosableAbilities.some(a => a.id === id))
-          .map(id => choosableAbilities.find(a => a.id === id)?.name || id),
-        // Inclui habilidades da trilha desbloqueadas pelo NEX atual
-        ...formData.trackAbilities,
-        // Inclui habilidade de trilha secundária via Versatilidade (NEX 50%+)
-        ...(formData.versatilityChoice?.type === 'track_ability' && formData.secondaryTrackAbility
-          ? [formData.secondaryTrackAbility]
-          : []),
-      ];
-
-      // Monta array de poderes paranormais (Cultista Arrependido)
-      const paranormalPowers = formData.originParanormalPower 
-        ? [{ id: formData.originParanormalPower, source: 'origin' }] 
-        : [];
-
-      const { data: insertedCharacter, error } = await supabase.from('characters').insert({
-        user_id: user.id,
-        name: formData.name,
-        player_name: formData.playerName || null,
-        origin: formData.origin,
-        class: formData.characterClass,
-        nex: formData.nex,
-        patent: formData.patent || 'Recruta', // Patente selecionada manualmente
-        agility: formData.attributes.agility,
-        strength: formData.attributes.strength,
-        intellect: formData.attributes.intellect,
-        presence: formData.attributes.presence,
-        vigor: formData.attributes.vigor,
-        hp_current: derivedStats.hp,
-        hp_max: derivedStats.hp,
-        pe_current: derivedStats.pe,
-        pe_max: derivedStats.pe,
-        san_current: derivedStats.san,
-        san_max: derivedStats.san,
-        defense: calculateDefense(formData.attributes.agility),
-        skills: allSkills,
-        powers: powers,
-        background: formData.background || null,
-        concept: formData.concept || null,
-        age: formData.age,
-        gender: formData.gender || null,
-        appearance: formData.appearance || null,
-        personality: formData.personality || null,
-        photo_url: photoUrl,
-        movement: 9,
-        proficiencies: proficiencies,
-        abilities: allAbilities,
-        class_track: formData.classTrack || null,
-        rituals: formData.rituals || [],
-        paranormal_powers: paranormalPowers,
-        // Trilha de Versatilidade (NEX 50%+)
-        versatility_track: formData.versatilityChoice?.type === 'track_ability' && formData.versatilityChoice.trackId
-          ? {
-              trackId: formData.versatilityChoice.trackId,
-              trackName: formData.versatilityChoice.trackName,
-              abilityId: formData.versatilityChoice.abilityId,
-              abilityName: formData.versatilityChoice.abilityName,
-            }
-          : null,
-        // Escolhas de Treinamento em Perícia (poder geral)
-        skill_training_choices: formData.skillTrainingChoices || {},
-      }).select('id').single();
-
-      if (error) throw error;
-
-      // Se há campaignId, vincula o personagem automaticamente à campanha
-      if (campaignId && insertedCharacter) {
-        const { data: memberData, error: memberError } = await supabase
-          .from('campaign_members')
-          .select('id')
-          .eq('campaign_id', campaignId)
-          .eq('user_id', user.id)
-          .single();
-        
-        if (memberData && !memberError) {
-          const { error: updateError } = await supabase
-            .from('campaign_members')
-            .update({ character_id: insertedCharacter.id })
-            .eq('id', memberData.id);
-          
-          if (updateError) {
-            console.error('Erro ao vincular personagem à campanha:', updateError);
-            // Não é crítico, apenas avisa
-            toast({
-              title: 'Aviso',
-              description: 'Personagem criado, mas não foi possível vincular à campanha automaticamente.',
-            });
-          }
-        }
-      }
+      // O servidor grava a ficha e o vínculo em uma transação, usando a mesma operação em tentativas repetidas.
+      const insertedCharacter = await createCharacter(formData, photoUrl, campaignId);
 
       // Clear draft after successful save
-      clearCharacterDraft();
+      clearCharacterDraft(draftScope);
 
       // Celebration effect - cores temáticas por classe
       const classColors: Record<string, string[]> = {
@@ -799,10 +480,10 @@ export default function CharacterCreate() {
 
       // Redireciona para a ficha do personagem criado
       navigate(`/character/${insertedCharacter.id}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Erro ao salvar',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Não foi possível confirmar a gravação. Seu rascunho foi preservado.',
         variant: 'destructive',
       });
     } finally {
@@ -900,6 +581,7 @@ export default function CharacterCreate() {
 
   return (
     <div className="min-h-screen bg-background pb-20 sm:pb-0 relative overflow-hidden">
+      {draftError && <p role="alert" className="relative z-10 p-3 bg-warning/10 text-warning">{draftError}</p>}
       {/* Atmospheric Effects - Dynamic */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <FlickeringGrid 
@@ -942,6 +624,7 @@ export default function CharacterCreate() {
               variant="ghost" 
               size="sm" 
               onClick={handleExitRequest}
+              aria-label="Voltar ao painel"
               className="text-muted-foreground px-2 sm:px-3"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -991,7 +674,10 @@ export default function CharacterCreate() {
 
         {/* Step content */}
         <div className="ordo-panel p-3 sm:p-6 mb-4 sm:mb-6">
-          {renderStep()}
+        {renderStep()}
+        {STEPS[currentStep]?.id !== 'review' && inspection.issues.some(issue=>issue.step===STEPS[currentStep]?.id) && <div role="status" className="mt-4 rounded-md border border-warning/30 bg-warning/5 p-3 text-sm space-y-2">
+          {inspection.issues.filter(issue=>issue.step===STEPS[currentStep]?.id).map((issue,index)=><p key={index}>{issue.message}</p>)}
+        </div>}
         </div>
 
         {/* Navigation - Desktop */}

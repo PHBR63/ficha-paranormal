@@ -16,7 +16,7 @@ import { SUPPLEMENT_TRACKS } from './supplement-classes';
 // ==================== ORIGENS PRINCIPAIS (26 origens do livro base) ====================
 // Textos fiéis ao manual oficial Ordem Paranormal RPG
 
-const CORE_ORIGINS = [
+export const CORE_ORIGINS = [
   {
     id: 'academico',
     name: 'Acadêmico',
@@ -874,7 +874,7 @@ export function calculateDerivedStats(
   let hp = classData.pvBase + vigor + Math.max(0, nexMultiplier) * (classData.pvPerNex + vigor);
 
   // PE = Base + PRE + (Multiplicador * (ProgressãoPE + PRE))
-  const pe = classData.peBase + presence + Math.max(0, nexMultiplier) * (classData.pePerNex + presence);
+  let pe = classData.peBase + presence + Math.max(0, nexMultiplier) * (classData.pePerNex + presence);
 
   // SAN = Base + (Multiplicador * ProgressãoSAN)
   let san = classData.sanBase + Math.max(0, nexMultiplier) * classData.sanPerNex;
@@ -889,6 +889,8 @@ export function calculateDerivedStats(
 
   // Aplicar modificador de origem (Cultista Arrependido, etc.)
   if (originId) {
+    // Dedicação: PE inicial e novos ganhos em 15%, 25%, 35%... (Base p.21).
+    if (originId === 'universitario') pe += 1 + Math.floor(Math.max(0, nexLevels - 1) / 2);
     const origin = ORIGINS.find(o => o.id === originId);
     if (origin?.sanityModifier) {
       const baseModifier = Math.floor(classData.sanBase * origin.sanityModifier / 100);
@@ -978,13 +980,8 @@ export function calculateCarryCapacity(strength: number): number {
  * Deslocamento = 9m (pode ser modificado por origem/habilidades)
  */
 export function calculateMovement(originId?: string): number {
-  let movement = 9;
-  
-  if (originId === 'atleta') {
-    movement += 3; // Atleta recebe +3m de deslocamento
-  }
-  
-  return movement;
+  // Atleta modifica testes; não concede deslocamento (Base pp.17,36).
+  return 9;
 }
 
 /**
