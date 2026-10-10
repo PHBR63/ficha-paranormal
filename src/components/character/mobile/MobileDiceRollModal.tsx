@@ -28,6 +28,8 @@ import {
 } from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { getSkillTrainingBonus } from '@/lib/skill-training';
+import { getSkillTrainingRequirement } from '@/lib/skill-test-requirements';
 import { getAttributeDicePool } from '@/lib/attribute-dice-pool';
 import { getConditionTestDicePenalty, resolveConditionTestAttribute } from '@/lib/conditions/condition-test-penalty';
 import confetti from 'canvas-confetti';
@@ -99,6 +101,8 @@ interface MobileDiceRollModalProps {
   currentSkillTrainingLevel?: SkillTrainingLevel;
   // Bônus de perícias do personagem (para swapToSkill como Impostor/Motor de Busca)
   characterSkills?: Record<string, number>;
+  // Graus persistidos 0–3, separados dos bônus numéricos de characterSkills.
+  characterSkillTraining?: Record<string, number>;
   // Props para integração SUE (opcional - para migração incremental)
   characterConfig?: SkillRollCharacterConfig;
   activeConditions?: string[];
@@ -158,19 +162,22 @@ export function MobileDiceRollModal({
   onPEChange,
   currentSkill,
   currentSkillTrainingLevel, // Nível de treinamento atual (para filtrar Eclético)
+  characterSkillTraining,
   characterSkills = {}, // Bônus de perícias do personagem
   // SUE Config (migração incremental)
   characterConfig,
   activeConditions = [],
 }: MobileDiceRollModalProps) {
   const sourceTrainingBonus = useMemo(() => {
+    if (characterSkillTraining) return getSkillTrainingBonus(characterSkillTraining, currentSkill || label);
     const sources = bonusSources.filter(source => source.type === 'skill' && Number.isFinite(source.value));
     return sources.length ? sources.reduce((sum, source) => sum + source.value, 0) : undefined;
-  }, [bonusSources]);
+  }, [bonusSources, characterSkillTraining, currentSkill, label]);
   const effectiveTrainingLevel: SkillTrainingLevel = useMemo(() => {
     if (currentSkillTrainingLevel) return currentSkillTrainingLevel;
+    if (characterSkillTraining) return bonusToTrainingLevel(getSkillTrainingBonus(characterSkillTraining, currentSkill || label));
     return bonusToTrainingLevel(sourceTrainingBonus ?? skillBonus);
-  }, [currentSkillTrainingLevel, sourceTrainingBonus, skillBonus]);
+  }, [currentSkillTrainingLevel, characterSkillTraining, currentSkill, label, sourceTrainingBonus, skillBonus]);
   // O mobile renderiza sua própria lista: aplica os mesmos requisitos do painel
   // desktop antes de permitir ativação ou cobrança de poderes neste teste.
   const skillPowers = useMemo(() => {
@@ -303,6 +310,7 @@ export function MobileDiceRollModal({
   }, [activatedPowerEffects.skillSwap, activatedPowerEffects.attributeSwap, intellect, strength, agility, presence, vigor, attributeValue]);
   
   const testedSkill = activatedPowerEffects.skillSwap || currentSkill || label;
+  const trainingRequirement = getSkillTrainingRequirement(testedSkill, characterSkillTraining ?? {}, activatedPowerEffects.ecleticoBonus);
   const testedAttribute = resolveConditionTestAttribute(testedSkill, SKILL_ATTRIBUTE_MAP, activatedPowerEffects.attributeSwap);
   const dicePenalty = getConditionTestDicePenalty(characterConfig?.activeConditions ?? activeConditions, testedAttribute as keyof SkillRollCharacterConfig['attributes'], testedSkill);
   const dicePool = getAttributeDicePool(effectiveAttribute > 0 ? effectiveAttribute + extraDice : effectiveAttribute, dicePenalty);
@@ -312,6 +320,7 @@ export function MobileDiceRollModal({
   const executeRoll = useCallback(() => {
     if (confirmingPE) return;
     if (pendingConfirmation) { void confirmRoll(); return; }
+    if (trainingRequirement) return;
     // Limpa animação anterior
     if (animationRef.current) {
       clearInterval(animationRef.current);
@@ -397,7 +406,7 @@ export function MobileDiceRollModal({
         }).then(confirmed => { if (!confirmed) setPhase('done'); });
       }
     }, 80);
-  }, [pendingConfirmation, confirmingPE, confirmRoll, dicePenalty, attributeValue, skillBonus, sourceTrainingBonus, effectiveSkillBonus, resistanceBonus, extraDice, activatedPowerEffects, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent, intellect, strength, agility, presence, vigor]);
+  }, [trainingRequirement, pendingConfirmation, confirmingPE, confirmRoll, dicePenalty, attributeValue, skillBonus, sourceTrainingBonus, effectiveSkillBonus, resistanceBonus, extraDice, activatedPowerEffects, label, diceCount, onRollComplete, getTotalPECost, onPEChange, peCurrent, intellect, strength, agility, presence, vigor]);
 
   // Handler para iniciar a rolagem (clique no botão "Rolar Dados")
   const handleStartRoll = useCallback(() => {
@@ -598,6 +607,7 @@ export function MobileDiceRollModal({
               >
                 <Button 
                   onClick={handleStartRoll}
+                  disabled={Boolean(trainingRequirement)}
                   size="lg"
                   className="w-full gap-2 font-display text-base tracking-wider"
                 >
@@ -845,7 +855,8 @@ export function MobileDiceRollModal({
           </div>
         </MobileDrawerBody>
 
-        {confirmationError && <p role="alert" className="px-4 text-sm text-destructive">{confirmationError}</p>}
+        {trainingRequirement && <p role="alert" className="px-4 text-sm text-destructive">{trainingRequirement}</p>}
+          {confirmationError && <p role="alert" className="px-4 text-sm text-destructive">{confirmationError}</p>}
         <MobileDrawerFooter>
           <MobileButtonGroup
             buttons={[
