@@ -45,7 +45,7 @@ export const ACCESSORY_MODIFICATIONS: AccessoryModificationData[] = [
   {
     id: 'aprimorado',
     name: 'Aprimorado',
-    description: 'O bônus em perícia concedido pelo acessório aumenta para +5. Se o item tiver função adicional, esta modificação poderá ser escolhida uma segunda vez para esta função.',
+    description: 'O bônus em perícia concedido pelo acessório aumenta para +5. Cada modificação pode ser instalada uma única vez por equipamento neste sistema.',
     effect: 'Aumenta um dos bônus em perícia para +5.',
   },
   {
