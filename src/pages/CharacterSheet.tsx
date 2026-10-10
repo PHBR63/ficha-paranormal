@@ -2687,6 +2687,7 @@ export default function CharacterSheet() {
         {isMobile ? (
           <MobileCharacterSheet
             character={{
+              creation_data: character.creation_data,
               id: character.id,
               name: character.name,
               class: character.class,
