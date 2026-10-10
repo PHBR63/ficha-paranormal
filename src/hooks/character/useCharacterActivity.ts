@@ -60,6 +60,7 @@ export function useCharacterActivity(characterId: string) {
       queryClient.invalidateQueries({ queryKey: ['character-activity', user?.id, characterId] }),
       queryClient.invalidateQueries({ queryKey: ['character-history', user?.id, characterId] }),
       queryClient.invalidateQueries({ queryKey: ['character-activity-sessions', user?.id, characterId] }),
+      queryClient.invalidateQueries({ queryKey: ['ritual-situational', characterId] }),
     ]);
   }, [queryClient, user?.id, characterId]);
   const writePending = useCallback((items: PendingRoll[]) => {

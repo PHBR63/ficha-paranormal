@@ -1,4 +1,5 @@
 import { confirmCombatAttack } from '@/services/combat-attack-service';
+import { useRitualSituationalContext } from '@/hooks/character/useRitualSituationalContext';
 import { PETurnBudgetPanel } from './PETurnBudgetPanel';
 import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
 import { DEFAULT_CASTING_CONCENTRATION, getCastingWillConfig, rollCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
@@ -1039,6 +1040,7 @@ export function MobileCharacterSheet({
 
   const ritualApplication = useRitualApplication(character.id, onRefetch);
   const { beginCast: beginRitualCast, cast: confirmRitualCast } = ritualApplication;
+  const castingRequirements = useRitualSituationalContext(character.id, selectedRitual?.id, ritualCastModalOpen);
   const [ritualTargetId, setRitualTargetId] = useState<string | null>(null);
   const ritualTargets = useRitualApplicationTargets(character.id);
   const selectedRitualTarget = ritualTargets.targets.find(target => target.id === ritualTargetId);
@@ -1101,6 +1103,7 @@ export function MobileCharacterSheet({
     try {
       const event = await confirmRitualCast(peBeforeCast, peCost, {
         ritualId: ritual.id, ritualName: ritual.name, ritualElement: ritual.element, ritualCircle: ritual.circle, enhancements, sessionId: ritualCampaignSessionId,
+        ...(concentration.situational ? { situational: activityJson(concentration.situational) } : {}),
       }, ritualCampaignId && ritualCampaignVersion ? { campaignId: ritualCampaignId, campaignVersion: ritualCampaignVersion } : {},
         () => ({ concentration: activityJson(rollCastingConcentration(concentration, getCastingWillConfig(character.presence, character.skills || {}, bonusSummary, parseConditions(character.conditions || []).map(condition => condition.id), globalDiceBonus))),
           paranormalCost: activityJson(rollParanormalCost(ritual.element, character.intellect, character.skills || {}, bonusSummary, parseConditions(character.conditions || []).map(condition => condition.id), globalDiceBonus)),
@@ -2633,6 +2636,12 @@ export function MobileCharacterSheet({
             // Mantém o componente montado para concluir o wizard após fechar a preparação.
           }}
           ritual={selectedRitual}
+          context={castingRequirements.context}
+          loading={castingRequirements.loading}
+          error={castingRequirements.error}
+          onReview={castingRequirements.review}
+          reviewing={castingRequirements.reviewing}
+          reviewError={castingRequirements.reviewError}
           peCurrent={character.pe_current}
           temporaryPE={temporaryResources.pe}
           peBudget={peBudget.data}

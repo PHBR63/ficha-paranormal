@@ -3,8 +3,9 @@ import { getSkillTrainingBonus } from '@/lib/skill-training';
 import { getConditionTestDicePenalty } from '@/lib/conditions/condition-test-penalty';
 import type { BonusSummary } from '@/hooks/useCharacterBonusSummary';
 import type { TestDiceModifiers } from '@/lib/unified-effects-engine';
+import type { RitualSituationalDeclaration } from './situational-requirements';
 
-export interface CastingConcentrationContext { situation: 'normal' | 'ruim' | 'terrivel'; damage: number; requirementsConfirmed?: boolean }
+export interface CastingConcentrationContext { situation: 'normal' | 'ruim' | 'terrivel'; damage: number; requirementsConfirmed?: boolean; situational?: RitualSituationalDeclaration }
 export const DEFAULT_CASTING_CONCENTRATION: CastingConcentrationContext = { situation: 'normal', damage: 0, requirementsConfirmed: false };
 export interface CastingWillConfig { attribute: number; dicePenalty: number; bonuses: { name: string; value: number }[] }
 

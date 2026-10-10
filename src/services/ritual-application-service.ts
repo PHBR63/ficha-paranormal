@@ -14,6 +14,12 @@ export async function castCharacterRitual(input: CastCharacterRitualInput): Prom
   }));
   if (error) throw activityFailure('A conjuração não foi confirmada.', error);
   const event = confirmActivity(data, input.characterId, input.operationId);
+  if (input.payload.situational) {
+    const payload = event.payload;
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload) || payload.situationalResolution !== 'server_checked') {
+      throw new Error('O servidor não confirmou os requisitos situacionais. Recupere a mesma conjuração.');
+    }
+  }
   if (input.payload.paranormalCost) {
     const payload = event.payload;
     if (!payload || typeof payload !== 'object' || Array.isArray(payload) || payload.paranormalCostResolution !== 'server_checked') {

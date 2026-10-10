@@ -1,4 +1,5 @@
 import { CreationReviewNotice } from '@/components/character/CreationReviewNotice';
+import { useRitualSituationalContext } from '@/hooks/character/useRitualSituationalContext';
 import { confirmCombatAttack } from '@/services/combat-attack-service';
 import { isAniquiladorFavoriteWeapon } from '@/lib/category-reduction';
 import { PETurnBudgetPanel } from '@/components/character/PETurnBudgetPanel';
@@ -1220,6 +1221,7 @@ export default function CharacterSheet() {
   const temporaryResources = useTemporaryResources(id || '');
   const peBudget = usePETurnBudget(id || '');
   const { beginCast: beginRitualCast, cast: confirmRitualCast } = ritualApplication;
+  const castingRequirements = useRitualSituationalContext(id || '', ritualToCast?.id, castModalOpen);
   const [ritualTargetId, setRitualTargetId] = useState<string | null>(null);
   const ritualTargets = useRitualApplicationTargets(id || '');
   const selectedRitualTarget = ritualTargets.targets.find(target => target.id === ritualTargetId);
@@ -1247,6 +1249,7 @@ export default function CharacterSheet() {
     try {
       const event = await confirmRitualCast(peBeforeCast, peCost, {
         ritualId: ritual.id, ritualName: ritual.name, ritualElement: ritual.element, ritualCircle: ritual.circle, enhancements, sessionId: ritualCampaignSessionId,
+        ...(concentration.situational ? { situational: activityJson(concentration.situational) } : {}),
       }, ritualCampaignId && ritualCampaignVersion ? { campaignId: ritualCampaignId, campaignVersion: ritualCampaignVersion } : {},
         () => ({ concentration: activityJson(rollCastingConcentration(concentration, getCastingWillConfig(character.presence, character.skills || {}, bonusSummary, activeConditionsForSUE, globalDiceBonus))),
           paranormalCost: activityJson(rollParanormalCost(ritual.element, character.intellect, character.skills || {}, bonusSummary, activeConditionsForSUE, globalDiceBonus)),
@@ -4117,6 +4120,12 @@ export default function CharacterSheet() {
         open={castModalOpen}
         onOpenChange={setCastModalOpen}
         ritual={ritualToCast}
+        context={castingRequirements.context}
+        loading={castingRequirements.loading}
+        error={castingRequirements.error}
+        onReview={castingRequirements.review}
+        reviewing={castingRequirements.reviewing}
+        reviewError={castingRequirements.reviewError}
         peCurrent={peCurrent}
         temporaryPE={temporaryResources.pe}
         peBudget={peBudget.data}
