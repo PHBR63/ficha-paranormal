@@ -345,6 +345,7 @@ export function MobileInventoryCard({
             {onUse && isConsumable && (
               <button
                 className="w-8 h-8 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center justify-center text-green-400 active:bg-green-500/20"
+                aria-label={`Usar ${item.name}`}
                 onClick={(e) => { e.stopPropagation(); onUse(item.id); }}
               >
                 <Zap className="w-4 h-4" />
@@ -358,6 +359,8 @@ export function MobileInventoryCard({
                     ? "bg-purple-500/10 border-purple-500/30 text-purple-400" 
                     : "bg-muted/50 border-border text-muted-foreground"
                 )}
+                aria-label={`Modificar ${item.name}`}
+                title="Modificar equipamento"
                 onClick={(e) => { e.stopPropagation(); onModify(item); }}
               >
                 <Wrench className="w-4 h-4" />
@@ -367,6 +370,7 @@ export function MobileInventoryCard({
             {actions.length > 0 && (
               <button
                 className="w-8 h-8 rounded-lg bg-muted/50 border border-border flex items-center justify-center text-muted-foreground active:bg-muted"
+                aria-label={`Ações de ${item.name}`}
                 onClick={(e) => { e.stopPropagation(); actionSheet.open(); }}
               >
                 <MoreVertical className="w-4 h-4" />
