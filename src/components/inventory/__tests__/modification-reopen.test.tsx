@@ -22,7 +22,7 @@ describe('Reabrir modificações', () => {
     const props = { open: false, currentModifications: [], onOpenChange: vi.fn(), onApplyModifications: vi.fn() };
     const view = render(make(props));
     view.rerender(make({ ...props, open: true, currentModifications: [mod] }));
-    const locked = screen.getAllByRole('checkbox').filter(e => (e as HTMLButtonElement).disabled);
+    const locked = screen.getAllByRole('checkbox').filter(e => (e as HTMLButtonElement).disabled && e.getAttribute('data-state') === 'checked');
     expect(locked).toHaveLength(1);
     expect(locked[0]).toHaveAttribute('data-state', 'checked');
     expect(screen.getByRole('button', { name: 'Aplicar Modificações' })).toBeDisabled();
@@ -32,6 +32,22 @@ describe('Reabrir modificações', () => {
     view.rerender(make({ ...props, open: true, currentModifications: [mod] }));
     expect(screen.getByRole('button', { name: 'Aplicar Modificações' })).toBeDisabled();
   });
+  it.each([['reforcada', 1, 0, 'Reforçada'], ['discreta', 0, 1, 'Discreta']] as const)(
+    '%s bloqueia a alternativa na seleção e após reabrir', (mod, selectedIndex, blockedIndex, label) => {
+      const props = { open: true, currentModifications: [], onOpenChange: vi.fn(), onApplyModifications: vi.fn() };
+      const view = render(<ArmorModificationModal armor={BASE_ARMORS[0]} {...props} />);
+      fireEvent.click(screen.getAllByRole('checkbox')[selectedIndex]);
+      expect(screen.getAllByRole('checkbox')[blockedIndex]).toBeDisabled();
+      expect(screen.getByRole('status')).toHaveTextContent('Incompatível com ' + label);
+      fireEvent.click(screen.getAllByRole('checkbox')[blockedIndex]);
+      expect(screen.getAllByRole('checkbox')[blockedIndex]).toHaveAttribute('data-state', 'unchecked');
+      fireEvent.click(screen.getAllByRole('checkbox')[selectedIndex]);
+      expect(screen.getAllByRole('checkbox')[blockedIndex]).toBeEnabled();
+      view.rerender(<ArmorModificationModal armor={BASE_ARMORS[0]} {...props} currentModifications={[mod]} />);
+      expect(screen.getAllByRole('checkbox')[blockedIndex]).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Aplicar Modificações' })).toBeDisabled();
+    }
+  );
   it('bloqueia confirmação repetida enquanto aguarda o servidor', async () => {
     let resolve!: () => void;
     const save = vi.fn(() => new Promise<void>(done => { resolve = done; }));

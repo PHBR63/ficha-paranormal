@@ -228,6 +228,12 @@ export function getModificationById(id: ArmorModification): ArmorModificationDat
   return ARMOR_MODIFICATIONS.find(mod => mod.id === id);
 }
 
+/** Retorna a melhoria incompatível presente na proteção, ou undefined. */
+export function getArmorModificationConflict(modification: ArmorModification, installed: readonly ArmorModification[]): ArmorModification | undefined {
+  const opposite = modification === 'discreta' ? 'reforcada' : modification === 'reforcada' ? 'discreta' : undefined;
+  return opposite && installed.includes(opposite) ? opposite : undefined;
+}
+
 // Função para calcular stats finais com modificações
 export function calculateModifiedStats(
   baseArmor: CatalogArmor,

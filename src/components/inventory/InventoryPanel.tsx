@@ -11,6 +11,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { mergeItemModifications } from '@/lib/inventory-modifications';
+import { getArmorModificationConflict } from '@/lib/catalogs/armor-catalog';
 import { useIsMobile } from '@/hooks';
 import { useCharacterCategoryReductions, type ExtendedInventoryItemWithReduction } from '@/hooks/useCharacterCategoryReductions';
 import { MobileInventoryCard } from './MobileInventoryCard';
@@ -947,6 +948,11 @@ export function InventoryPanel({
   const handleApplyArmorModifications = async (modifications: ArmorModification[]) => {
     if (!armorToModify || !onInventoryChange) return;
     modifications = mergeItemModifications((armorToModify as any).appliedArmorModifications || [], modifications);
+    if (modifications.some(mod => getArmorModificationConflict(mod, modifications))) {
+      toast({ title: 'Modificações incompatíveis', description: 'A mesma proteção não pode ser Reforçada e Discreta. Escolha uma delas.', variant: 'destructive' });
+      throw new Error('Reforçada e Discreta não podem coexistir');
+    }
+
 
     const hasModifications = modifications.length > 0;
     const baseName = armorToModify.name.replace(/\s*\(Mod\.\)$/, '');
