@@ -302,8 +302,10 @@ function RitualCard({
             {/* Checkbox de seleção */}
             <div className="pt-0.5">
               <Checkbox
+                aria-label={`Selecionar ${ritual.name} (${ritual.element}, ${ritual.circle}º círculo)`}
                 checked={isSelected}
                 disabled={isDisabled && !isSelected}
+                onClick={(event) => event.stopPropagation()}
                 onCheckedChange={() => !isDisabled && onToggle()}
                 className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
@@ -344,7 +346,8 @@ function RitualCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="p-1 h-auto"
+                className="p-1 min-h-11 min-w-11 shrink-0"
+                aria-label={`${isExpanded ? 'Ocultar' : 'Ver'} detalhes de ${ritual.name} (${ritual.element})`}
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsExpanded(!isExpanded);

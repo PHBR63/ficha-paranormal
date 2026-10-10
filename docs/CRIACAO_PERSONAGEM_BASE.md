@@ -25,6 +25,7 @@ Todos os caminhos desta tabela são relativos à raiz do repositório. Arquivos 
 | `src/components/character/CreationTrainingPanel.tsx` | Recebe formulário/atualizador; mostra graus de NEX 35/70 e escolhas de Perito com elegibilidade e contagem. |
 | `src/components/character/CreationPowerChoices.tsx` | Recebe formulário/atualizador; registra subescolhas de Transcender, Expansão, itens e afinidade. Consome catálogos, contrato e modal. |
 | `src/components/character/CreationRitualExtras.tsx` | Registra rituais adicionais de Saber Ampliado, Grimório e Lâmina, preservando cada fonte. Exibe requisitos de uso. |
+| `src/components/character/__tests__/StepRitualsCreation.test.tsx` | Confere seleção única por clique e distinção das quatro versões de Amaldiçoar Arma pelo elemento. |
 | `src/components/character/ClassPowerSubchoiceModal.tsx` | Recebe configuração e escolhas elegíveis; devolve valores validados de perícia, elemento, ritual ou item. |
 | `src/components/character/StepOrigin.tsx`, `StepClass.tsx`, `StepSkills.tsx`, `StepAbilities.tsx`, `StepRituals.tsx` | Integram os novos painéis ao formulário. A mudança de classe pede confirmação antes de limpar escolhas dependentes. |
 | `src/components/character/CharacterCreationStepper.tsx` | Recebe etapa/estado; fornece navegação com nomes acessíveis e alvos móveis de 44 px. |
@@ -71,7 +72,7 @@ Tabelas afetadas: `characters` recebe dados canônicos e proveniência; `campaig
 formulário → inspeção local → revisão → RPC autenticada
            → validação e cálculo no servidor
            → INSERT ficha + vínculo + resultado, na mesma transação
-           → { character_id, confirmed: true, campaign_id, campaign_version }
+           → { id, confirmed: true, campaign_id, campaign_version }
 ```
 
 Regerar o catálogo, antes da aplicação de uma versão nova: `node scripts/generate-character-creation.mjs`. A geração não aplica SQL. Depois de uma migration aplicada, qualquer mudança de regra precisa de uma nova migration; não reutilizar a versão antiga para alterar bancos já migrados.

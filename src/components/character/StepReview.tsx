@@ -5,7 +5,7 @@ import { ConhecimentoSymbol, EnergiaSymbol, MedoSymbol, MorteSymbol, SangueSymbo
 
 import { useMemo } from 'react';
 import { ORIGINS, CLASSES, SKILLS,  getTrackById, TRAINING_LABELS } from '@/lib/character-data';
-import { creationSteps, inspectCharacterCreation, creationInventory } from '@/lib/character-creation-rules';
+import { creationSteps, inspectCharacterCreation, creationInventory, creationRitualSlots } from '@/lib/character-creation-rules';
 import { getPowerById } from '@/lib/class-powers/power-registry';
 import { ALL_ITEMS } from '@/lib/catalogs/items-catalog';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
@@ -414,6 +414,13 @@ export function StepReview({
       <section className="ordo-panel p-4 space-y-3" aria-label="Escolhas e associações">
         <div className="flex items-center justify-between"><h4 className="font-display text-lg">ESCOLHAS E ASSOCIAÇÕES</h4><EditButton stepId="abilities" /></div>
         {Object.entries(formData.classPowerChoices).map(([key,choice])=><p key={key} className="text-sm"><strong>{getPowerById(choice.powerId)?.name || choice.powerId}:</strong>{' '}{choice.chosenValues.map(id=>SKILLS.find(s=>s.id===id)?.name || ALL_ITEMS.find(i=>i.id===id)?.name || ALL_RITUALS.find(r=>r.id===id)?.name || id).join(', ')}</p>)}
+        {creationRitualSlots(formData).length > 0 && <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2"><h5 className="font-display">FONTES DOS RITUAIS ADICIONAIS</h5><EditButton stepId="rituals" /></div>
+          {creationRitualSlots(formData).map(slot => <p key={slot.source} className="text-sm"><strong>{slot.label}:</strong>{' '}{(formData.extraRituals?.[slot.source] || []).map(id => {
+            const ritual = ALL_RITUALS.find(item => item.id === id);
+            return ritual ? `${ritual.name} (${ritual.element})` : id;
+          }).join(', ') || 'Escolha pendente'}</p>)}
+        </div>}
         {inspection.paranormalPowers.map((power,index)=><div key={`${power.id}-${index}`} className="text-sm space-y-1"><p><strong>{power.name}</strong> — {power.element}</p><p className="text-muted-foreground">{power.description}</p>{power.choices?.ritualId && <p>Ritual: {ALL_RITUALS.find(r=>r.id===power.choices?.ritualId)?.name}</p>}{power.choices?.classPowerIds?.map(id=><p key={id}>Poder concedido: {getPowerById(id)?.name}</p>)}</div>)}
         {creationInventory(formData).map(item=><p key={item.id} className="text-sm"><strong>{item.name}</strong> — categoria {item.category}{item.effectiveCategory!==item.category?` → ${item.effectiveCategory}`:''}; {Math.max(0,item.slots-item.spaceReduction)} espaço(s). Benefício: {item.creationSource==='grimorio'?'Criar Grimório':item.creationSource==='a-favorita'?'A Favorita':item.creationSource==='ferramenta-de-trabalho'?'Ferramenta de Trabalho':item.creationSource==='ferramenta-favorita'?'Ferramenta Favorita':'Mochila de Utilidades'}.</p>)}
         {formData.classTrack==='graduado' && formData.nex>=40 && <p className="text-sm text-muted-foreground">Rituais do grimório exigem segurá-lo e uma ação completa para folhear. O item ocupa 1 espaço.</p>}
