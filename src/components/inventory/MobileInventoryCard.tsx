@@ -1,3 +1,4 @@
+import { getInstalledItemModifications } from '@/lib/inventory-modifications';
 /**
  * MobileInventoryCard - Card compacto com swipe gestures para inventário mobile
  * Inclui MobileActionSheet como alternativa ao swipe para acessibilidade
@@ -80,7 +81,7 @@ export function MobileInventoryCard({
   
   const isConsumable = item.consumable && (item.uses ?? 0) > 0;
   const usesDisplay = item.consumable ? `${item.uses ?? 0}/${item.maxUses ?? item.uses ?? 0}` : null;
-  const appliedMods = (item as any).appliedModifications as WeaponModification[] | undefined;
+  const appliedMods = getInstalledItemModifications(item);
   const hasModifications = appliedMods && appliedMods.length > 0;
   const isFavorite = !!(item as any).favoriteAbilityId;
   const isTemporary = (item as any).isTemporary === true;
