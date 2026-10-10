@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { WeaponModificationModal } from '../WeaponModificationModal';
@@ -73,5 +73,44 @@ describe('Reabrir modificações', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Aplicar Modificações' }));
     await waitFor(() => expect(close).toHaveBeenCalledWith(false));
     expect(save.mock.calls[0][0]).toEqual(save.mock.calls[1][0]);
+  });
+});
+
+// Exercita o requisito na tela real, inclusive a seleção simultânea de Ferrolho.
+describe('Compensador visível com requisito', () => {
+  const gun = ALL_WEAPONS.find(w => w.id === 'pistola')!;
+  const checkbox = (name: string) => within(screen.getByText(name, { exact: true }).closest('.flex.items-start')!).getByRole('checkbox');
+  const mount = (selected: any[] = [], automatic = false) => {
+    const save = vi.fn();
+    render(<WeaponModificationModal open weapon={automatic ? ALL_WEAPONS.find(w => w.id === 'fuzil_assalto')! : gun}
+      currentModifications={selected} onOpenChange={vi.fn()} onApplyModifications={save} />);
+    return save;
+  };
+  it('exibe Compensador bloqueado e explica a exigência de arma automática', () => {
+    mount();
+    expect(checkbox('Compensador')).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent('Requer arma automática');
+  });
+  it('permite Ferrolho e Compensador juntos, mas bloqueia salvar ao retirar o requisito', async () => {
+    const save = mount();
+    fireEvent.click(checkbox('Ferrolho Automático'));
+    expect(checkbox('Compensador')).toBeEnabled();
+    fireEvent.click(checkbox('Compensador'));
+    fireEvent.click(checkbox('Ferrolho Automático'));
+    expect(screen.getByRole('button', { name: 'Aplicar Modificações' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar Modificações' }));
+    expect(save).not.toHaveBeenCalled();
+    fireEvent.click(checkbox('Ferrolho Automático'));
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar Modificações' }));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(['compensador', 'ferrolho_automatico']));
+  });
+  it('habilita em arma originalmente automática', () => {
+    mount([], true);
+    expect(checkbox('Compensador')).toBeEnabled();
+  });
+  it('mantém Compensador instalado bloqueado contra reaplicação', () => {
+    mount(['ferrolho_automatico', 'compensador']);
+    expect(checkbox('Compensador')).toBeDisabled();
+    expect(checkbox('Compensador')).toHaveAttribute('data-state', 'checked');
   });
 });

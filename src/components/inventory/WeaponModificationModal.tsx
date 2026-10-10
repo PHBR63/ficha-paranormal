@@ -27,6 +27,7 @@ import {
   type WeaponModification,
   type WeaponModificationData,
   getAvailableModifications,
+  canApplyModification,
   calculateModifiedWeaponStats,
   getWeaponModificationById,
   MODIFICATION_LABELS,
@@ -103,6 +104,15 @@ export function WeaponModificationModal({
     [weapon, currentModifications]
   );
   
+  // O requisito considera também Ferrolho escolhido nesta mesma confirmação.
+  const compensatorAvailable = canApplyModification(
+    { ...weapon, appliedModifications: selectedMods }, 'compensador'
+  );
+  const invalidNewCompensator = selectedMods.includes('compensador')
+    && !alreadyAppliedMods.has('compensador') && !compensatorAvailable;
+  const compensatorRequirement = compensatorAvailable ? undefined
+    : 'Requer arma automática. Selecione Ferrolho Automático para habilitar nesta arma.';
+
   // Todas as modificações para exibir: já aplicadas + novas disponíveis
   const displayModifications = useMemo(() => {
     const applied = currentModifications
@@ -117,8 +127,12 @@ export function WeaponModificationModal({
       }
     });
     
+    // Exibir o requisito evita que Compensador pareça ausente do catálogo.
+    const compensator = getWeaponModificationById('compensador');
+    if (weapon.type === 'firearm' && weapon.category !== 'especial' && compensator
+      && !allMods.some(mod => mod.id === 'compensador')) allMods.push(compensator);
     return allMods;
-  }, [newAvailableModifications, currentModifications]);
+  }, [newAvailableModifications, currentModifications, weapon.type, weapon.category]);
   
   // Estatísticas calculadas com modificações selecionadas
   const modifiedStats = useMemo(() => 
@@ -151,6 +165,7 @@ export function WeaponModificationModal({
   const toggleModification = (modId: WeaponModification) => {
     // Modificações já aplicadas não podem ser removidas (são permanentes)
     if (alreadyAppliedMods.has(modId)) return;
+    if (modId === 'compensador' && !selectedMods.includes(modId) && !compensatorAvailable) return;
     
     setSelectedMods(prev => 
       prev.includes(modId) 
@@ -169,7 +184,7 @@ export function WeaponModificationModal({
   
   // Aplicar modificações
   const handleApply = async () => {
-    if (isApplying || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))) return;
+    if (isApplying || invalidNewCompensator || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))) return;
     setIsApplying(true);
     try {
       await onApplyModifications([...new Set([...currentModifications, ...selectedMods])]);
@@ -225,6 +240,7 @@ export function WeaponModificationModal({
                                 modification={mod}
                                 isSelected={selectedMods.includes(mod.id)}
                                 isApplied={alreadyAppliedMods.has(mod.id)}
+                                unavailableReason={mod.id === 'compensador' ? compensatorRequirement : undefined}
                                 onToggle={() => toggleModification(mod.id)}
                               />
                             ))}
@@ -402,7 +418,7 @@ export function WeaponModificationModal({
           </Button>
           <Button 
             onClick={handleApply}
-            disabled={isApplying || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))}
+            disabled={isApplying || invalidNewCompensator || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))}
             className="bg-primary hover:bg-primary/90"
           >
             Aplicar Modificações
@@ -418,26 +434,30 @@ function ModificationCard({
   modification,
   isSelected,
   isApplied,
+  unavailableReason,
   onToggle,
 }: {
   modification: WeaponModificationData;
   isSelected: boolean;
   /** Indica se a modificação já estava aplicada antes de abrir o modal */
   isApplied: boolean;
+  unavailableReason?: string;
   onToggle: () => void;
 }) {
   const labelData = MODIFICATION_LABELS[modification.id];
   const IconComponent = MODIFICATION_ICONS[labelData?.icon || 'Wrench'];
   
   // Modificações já aplicadas são permanentes e não podem ser removidas
-  const isLocked = isApplied;
+  const isLocked = isApplied || (!!unavailableReason && !isSelected);
   
   return (
     <div 
       className={`
         p-3 rounded-lg border transition-all
-        ${isLocked
+        ${isApplied
           ? 'bg-green-500/10 border-green-500/50 opacity-75 cursor-default' 
+          : isLocked
+            ? 'bg-muted/20 border-border cursor-default'
           : isSelected 
             ? 'bg-primary/10 border-primary/50 cursor-pointer' 
             : 'bg-muted/20 border-border hover:border-primary/30 cursor-pointer'
@@ -463,7 +483,7 @@ function ModificationCard({
                 +{modification.categoryIncrease} Cat
               </Badge>
             )}
-            {isLocked && (
+            {isApplied && (
               <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
                 <Check className="w-3 h-3 mr-1" />
                 Aplicada
@@ -474,6 +494,9 @@ function ModificationCard({
           <p className="text-xs text-muted-foreground">
             {modification.description}
           </p>
+          {unavailableReason && !isApplied && (
+            <p role="status" className="text-xs text-amber-300">{unavailableReason}</p>
+          )}
         </div>
       </div>
     </div>
