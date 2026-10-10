@@ -12,6 +12,7 @@
  */
 
 import { useState, useMemo, useEffect } from 'react';
+import { ATTRIBUTE_COLORS, getAttributeColor, type AttributeKey } from '@/lib/constants/attributes';
 import { motion } from 'framer-motion';
 import {
   MobileModal,
@@ -945,7 +946,7 @@ export function CharacterEditModal({
                   label="AGILIDADE"
                   abbr="AGI"
                   value={agility}
-                  color="hsl(var(--accent))"
+                  attribute="agility"
                   onDecrease={() => handleAttributeChange('agility', -1)}
                   onIncrease={() => handleAttributeChange('agility', 1)}
                   isChanged={changedFields.agility}
@@ -955,7 +956,7 @@ export function CharacterEditModal({
                   label="FORÇA"
                   abbr="FOR"
                   value={strength}
-                  color="hsl(var(--destructive))"
+                  attribute="strength"
                   onDecrease={() => handleAttributeChange('strength', -1)}
                   onIncrease={() => handleAttributeChange('strength', 1)}
                   isChanged={changedFields.strength}
@@ -965,7 +966,7 @@ export function CharacterEditModal({
                   label="INTELECTO"
                   abbr="INT"
                   value={intellect}
-                  color="hsl(var(--primary))"
+                  attribute="intellect"
                   onDecrease={() => handleAttributeChange('intellect', -1)}
                   onIncrease={() => handleAttributeChange('intellect', 1)}
                   isChanged={changedFields.intellect}
@@ -975,7 +976,7 @@ export function CharacterEditModal({
                   label="PRESENÇA"
                   abbr="PRE"
                   value={presence}
-                  color="hsl(var(--paranormal))"
+                  attribute="presence"
                   onDecrease={() => handleAttributeChange('presence', -1)}
                   onIncrease={() => handleAttributeChange('presence', 1)}
                   isChanged={changedFields.presence}
@@ -985,7 +986,7 @@ export function CharacterEditModal({
                   label="VIGOR"
                   abbr="VIG"
                   value={vigor}
-                  color="hsl(var(--success))"
+                  attribute="vigor"
                   onDecrease={() => handleAttributeChange('vigor', -1)}
                   onIncrease={() => handleAttributeChange('vigor', 1)}
                   isChanged={changedFields.vigor}
@@ -1412,7 +1413,7 @@ function AttributeEditor({
   label,
   abbr,
   value,
-  color,
+  attribute,
   onDecrease,
   onIncrease,
   isChanged = false,
@@ -1421,18 +1422,19 @@ function AttributeEditor({
   label: string;
   abbr: string;
   value: number;
-  color: string;
+  attribute: AttributeKey;
   onDecrease: () => void;
   onIncrease: () => void;
   isChanged?: boolean;
   tooltip?: string;
 }) {
+  const color = ATTRIBUTE_COLORS[attribute];
   return (
     <div 
       className={`flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg border transition-all ${isChanged ? 'ring-2 ring-warning/50' : ''}`}
       style={{ 
-        backgroundColor: isChanged ? 'hsl(var(--warning) / 0.1)' : `${color}10`,
-        borderColor: isChanged ? 'hsl(var(--warning) / 0.5)' : `${color}30`,
+        backgroundColor: isChanged ? 'hsl(var(--warning) / 0.1)' : getAttributeColor(attribute, 0.06),
+        borderColor: isChanged ? 'hsl(var(--warning) / 0.5)' : getAttributeColor(attribute, 0.35),
       }}
     >
       <div className="flex items-center gap-3">

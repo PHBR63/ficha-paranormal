@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { Filter, Info } from '@/components/icons/ordem-icons';
 import { ChevronDown, Search, X } from '@/components/icons/ordem-icons';
 import { cn } from '@/lib/utils';
+import { getAttributeColor, type AttributeKey } from '@/lib/constants/attributes';
 import { getSkillTrainingLevel } from '@/lib/skill-training';
 import { SKILLS, TRAINING_BONUS_MAP, TRAINING_LABELS } from '@/lib/character-data';
 import { Input } from '@/components/ui/input';
@@ -271,7 +272,7 @@ function SkillsByAttributeComponent({
                     {/* Valor do atributo */}
                     <span 
                       className="text-xs px-2 py-0.5 rounded font-display"
-                      style={{ backgroundColor: `${color}20`, color }}
+                      style={{ backgroundColor: getAttributeColor(attr as AttributeKey, 0.12), color }}
                     >
                       +{attrValue}
                     </span>
@@ -387,7 +388,7 @@ function SkillsByAttributeComponent({
                                         ? "bg-purple-500/30 text-purple-400"
                                         : ""
                                   )}
-                                  style={!isExpert && !isVeteran ? { backgroundColor: `${color}20`, color } : undefined}
+                                  style={!isExpert && !isVeteran ? { backgroundColor: getAttributeColor(attr as AttributeKey, 0.12), color } : undefined}
                                 >
                                   {trainingLabel}
                                 </span>
