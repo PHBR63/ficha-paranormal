@@ -219,8 +219,12 @@ export function getAttributeAbbr(keyOrName: string): string {
 /**
  * Utilitário: Obtém a cor CSS de um atributo
  */
-export function getAttributeColor(key: AttributeKey): string {
-  return ATTRIBUTE_COLORS[key] || 'hsl(var(--foreground))';
+export function getAttributeColor(key: AttributeKey, opacity?: number): string {
+  if (opacity === undefined) return ATTRIBUTE_COLORS[key] || 'hsl(var(--foreground))';
+  // Transparência pertence ao HSL; sufixos HEX como "20" invalidam essa cor.
+  const variable = ATTRIBUTE_COLORS[key] ? `--attr-${key}` : '--foreground';
+  const alpha = Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1;
+  return `hsl(var(${variable}) / ${alpha})`;
 }
 
 /**
