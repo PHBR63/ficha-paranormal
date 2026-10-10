@@ -1,3 +1,6 @@
+import { getCompatibleAmmunition, getAmmunitionEffects, type CombatAmmunition } from '@/lib/ammunition-effects';
+import { CombatAmmunitionSelector } from './CombatAmmunitionSelector';
+import { WeaponModificationNotes } from './WeaponModificationNotes';
 import type { ConfirmCombatAttack, CombatCostSelection } from '@/services/combat-attack-service';
 /**
  * CombatRollModal - Modal de combate com rolagem de ataque e dano
@@ -7,7 +10,7 @@ import type { ConfirmCombatAttack, CombatCostSelection } from '@/services/combat
 
 import { useConfirmedDiceRoll, type ConfirmDicePE } from '@/hooks/useConfirmedDiceRoll';
 import { getCombatPowerDicePenalty } from '@/lib/class-powers/combat-test-dice';
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity as InfinityIcon, Droplets, Crosshair, AlertCircle } from '@/components/icons/ordem-icons';
 import { SpecialAttackSelector, useSpecialAttackState } from './SpecialAttackSelector';
@@ -74,6 +77,9 @@ interface WeaponEntry {
   special?: string;
   notes?: string;
   ammoType?: string;
+  appliedModifications?: string[];
+  modificationAttackBonus?: number;
+  modificationEffects?: string[];
   // Aniquilador: indica se esta arma é a favorita
   isFavoriteWeapon?: boolean;
   favoriteAbilityId?: string;
@@ -194,6 +200,7 @@ interface CombatRollModalProps {
   originBoundWeaponId?: string;
   
   // Callback
+  ammunition?: CombatAmmunition[];
   onRollComplete?: (result: DiceRollResult) => void;
 }
 
@@ -267,6 +274,7 @@ export function CombatRollModal({
   characterOrigin, // ID da origem do personagem
   originBoundWeaponId, // Arma vinculada pela origem (Operário)
   onRollComplete,
+  ammunition = [],
 }: CombatRollModalProps) {
   const unifiedEffects = useMemo(() => getWeaponDamageEffects(sheetEffects, weapon), [sheetEffects, weapon]);
   // === HOOK DE COMBATE INTEGRADO COM SUE ===
@@ -728,7 +736,7 @@ export function CombatRollModal({
 
   // Calcular bônus total de ataque (inclui bônus do SUE, trilha, weapon buffs e modificador manual)
   const totalAttackBonus = useMemo(() => {
-    let total = attackSkill.bonus;
+    let total = attackSkill.bonus + (weapon?.modificationAttackBonus ?? 0);
     const isMeleeAttack = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
     
     // === BÔNUS DO SISTEMA UNIFICADO DE EFEITOS (SUE) ===
@@ -795,8 +803,17 @@ export function CombatRollModal({
   }, [attackSkill.bonus, passiveBonuses, selectedBonuses, availableBonuses, classPowerBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus, proficiencyCheck]);
 
   // === Detalhamento das fontes de bônus de ataque para exibição ===
+  const [selectedAmmunitionId, setSelectedAmmunitionId] = useState('');
+  useEffect(() => { if (open) setSelectedAmmunitionId(''); }, [open, weapon?.id]);
+  const compatibleAmmunition = getCompatibleAmmunition(weapon ?? {}, ammunition);
+  const selectedAmmunition = compatibleAmmunition.find(item => item.id === selectedAmmunitionId);
+  const ammunitionEffects = getAmmunitionEffects(selectedAmmunition);
+  const requiresCalibreGrosso = weapon?.appliedModifications?.includes('calibre_grosso') ?? false;
+  const ammunitionUnavailable = (requiresCalibreGrosso || !!selectedAmmunitionId) && !selectedAmmunition;
+
   const attackBonusSources = useMemo(() => {
     const sources: BonusSourceDisplay[] = [];
+    if (weapon?.modificationAttackBonus) sources.push({ label: 'Modificações da arma', value: weapon.modificationAttackBonus, type: 'other', description: 'Certeira ou Alongada: bônus do item salvo no inventário.' });
     const isMeleeAttack = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
     
     // Bônus de perícia (treinamento)
@@ -1249,8 +1266,8 @@ export function CombatRollModal({
       base += activeTechniqueEffects.criticalMultiplierBonus;
     }
     
-    return base;
-  }, [weapon, weaponBuffBonuses, unifiedEffects, activeTechniqueEffects, trackCombatBonuses]);
+    return base + ammunitionEffects.criticalMultiplierBonus;
+  }, [ammunitionEffects.criticalMultiplierBonus, weapon, weaponBuffBonuses, unifiedEffects, activeTechniqueEffects, trackCombatBonuses]);
 
   // Cores para cada tipo de bônus
   const bonusTypeColors: Record<BonusSourceDisplay['type'], string> = {
@@ -1272,7 +1289,7 @@ export function CombatRollModal({
   const handleRollAttack = () => {
     if (preparingAttack.current || attackConfirmation.confirming) return;
     if (attackConfirmation.pending) { void attackConfirmation.confirm(); return; }
-    if (!weapon || !canAffordPE || confirmationUnavailable) return;
+    if (!weapon || !canAffordPE || confirmationUnavailable || ammunitionUnavailable) return;
     preparingAttack.current = true;
 
     // Feedback de rolagem
@@ -1636,7 +1653,8 @@ export function CombatRollModal({
     
     // SEPARAR os dados do buff do resto dos dados extras
     // Os dados extras agora são: poderes + ataque furtivo + máquina de matar + golpe pesado (SEM weapon buffs)
-    const allExtraDice = [...extraDice, ...sneakDice, ...maquinaDeMatarDiceResults, ...golpePesadoDiceResults];
+    const ammunitionDice = Array.from({ length: ammunitionEffects.explosiveDice }, () => Math.floor(Math.random() * 6) + 1);
+    const allExtraDice = [...ammunitionDice, ...extraDice, ...sneakDice, ...maquinaDeMatarDiceResults, ...golpePesadoDiceResults];
     
     // Calcular totais SEPARADOS
     const weaponDiceTotal = mainDice.reduce((a, b) => a + b, 0);
@@ -1647,7 +1665,7 @@ export function CombatRollModal({
       // O histórico inclui cada dado adicional, sem recalcular nem sortear de novo.
       const historyDice = [...mainDice, ...allExtraDice, ...weaponBuffDice];
       onRollComplete?.({
-        type: 'damage', label: `Dano: ${weapon.name}${total < 1 ? ' (mínimo 1)' : ''}`,
+        type: 'damage', label: `Dano: ${weapon.name}${selectedAmmunition ? ` — ${selectedAmmunition.name}` : ''}${total < 1 ? ' (mínimo 1)' : ''}`,
         dice: historyDice, keptDice: historyDice.reduce((sum, die) => sum + die, 0),
         skillBonus: 0, otherBonuses: damageBonus, extraDice: allExtraDice.length + weaponBuffDice.length,
         total: Math.max(1, total), isCritical, isDisadvantage: false, timestamp: new Date(),
@@ -1692,6 +1710,9 @@ export function CombatRollModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-card border-primary/30">
+        <WeaponModificationNotes effects={weapon.modificationEffects} />
+          {weapon.ammoType && <CombatAmmunitionSelector ammunition={compatibleAmmunition} selectedId={selectedAmmunitionId} onSelect={setSelectedAmmunitionId}
+            disabled={phase !== 'setup' || attackConfirmation.confirming || !!attackConfirmation.pending} requiresCalibreGrosso={requiresCalibreGrosso} />}
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display text-primary">
             {weapon.type === 'Disparo' ? (
@@ -2411,7 +2432,7 @@ export function CombatRollModal({
                   className="w-full font-display"
                   size="lg"
                   onClick={handleRollAttack}
-                  disabled={attackConfirmation.confirming || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable))}
+                  disabled={attackConfirmation.confirming || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable))}
                 >
                   <Dices className="w-5 h-5 mr-2" />
                   {attackConfirmation.confirming ? "CONFIRMANDO PE…" : attackConfirmation.pending ? "TENTAR CONFIRMAR ATAQUE" : "ROLAR ATAQUE"}

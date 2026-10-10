@@ -1,3 +1,4 @@
+import { getModificationCategoryError } from '@/lib/inventory-modifications';
 /**
  * Modal para selecionar e aplicar modificações em armas
  * Baseado na Tabela 3.5 do livro oficial de Ordem Paranormal
@@ -89,6 +90,8 @@ export function WeaponModificationModal({
   // Estado local para modificações selecionadas
   const [selectedMods, setSelectedMods] = useState<WeaponModification[]>(() => [...new Set(currentModifications)]);
   
+  const categoryError = getModificationCategoryError(weapon.category, selectedMods.length);
+
   const [isApplying, setIsApplying] = useState(false);
   // Abrir de novo ou receber a ficha atualizada deve refletir o registro persistido.
   useEffect(() => {
@@ -184,7 +187,7 @@ export function WeaponModificationModal({
   
   // Aplicar modificações
   const handleApply = async () => {
-    if (isApplying || invalidNewCompensator || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))) return;
+    if (categoryError || isApplying || invalidNewCompensator || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))) return;
     setIsApplying(true);
     try {
       await onApplyModifications([...new Set([...currentModifications, ...selectedMods])]);
@@ -211,6 +214,7 @@ export function WeaponModificationModal({
         </MobileModalHeader>
         
         <MobileModalBody>
+          {categoryError && <p role="alert" className="text-amber-300 text-sm mb-3">{categoryError}</p>}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Lista de modificações */}
             <div className="space-y-3">
@@ -367,7 +371,7 @@ export function WeaponModificationModal({
                     </span>
                     <div className="space-y-1">
                       {modifiedStats.specialEffects.map((effect, i) => (
-                        <p key={i} className="text-xs text-primary/80 bg-primary/10 rounded px-2 py-1">
+                        <p key={i} className="text-xs text-foreground bg-primary/10 rounded px-2 py-1">
                           {effect}
                         </p>
                       ))}
@@ -406,7 +410,7 @@ export function WeaponModificationModal({
           </Button>
           <Button 
             onClick={handleApply}
-            disabled={isApplying || invalidNewCompensator || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))}
+            disabled={!!categoryError || isApplying || invalidNewCompensator || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))}
             className="bg-primary hover:bg-primary/90"
           >
             Aplicar Modificações

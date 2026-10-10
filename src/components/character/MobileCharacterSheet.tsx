@@ -2,6 +2,7 @@ import { preserveInventoryModifications } from '@/lib/inventory-modifications';
 import { confirmCombatAttack } from '@/services/combat-attack-service';
 import { useRitualSituationalContext } from '@/hooks/character/useRitualSituationalContext';
 import { PETurnBudgetPanel } from './PETurnBudgetPanel';
+import { AccessoryApprovalPanel } from '@/components/inventory/AccessoryApprovalPanel';
 import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
 import { DEFAULT_CASTING_CONCENTRATION, getCastingWillConfig, rollCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
 import { rollParanormalCost } from '@/lib/rituals/paranormal-cost';
@@ -700,6 +701,7 @@ export function MobileCharacterSheet({
   // Hook SUE como fonte única de verdade para todos os bônus
   // Usa optional chaining para proteção durante carregamento
   const bonusSummary = useBonusSummaryFromSUE({
+    characterId: character?.id,
     origin: character?.origin || '',
     abilities: character?.abilities || [],
     generalPowers: character?.general_powers || [],
@@ -1915,6 +1917,7 @@ export function MobileCharacterSheet({
               <SustainedRitualControl key={character.id} characterId={character.id}
                 state={sustainedState} peCurrent={character.pe_current} onRefetch={onRefetch} mobile />
               <PETurnBudgetPanel characterId={character.id} />
+              <AccessoryApprovalPanel state={bonusSummary.accessories} />
               <TemporaryResourcesPanel characterId={character.id} />
 
               {/* Painel de Efeitos Ativos (SUE) */}
@@ -2559,6 +2562,7 @@ export function MobileCharacterSheet({
       {/* Modal de combate completo (ataque + dano) - PARIDADE COMPLETA DESKTOP */}
       {selectedWeapon && (
         <MobileCombatRollModal
+          ammunition={character.inventory.filter(item => item.itemType === 'consumable') as any}
           open={combatModalOpen}
           onClose={() => {
             setCombatModalOpen(false);

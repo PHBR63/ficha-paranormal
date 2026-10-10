@@ -93,6 +93,7 @@ import { cn } from '@/lib/utils';
 import { DiceRollResult } from '@/lib/dice-roller';
 import { calculateRitualResistanceDT } from '@/lib/rituals/ritual-resistance';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
+import { AccessoryApprovalPanel } from '@/components/inventory/AccessoryApprovalPanel';
 import { DataErrorBoundary } from '@/components/DataErrorBoundary';
 import { InventoryItem, hasInventarioOtimizado, calculateCarryCapacity } from '@/lib/inventory-system';
 import { EspecialistaArmaIndicator } from '@/components/character/EspecialistaArmaIndicator';
@@ -248,6 +249,8 @@ interface InventoryItemPersisted {
   baseDamage?: string;
   baseCritical?: number;
   appliedModifications?: string[];
+  attackBonus?: number;
+  specialEffects?: string[];
   // Campos para itens temporários/improvisados
   isTemporary?: boolean;
   temporarySource?: string;
@@ -636,6 +639,7 @@ export default function CharacterSheet() {
 
   // Hook SUE como fonte única de verdade para todos os bônus
   const bonusSummary = useBonusSummaryFromSUE({
+    characterId: character?.id,
     origin: character?.origin || '',
     abilities: character?.abilities || [],
     generalPowers: character?.general_powers || [],
@@ -2483,6 +2487,9 @@ export default function CharacterSheet() {
             : item.criticalMultiplier)
         : undefined,
       special: item.special,
+      appliedModifications: item.appliedModifications,
+      modificationAttackBonus: item.attackBonus,
+      modificationEffects: item.specialEffects,
       ammoType: item.ammoType,
     }));
 
@@ -3298,6 +3305,7 @@ export default function CharacterSheet() {
                 defaultOpen={false}
               >
                 <DataErrorBoundary fallbackMessage="Erro ao carregar inventário">
+                  <AccessoryApprovalPanel state={bonusSummary.accessories} />
                   <InventoryPanel
                     inventory={character.inventory.map((item) => ({
                       ...preserveInventoryModifications(item),
@@ -3502,6 +3510,7 @@ export default function CharacterSheet() {
 
               {/* Tabela de Combate */}
               <CombatWeaponsTable
+                ammunition={character.inventory.filter(item => item.itemType === 'consumable') as any}
                 activeConditions={activeConditionsForSUE}
                 weapons={equippedWeapons}
                 attributes={attributes}

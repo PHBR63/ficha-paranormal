@@ -1,3 +1,4 @@
+import type { CombatAmmunition } from '@/lib/ammunition-effects';
 import type { ConfirmCombatAttack } from '@/services/combat-attack-service';
 /**
  * CombatWeaponsTable - Tabela de armas/combate estilo ficha de papel
@@ -42,7 +43,10 @@ export interface WeaponEntry {
   criticalMultiplier?: string; // Multiplicador (ex: "x3")
   special?: string; // Propriedades especiais
   notes?: string;
-  ammoType?: string; // Tipo de munição
+  ammoType?: string;
+  appliedModifications?: string[];
+  modificationAttackBonus?: number;
+  modificationEffects?: string[]; // Tipo de munição
   // Aniquilador: indica se esta arma é a favorita
   isFavoriteWeapon?: boolean;
   // Categoria da arma para proficiência (0=Simples, I=Tática, II=Pesada)
@@ -111,6 +115,7 @@ interface CombatWeaponsTableProps {
   activatedTrackEffects?: string[];
   
   // Callback para histórico
+  ammunition?: CombatAmmunition[];
   onRollComplete?: (result: DiceRollResult) => void;
   
   // Fallback antigo para compatibilidade
@@ -172,6 +177,7 @@ export function CombatWeaponsTable({
   // NOVO: Efeitos de trilha ativados (disparo-letal, ataque-extra, etc.)
   activatedTrackEffects = [],
   onRollComplete,
+  ammunition,
   onRollAttack, // Fallback antigo
   // Fase 5: Props de buffs de arma
   weaponBuffs = [],
@@ -376,6 +382,7 @@ export function CombatWeaponsTable({
       {/* Modal de combate completo */}
       {attributes && skills && currentPE !== undefined && maxPE !== undefined && onPEChange && (
         <CombatRollModal
+          ammunition={ammunition}
           open={combatModalOpen}
           onClose={() => {
             setCombatModalOpen(false);

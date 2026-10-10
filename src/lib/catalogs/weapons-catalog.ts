@@ -75,11 +75,11 @@ export const MELEE_WEAPON_MODIFICATIONS: WeaponModificationData[] = [
   {
     id: 'discreta_melee',
     name: 'Discreta',
-    description: '+5 em testes para ser ocultada e reduz o espaço em –1.',
+    description: '+5 em Crime para ocultar, mesmo sem treinamento; reduz um espaço.',
     applicableTo: ['melee', 'ranged'],
     categoryIncrease: 1,
     spaceReduction: 1,
-    special: '+5 em testes para ser ocultada e reduz o espaço em –1',
+    special: '+5 em Crime para ocultar, mesmo sem treinamento; reduz um espaço',
   },
   {
     id: 'perigosa',
@@ -112,10 +112,11 @@ export const FIREARM_MODIFICATIONS: WeaponModificationData[] = [
   {
     id: 'calibre_grosso',
     name: 'Calibre Grosso',
-    description: 'Aumenta o dano em mais um dado do mesmo tipo.',
+    description: 'Aumenta o dano em um dado do mesmo tipo. Exige munição de calibre grosso, de mesma categoria da normal; incompatível com armas normais.',
     applicableTo: ['firearm'],
     categoryIncrease: 1,
     damageBonus: '+1 dado',
+    special: 'Exige munição específica de calibre grosso. Sua categoria não aumenta por isso; essa munição não pode ser usada em armas normais.',
   },
   {
     id: 'compensador',
@@ -128,11 +129,11 @@ export const FIREARM_MODIFICATIONS: WeaponModificationData[] = [
   {
     id: 'discreta_firearm',
     name: 'Discreta',
-    description: '+5 em testes para ser ocultada e reduz o espaço em –1.',
+    description: '+5 em Crime para ocultar, mesmo sem treinamento; reduz um espaço.',
     applicableTo: ['firearm'],
     categoryIncrease: 1,
     spaceReduction: 1,
-    special: '+5 em testes para ser ocultada e reduz o espaço em –1',
+    special: '+5 em Crime para ocultar, mesmo sem treinamento; reduz um espaço',
   },
   {
     id: 'ferrolho_automatico',
@@ -158,7 +159,7 @@ export const FIREARM_MODIFICATIONS: WeaponModificationData[] = [
     applicableTo: ['firearm'],
     categoryIncrease: 1,
     rangeBonus: 1,
-    special: 'Aumenta alcance da arma e da habilidade Ataque Furtivo',
+    special: 'Aumenta o alcance da arma em uma categoria; permite Ataque Furtivo em qualquer alcance',
   },
   {
     id: 'silenciador',
@@ -1157,11 +1158,14 @@ export function calculateModifiedWeaponStats(
     appliedModifications: [...(baseWeapon.appliedModifications ?? []), ...modifications],
   };
   const applicableModifications = modifications.filter(modId =>
-    modId !== 'compensador' || canApplyModification(currentWeapon, modId)
+    canApplyModification(currentWeapon, modId)
   );
   if (applicableModifications.length !== modifications.length) {
     // Não reescreve melhorias/categoria de itens legados; explica por que o efeito não foi aplicado.
-    specialEffects.push('Compensador exige uma arma automática; seu efeito não foi aplicado.');
+    for (const id of modifications.filter(id => !applicableModifications.includes(id))) {
+      specialEffects.push(id === 'compensador' ? 'Compensador exige uma arma automática; seu efeito não foi aplicado.'
+        : `${getWeaponModificationById(id)?.name ?? id}: modificação incompatível com a arma; efeito não aplicado.`);
+    }
   }
   
   // Aplica cada modificação

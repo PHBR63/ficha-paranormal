@@ -1,3 +1,4 @@
+import { getModificationCategoryError } from '@/lib/inventory-modifications';
 /**
  * Modal de Modificações para Acessórios
  * Baseado na Tabela 3.9 do livro oficial - Ordem Paranormal RPG
@@ -28,50 +29,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Briefcase, Wrench, Check, Star, EyeOff, PlusCircle, BookOpen } from '@/components/icons/ordem-icons';
 
-// Tipos de modificação para acessórios
-export type AccessoryModification = 'aprimorado' | 'discreto' | 'funcao_adicional' | 'instrumental';
-
-// Dados de cada modificação
-export interface AccessoryModificationData {
-  id: AccessoryModification;
-  name: string;
-  description: string;
-  effect: string;
-  spaceModifier?: number;
-}
-
-// Tabela 3.9: Modificações para Acessórios
-export const ACCESSORY_MODIFICATIONS: AccessoryModificationData[] = [
-  {
-    id: 'aprimorado',
-    name: 'Aprimorado',
-    description: 'O bônus em perícia concedido pelo acessório aumenta para +5. Cada modificação pode ser instalada uma única vez por equipamento neste sistema.',
-    effect: 'Aumenta um dos bônus em perícia para +5.',
-  },
-  {
-    id: 'discreto',
-    name: 'Discreto',
-    description: 'O item é miniaturizado ou disfarçado como outro item inócuo (como um relógio). Reduz o número de espaços ocupados em 1, fornece +5 em testes de Crime para ser ocultado e permite que você faça esse teste mesmo que não seja treinado na perícia.',
-    effect: '+5 em testes de ocultar e reduz o espaço em -1.',
-    spaceModifier: -1,
-  },
-  {
-    id: 'funcao_adicional',
-    name: 'Função Adicional',
-    description: 'O acessório fornece +2 em uma perícia adicional à sua escolha, sujeita à aprovação do mestre.',
-    effect: 'Concede +2 a uma perícia adicional.',
-  },
-  {
-    id: 'instrumental',
-    name: 'Instrumental',
-    description: 'O acessório pode ser usado como um kit de perícia específico (escolhido ao aplicar esta modificação).',
-    effect: 'O acessório funciona como um kit de perícia.',
-  },
-];
+import { ACCESSORY_MODIFICATIONS, calculateAccessorySkillBonuses, validateAccessoryModifications, type AccessoryConfiguration, type AccessoryModification } from '@/lib/accessory-modifications';
+import { SKILLS } from '@/lib/character-data';
+export { ACCESSORY_MODIFICATIONS, type AccessoryModification } from '@/lib/accessory-modifications';
 
 // Ícones por modificação
 const MOD_ICONS: Record<AccessoryModification, React.ComponentType<{ className?: string }>> = {
   aprimorado: Star,
+  aprimorado_adicional: Star,
   discreto: EyeOff,
   funcao_adicional: PlusCircle,
   instrumental: BookOpen,
@@ -87,7 +52,9 @@ interface AccessoryModificationModalProps {
   itemCategory: string;
   itemSpaces: number | '*';
   currentModifications: AccessoryModification[];
-  onApplyModifications: (modifications: AccessoryModification[]) => void | Promise<void>;
+  catalogId?: string;
+  currentConfiguration?: AccessoryConfiguration;
+  onApplyModifications: (modifications: AccessoryModification[], configuration?: AccessoryConfiguration) => void | Promise<void>;
 }
 
 export function AccessoryModificationModal({
@@ -97,9 +64,18 @@ export function AccessoryModificationModal({
   itemCategory,
   itemSpaces,
   currentModifications,
+  catalogId,
+  currentConfiguration,
   onApplyModifications,
 }: AccessoryModificationModalProps) {
   const [selectedMods, setSelectedMods] = useState<AccessoryModification[]>(() => [...new Set(currentModifications)]);
+
+  const [configuration, setConfiguration] = useState<AccessoryConfiguration>(currentConfiguration ?? {});
+  useEffect(() => { if (open) setConfiguration(currentConfiguration ?? {}); }, [open, currentConfiguration]);
+  const configurationError = validateAccessoryModifications(selectedMods, configuration, catalogId);
+
+  const categoryError = getModificationCategoryError(itemCategory, selectedMods.length);
+  const configurationChanged = JSON.stringify(configuration) !== JSON.stringify(currentConfiguration ?? {});
 
   const [isApplying, setIsApplying] = useState(false);
   // Abrir de novo ou receber a ficha atualizada deve refletir o registro persistido.
@@ -135,20 +111,21 @@ export function AccessoryModificationModal({
   // Toggle de modificação
   const toggleModification = (modId: AccessoryModification) => {
     if (alreadyAppliedMods.has(modId)) return;
+    if (modId === 'aprimorado_adicional' && !selectedMods.includes('funcao_adicional')) return;
 
     setSelectedMods(prev =>
       prev.includes(modId)
-        ? prev.filter(m => m !== modId)
+        ? prev.filter(m => m !== modId && !(modId === 'funcao_adicional' && m === 'aprimorado_adicional' && !alreadyAppliedMods.has(m)))
         : [...prev, modId]
     );
   };
 
   // Aplicar
   const handleApply = async () => {
-    if (isApplying || !selectedMods.some(mod => !alreadyAppliedMods.has(mod))) return;
+    if (categoryError || configurationError || isApplying || (!configurationChanged && !selectedMods.some(mod => !alreadyAppliedMods.has(mod)))) return;
     setIsApplying(true);
     try {
-      await onApplyModifications([...new Set([...currentModifications, ...selectedMods])]);
+      await onApplyModifications([...new Set([...currentModifications, ...selectedMods])], configuration);
       onOpenChange(false);
     } catch {
       // O painel apresenta a falha; manter a seleção aberta permite repetir.
@@ -166,11 +143,12 @@ export function AccessoryModificationModal({
             Modificações: {itemName}
           </MobileModalTitle>
           <MobileModalDescription>
-            Tabela 3.9 — Cada modificação aumenta a categoria em I. Cada uma só pode ser aplicada uma vez ao mesmo acessório.
+            Tabela 3.9 — Cada modificação aumenta a categoria em I. Aprimorado pode beneficiar a função principal e a função adicional uma vez cada.
           </MobileModalDescription>
         </MobileModalHeader>
 
         <MobileModalBody className="px-4 sm:px-6 py-4 flex-1 overflow-y-auto">
+          {categoryError && <p role="alert" className="text-amber-300 text-sm mb-3">{categoryError}</p>}
           {/* Resumo do item */}
           <div className="p-3 rounded-lg bg-muted/30 border border-border mb-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -199,6 +177,39 @@ export function AccessoryModificationModal({
             </div>
           </div>
 
+          <div className="space-y-3 mb-4">
+            {(['utensilio', 'vestimenta'].includes(catalogId ?? '') || configuration.primarySkill || selectedMods.includes('aprimorado')) && (
+              <label className="block text-sm text-foreground">Perícia principal
+                <select aria-label="Perícia principal" className="block w-full bg-background border rounded p-2 mt-1" value={configuration.primarySkill ?? ''}
+                  disabled={!!currentConfiguration?.primarySkill} onChange={e => setConfiguration(prev => ({ ...prev, primarySkill: e.target.value }))}>
+                  <option value="">Escolha a perícia</option>
+                  {SKILLS.filter(s => !['luta', 'pontaria'].includes(s.id)).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </label>
+            )}
+            {selectedMods.includes('funcao_adicional') && (
+              <label className="block text-sm text-foreground">Perícia de Função Adicional
+                <select aria-label="Perícia de Função Adicional" className="block w-full bg-background border rounded p-2 mt-1" value={configuration.additionalSkill ?? ''}
+                  disabled={!!currentConfiguration?.additionalSkill} onChange={e => setConfiguration(prev => ({ ...prev, additionalSkill: e.target.value }))}>
+                  <option value="">Escolha outra perícia</option>
+                  {SKILLS.filter(s => !['luta', 'pontaria', configuration.primarySkill].includes(s.id)).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </label>
+            )}
+            {selectedMods.includes('instrumental') && (
+              <label className="block text-sm text-foreground">Kit de Instrumental
+                <select aria-label="Kit de Instrumental" className="block w-full bg-background border rounded p-2 mt-1" value={configuration.kitSkill ?? ''}
+                  disabled={!!currentConfiguration?.kitSkill} onChange={e => setConfiguration(prev => ({ ...prev, kitSkill: e.target.value }))}>
+                  <option value="">Escolha o kit</option>
+                  {SKILLS.filter(s => ['crime', 'enganacao', 'medicina', 'tecnologia'].includes(s.id)).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </label>
+            )}
+            {Object.entries(calculateAccessorySkillBonuses(selectedMods, configuration)).map(([skill, bonus]) =>
+              <p key={skill} className="text-sm text-foreground">{SKILLS.find(entry => entry.id === skill)?.name}: +{bonus} previsto, sujeito à conferência do mestre.</p>)}
+            {configurationError && <p role="status" className="text-amber-300 text-sm">{configurationError}</p>}
+            <p className="text-sm text-muted-foreground">As perícias beneficiadas precisam ser conferidas com o mestre. Os bônus não substituem treinamento nem se acumulam com bônus de outros itens.</p>
+          </div>
           {/* Lista de modificações */}
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-foreground mb-2">
@@ -207,6 +218,7 @@ export function AccessoryModificationModal({
             {ACCESSORY_MODIFICATIONS.map(mod => {
               const isSelected = selectedMods.includes(mod.id);
               const isLocked = alreadyAppliedMods.has(mod.id);
+              const missingRequirement = (mod.id === 'aprimorado_adicional' && !selectedMods.includes('funcao_adicional')) || (mod.id === 'aprimorado' && catalogId === 'kit_pericia');
               const Icon = MOD_ICONS[mod.id];
 
               return (
@@ -221,14 +233,14 @@ export function AccessoryModificationModal({
                         : 'bg-muted/20 border-border hover:border-primary/30 cursor-pointer'
                     }
                   `}
-                  onClick={isLocked ? undefined : () => toggleModification(mod.id)}
+                  onClick={isLocked || missingRequirement ? undefined : () => toggleModification(mod.id)}
                 >
                   <div className="flex items-start gap-3">
                     <Checkbox
                       onClick={event => event.stopPropagation()}
                       checked={isSelected}
-                      onCheckedChange={isLocked ? undefined : () => toggleModification(mod.id)}
-                      disabled={isLocked}
+                      onCheckedChange={isLocked || missingRequirement ? undefined : () => toggleModification(mod.id)}
+                      disabled={isLocked || missingRequirement}
                       className="mt-1"
                     />
                     <div className="flex-1 min-w-0">
@@ -246,7 +258,7 @@ export function AccessoryModificationModal({
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">{mod.description}</p>
-                      <p className="text-xs text-primary/80 mt-1 font-medium">Efeito: {mod.effect}</p>
+                      <p className="text-xs text-foreground mt-1 font-medium">Efeito: {mod.effect}</p>
                     </div>
                   </div>
                 </div>
@@ -262,7 +274,7 @@ export function AccessoryModificationModal({
             </Button>
             <Button
               onClick={handleApply}
-              disabled={isApplying || !hasNewMods}
+              disabled={!!categoryError || !!configurationError || isApplying || (!hasNewMods && !configurationChanged)}
               className="flex-1"
             >
               <Wrench className="w-4 h-4 mr-2" />

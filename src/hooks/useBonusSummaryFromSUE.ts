@@ -12,6 +12,7 @@
  */
 
 import { useMemo, useCallback } from 'react';
+import { useAccessoryApprovals } from './useAccessoryApprovals';
 import { 
   useUnifiedEffects, 
   CharacterStateForEffects, 
@@ -45,6 +46,7 @@ import {
 
 // Props do hook
 export interface UseBonusSummaryFromSUEProps {
+  characterId?: string;
   // Dados básicos do personagem
   origin: string;
   abilities: string[];
@@ -129,6 +131,7 @@ function convertToBreakdown(
  * Hook que usa o SUE como fonte única de verdade e converte para BonusSummary
  */
 export function useBonusSummaryFromSUE({
+  characterId,
   origin,
   abilities,
   generalPowers = [],
@@ -164,12 +167,14 @@ export function useBonusSummaryFromSUE({
   versatilityTrack,
   classPowerChoices = {},
 }: UseBonusSummaryFromSUEProps): BonusSummary & { 
+  accessories: ReturnType<typeof useAccessoryApprovals>;
   /** Acesso completo ao resultado do SUE (inclui hardening) */
   unifiedEffects: UnifiedEffectsResult;
   /** Atalho para metadados de hardening */
   hardeningMetadata: UnifiedEffectsResult['hardening']['metadata'] | null;
 } {
   
+  const accessories = useAccessoryApprovals(characterId, inventory);
   // Monta o estado do personagem para o SUE
   const characterState = useMemo<CharacterStateForEffects>(() => ({
     origin,
@@ -344,6 +349,11 @@ export function useBonusSummaryFromSUE({
       }
     }
     
+    for (const [skill, bonus] of Object.entries(accessories.bonuses)) {
+      const current = skillBonuses[skill] ?? { total: 0, breakdown: [] };
+      skillBonuses[skill] = { total: current.total + bonus,
+        breakdown: [...current.breakdown, convertToBreakdown('Acessório aprovado e em uso (maior bônus de item)', bonus, 'equipment')] };
+    }
     // === EFEITOS ESPECIAIS (do SUE) ===
     const special: BonusBreakdown[] = computed.specialEffects.map(e => ({
       source: e.source,
@@ -639,11 +649,13 @@ export function useBonusSummaryFromSUE({
     generalPowers, 
     isConditionalActive,
     intellect,
+    accessories.bonuses,
   ]);
   
   // Retorna BonusSummary + acesso ao SUE com hardening
   return {
     ...bonusSummary,
+    accessories,
     unifiedEffects,
     hardeningMetadata: unifiedEffects.hardening?.metadata ?? null,
   };

@@ -1,3 +1,6 @@
+import { getCompatibleAmmunition, getAmmunitionEffects, type CombatAmmunition } from '@/lib/ammunition-effects';
+import { CombatAmmunitionSelector } from '../CombatAmmunitionSelector';
+import { WeaponModificationNotes } from '../WeaponModificationNotes';
 import type { ConfirmCombatAttack, CombatCostSelection } from '@/services/combat-attack-service';
 /**
  * MobileCombatRollModal - Modal de combate completo para mobile
@@ -19,7 +22,7 @@ import type { ConfirmCombatAttack, CombatCostSelection } from '@/services/combat
 import { useConfirmedDiceRoll, type ConfirmDicePE } from '@/hooks/useConfirmedDiceRoll';
 import { getCombatPowerDicePenalty } from '@/lib/class-powers/combat-test-dice';
 import { getWeaponDamageEffects, hasLongFirearmDamage } from '@/lib/effects/weapon-damage-effects';
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sword, 
@@ -156,6 +159,7 @@ interface MobileCombatRollModalProps {
   unifiedEffects?: ComputedEffects;
   activeConditions?: string[];
   weaponBuffs?: WeaponBuff[];
+  ammunition?: CombatAmmunition[];
   onRollComplete?: (result: DiceRollResult) => void;
   // NOVAS PROPS - Paridade com desktop
   paranormalPowers?: Array<{ id: string; name: string; element: string }>;
@@ -245,6 +249,7 @@ export function MobileCombatRollModal({
   activeConditions = [],
   weaponBuffs = [],
   onRollComplete,
+  ammunition = [],
   // NOVAS PROPS - Paridade com desktop
   paranormalPowers = [],
   hasAffinity = false,
@@ -674,7 +679,7 @@ export function MobileCombatRollModal({
 
   // Bônus total de ataque - ATUALIZADO com SUE, trilha, weapon buffs
   const totalAttackBonus = useMemo(() => {
-    let total = attackSkill.bonus;
+    let total = attackSkill.bonus + (weapon?.modificationAttackBonus ?? 0);
     const isMelee = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
     
     // Bônus do SUE
@@ -728,8 +733,17 @@ export function MobileCombatRollModal({
   }, [attackSkill.bonus, selectedBonuses, availableBonuses, manualAttackMod, weaponBuffBonuses, unifiedEffects, weapon, trackCombatBonuses, passiveBonuses, specialAttackConfig.enabled, specialAttackResult.attackBonus, proficiencyCheck]);
 
   // Detalhamento das fontes de bônus de ataque - NOVO
+  const [selectedAmmunitionId, setSelectedAmmunitionId] = useState('');
+  useEffect(() => { if (open) setSelectedAmmunitionId(''); }, [open, weapon?.id]);
+  const compatibleAmmunition = getCompatibleAmmunition(weapon ?? {}, ammunition);
+  const selectedAmmunition = compatibleAmmunition.find(item => item.id === selectedAmmunitionId);
+  const ammunitionEffects = getAmmunitionEffects(selectedAmmunition);
+  const requiresCalibreGrosso = weapon?.appliedModifications?.includes('calibre_grosso') ?? false;
+  const ammunitionUnavailable = (requiresCalibreGrosso || !!selectedAmmunitionId) && !selectedAmmunition;
+
   const attackBonusSources = useMemo(() => {
     const sources: BonusSourceDisplay[] = [];
+    if (weapon?.modificationAttackBonus) sources.push({ label: 'Modificações da arma', value: weapon.modificationAttackBonus, type: 'other', description: 'Certeira ou Alongada: bônus do item salvo no inventário.' });
     const isMelee = weapon?.type === 'Corpo a Corpo' || weapon?.type === 'Briga';
     
     if (attackSkill.bonus > 0) {
@@ -1118,8 +1132,8 @@ export function MobileCombatRollModal({
       multiplier += activeTechniqueEffects.criticalMultiplierBonus;
     }
     
-    return multiplier;
-  }, [weapon, weaponBuffBonuses, unifiedEffects, activeTechniqueEffects, trackCombatBonuses]);
+    return multiplier + ammunitionEffects.criticalMultiplierBonus;
+  }, [ammunitionEffects.criticalMultiplierBonus, weapon, weaponBuffBonuses, unifiedEffects, activeTechniqueEffects, trackCombatBonuses]);
 
   // === FEEDBACK SONORO E HÁPTICO ===
   const combatFeedback = useCombatFeedback();
@@ -1128,7 +1142,7 @@ export function MobileCombatRollModal({
   const rollAttack = useCallback(() => {
     if (preparingAttack.current || attackConfirmation.confirming) return;
     if (attackConfirmation.pending) { void attackConfirmation.confirm(); return; }
-    if (!weapon || !canAffordPE || confirmationUnavailable) return;
+    if (!weapon || !canAffordPE || confirmationUnavailable || ammunitionUnavailable) return;
     preparingAttack.current = true;
 
     setIsRolling(true);
@@ -1205,7 +1219,7 @@ export function MobileCombatRollModal({
       },
 
     }).finally(() => { preparingAttack.current = false; setIsRolling(false); });
-  }, [confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, isAtiradorElite, disparoLetalConfig, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
+  }, [ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, isAtiradorElite, disparoLetalConfig, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
@@ -1432,7 +1446,8 @@ export function MobileCombatRollModal({
         weaponBuffDice.push(useMaxDamage ? weaponBuffDiceSize : Math.floor(Math.random() * weaponBuffDiceSize) + 1);
       }
       
-      const allExtraDice = [...extraDice, ...sneakDice, ...maquinaDeMatarDiceResults, ...golpePesadoDiceResults];
+      const ammunitionDice = Array.from({ length: ammunitionEffects.explosiveDice }, () => Math.floor(Math.random() * 6) + 1);
+      const allExtraDice = [...ammunitionDice, ...extraDice, ...sneakDice, ...maquinaDeMatarDiceResults, ...golpePesadoDiceResults];
       
       const weaponDiceTotal = mainDice.reduce((a, b) => a + b, 0);
       const extraDiceTotal = allExtraDice.reduce((a, b) => a + b, 0);
@@ -1442,7 +1457,7 @@ export function MobileCombatRollModal({
       // O histórico inclui cada dado adicional, sem recalcular nem sortear de novo.
       const historyDice = [...mainDice, ...allExtraDice, ...weaponBuffDice];
       onRollComplete?.({
-        type: 'damage', label: `Dano: ${weapon.name}${total < 1 ? ' (mínimo 1)' : ''}`,
+        type: 'damage', label: `Dano: ${weapon.name}${selectedAmmunition ? ` — ${selectedAmmunition.name}` : ''}${total < 1 ? ' (mínimo 1)' : ''}`,
         dice: historyDice, keptDice: historyDice.reduce((sum, die) => sum + die, 0),
         skillBonus: 0, otherBonuses: damageBonus, extraDice: allExtraDice.length + weaponBuffDice.length,
         total: Math.max(1, total), isCritical, isDisadvantage: false, timestamp: new Date(),
@@ -1480,7 +1495,7 @@ export function MobileCombatRollModal({
       setIsRolling(false);
       setPhase('damage');
     }, 500);
-  }, [abilities, isInfiltrador, sneakAttackConfig, weapon, attackResult, selectedBonuses, availableBonuses, attributes, unifiedEffects, maquinaDeMatarActive, criticalMultiplier, advancedBonuses, trackCombatBonuses, weaponBuffBonuses, weaponBuffs, passiveBonuses, manualDamageMod, nex, onRollComplete]);
+  }, [selectedAmmunition, ammunitionEffects.explosiveDice, abilities, isInfiltrador, sneakAttackConfig, weapon, attackResult, selectedBonuses, availableBonuses, attributes, unifiedEffects, maquinaDeMatarActive, criticalMultiplier, advancedBonuses, trackCombatBonuses, weaponBuffBonuses, weaponBuffs, passiveBonuses, manualDamageMod, nex, onRollComplete]);
 
   if (!weapon) return null;
 
@@ -1538,6 +1553,9 @@ export function MobileCombatRollModal({
         </MobileDrawerHeader>
 
         <MobileDrawerBody>
+          <WeaponModificationNotes effects={weapon.modificationEffects} />
+          {weapon.ammoType && <CombatAmmunitionSelector ammunition={compatibleAmmunition} selectedId={selectedAmmunitionId} onSelect={setSelectedAmmunitionId}
+            disabled={phase !== 'setup' || attackConfirmation.confirming || !!attackConfirmation.pending} requiresCalibreGrosso={requiresCalibreGrosso} />}
           <AnimatePresence mode="wait">
             {/* FASE: Setup */}
             {phase === 'setup' && (
@@ -2257,7 +2275,7 @@ export function MobileCombatRollModal({
                     ) : <Target className="w-5 h-5" />,
                     onClick: rollAttack,
                     type: 'primary',
-                    disabled: attackConfirmation.confirming || isRolling || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable)),
+                    disabled: attackConfirmation.confirming || isRolling || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable)),
                   }
                 ]}
               />

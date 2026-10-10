@@ -8,7 +8,12 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook as renderHookWithProvider } from '@testing-library/react';
+import { createElement } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+const renderHook = <T,>(callback: () => T) => renderHookWithProvider(callback, {
+  wrapper: ({ children }) => createElement(QueryClientProvider, { client: new QueryClient({ defaultOptions: { queries: { retry: false } } }) }, children),
+});
 
 // Spies transparentes preservam os contratos e cálculos reais dos hooks.
 vi.mock('@/hooks/useDefenseBonuses', async (importOriginal) => {
