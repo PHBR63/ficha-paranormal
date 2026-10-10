@@ -13,7 +13,8 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { calculateDerivedStats, countTranscender, CLASSES, ORIGINS, getOcultistRituals } from './character-data';
+import { calculateDerivedStats, countTranscender, CLASSES, ORIGINS } from './character-data';
+import { getKnownRitualLimit } from './rituals/known-ritual-limit';
 import { getPowerChoiceMilestones, getCharacterPowerChoices } from './transcender-system';
 import { TRAINING_GRADE_KEYS, LEGACY_TRAINING_GRADE_KEYS } from './constants/game-ids';
 
@@ -102,6 +103,7 @@ export interface TrainingGradeChoicesAudit {
 
 // Dados do personagem necessários para auditoria
 export interface CharacterForAudit {
+  creation_data?: unknown;
   id: string;
   name: string;
   class: string;
@@ -877,7 +879,7 @@ export function auditRitualsCount(character: CharacterForAudit): { issues: Audit
   }
   
   const rituals = character.rituals || [];
-  const limits = getOcultistRituals(character.nex);
+  const limits = getKnownRitualLimit(character);
   
   if (!limits) {
     return { issues };
@@ -893,7 +895,7 @@ export function auditRitualsCount(character: CharacterForAudit): { issues: Audit
       category: 'rituals',
       severity: 'error',
       title: 'Rituais Excedentes',
-      description: `O personagem tem ${currentCount} rituais, mas deveria ter no máximo ${maxRituals} (limite para NEX ${character.nex}%). Excesso de ${excessRituals} ritual(is).`,
+      description: `O personagem tem ${currentCount} rituais, mas o limite comum para NEX ${character.nex}% é ${limits.baseCount}, mais ${limits.extraCount} extras com fonte registrada. Excesso de ${excessRituals} ritual(is).`,
       currentValue: currentCount,
       expectedValue: maxRituals,
       autoFixable: false,

@@ -60,7 +60,7 @@ export const LAMINA_PASSIVES: LaminaPassive[] = [
   { 
     name: 'Lâmina Maldita', 
     minNex: 10, 
-    effect: 'Aprende Amaldiçoar Arma. +1 PE = ação movimento. Usa Ocultismo para ataque.' 
+    effect: 'Aprende Amaldiçoar Arma. Se já conhecia o ritual antes da habilidade, após conferência do mestre pode gastar +1 PE para execução de movimento. Usa Ocultismo com a arma amaldiçoada.'
   },
   { 
     name: 'Gladiador Paranormal', 

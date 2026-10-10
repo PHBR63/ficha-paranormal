@@ -651,7 +651,7 @@ export const CLASS_TRACKS: ClassTrack[] = [
     classId: 'Ocultista',
     description: 'Alguns ocultistas preferem unir conhecimento arcano e combate físico, usando o paranormal como extensão de sua lâmina.',
     abilities: [
-      { id: 'lamina-maldita', name: 'Lâmina Maldita', description: 'Você aprende o ritual Amaldiçoar Arma. Ao conjurá-lo, pode gastar +1 PE para reduzir o tempo de conjuração para movimento. Além disso, ao conjurar esse ritual, você pode usar Ocultismo no lugar de Luta ou Pontaria para testes de ataque com a arma amaldiçoada.', minNex: 10, isInitial: true },
+      { id: 'lamina-maldita', name: 'Lâmina Maldita', description: 'Você aprende o ritual Amaldiçoar Arma. Se já conhecia esse ritual antes de receber esta habilidade, pode gastar +1 PE para conjurá-lo como ação de movimento; o sistema exige conferência histórica do mestre. Ao atacar com uma arma amaldiçoada pelo ritual, pode usar Ocultismo no lugar de Luta ou Pontaria.', minNex: 10, isInitial: true },
       { id: 'gladiador-paranormal', name: 'Gladiador Paranormal', description: 'Sempre que acerta um ataque corpo a corpo, você recebe 2 PE temporários. Você pode ganhar um número máximo de PE temporários por cena igual ao seu limite de PE por turno. PE temporários desaparecem ao final da cena.', minNex: 40 },
       { id: 'conjuracao-marcial', name: 'Conjuração Marcial', description: 'Uma vez por rodada, quando lança um ritual com execução de ação padrão, você pode gastar 2 PE para fazer um ataque corpo a corpo como ação livre.', minNex: 65 },
       { id: 'lamina-do-medo', name: 'Lâmina do Medo', description: 'Você aprende o ritual Lâmina do Medo.', minNex: 99 },

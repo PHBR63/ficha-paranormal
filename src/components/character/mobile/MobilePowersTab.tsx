@@ -88,7 +88,7 @@ interface MobilePowersTabProps {
   originPowers: OriginPower[];
   rituals: string[];
   powerLimits: { total: number; fromTranscender: number; fromOrigin: number };
-  ritualLimits: { count: number } | null;
+  ritualLimits: { count: number; extraCount?: number } | null;
   hasExcessPowers: boolean;
   hasExcessRituals: boolean;
   // Contagem de slots de Transcender usados (poderes paranormais escolhidos via Transcender)
@@ -849,6 +849,7 @@ export const MobilePowersTab = memo(function MobilePowersTab({
                 ) : (
                   <span className="text-xs text-muted-foreground">
                     {rituals.length}/{ritualLimits.count} rituais
+                    {(ritualLimits.extraCount || 0) > 0 && ` · ${ritualLimits.extraCount} extras com fonte registrada`}
                   </span>
                 )}
               </>

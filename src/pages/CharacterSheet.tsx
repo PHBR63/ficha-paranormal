@@ -77,7 +77,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MobileActionSheet, useActionSheet } from '@/components/ui/mobile-action-sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ORIGINS, CLASSES, getTrackById, getOcultistRituals, getSkillBonus } from '@/lib/character-data';
+import { ORIGINS, CLASSES, getTrackById, getSkillBonus } from '@/lib/character-data';
+import { getKnownRitualLimit } from '@/lib/rituals/known-ritual-limit';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
 import { ALL_CLASS_ABILITIES } from '@/lib/class-abilities';
 import { PARANORMAL_POWERS, ParanormalPower, ParanormalElement, SavedParanormalPower, getPowerById } from '@/lib/paranormal-powers';
@@ -262,6 +263,7 @@ interface PersistedCondition {
 
 // Interface do personagem
 interface Character {
+  creation_data?: unknown;
   creation_review?:string[];
   id: string;
   name: string;
@@ -1850,6 +1852,8 @@ export default function CharacterSheet() {
       skills: character.skills,
       abilities: character.abilities,
       class_track: character.class_track || undefined,
+      rituals: character.rituals,
+      creation_data: character.creation_data,
       // Campos opcionais que podem não existir no tipo base
       skill_training_choices: charAny.skill_training_choices as CharacterForAudit['skill_training_choices'] || undefined,
       training_grade_choices: charAny.training_grade_choices as CharacterForAudit['training_grade_choices'] || undefined,
@@ -2336,8 +2340,8 @@ export default function CharacterSheet() {
   // Calcula limite de rituais para Ocultistas (ANTES do early return para evitar erro de hooks)
   const ritualLimits = useMemo(() => {
     if (!character || character.class !== 'Ocultista') return null;
-    return getOcultistRituals(character.nex);
-  }, [character?.class, character?.nex]);
+    return getKnownRitualLimit(character);
+  }, [character]);
   
   // Verifica se há rituais excedentes
   const hasExcessRituals = ritualLimits && character
@@ -3243,6 +3247,7 @@ export default function CharacterSheet() {
                           ) : (
                             <span className="text-xs text-muted-foreground">
                               {character.rituals.length}/{ritualLimits.count} rituais
+                              {ritualLimits.extraCount > 0 && ` · ${ritualLimits.extraCount} extras com fonte registrada`}
                             </span>
                           )}
                         </div>

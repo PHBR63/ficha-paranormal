@@ -71,7 +71,7 @@ import { ExcessPowersRemovalModal } from './ExcessPowersRemovalModal';
 import { ExcessRitualsRemovalModal } from './ExcessRitualsRemovalModal';
 import { RemovedPowersHistory } from './RemovedPowersHistory';
 import { IncompleteDataBanner } from './IncompleteDataBanner';
-import { getOcultistRituals } from '@/lib/character-data';
+import { getKnownRitualLimit } from '@/lib/rituals/known-ritual-limit';
 // useCharacterAudit já importado acima
 import { CharacterForAudit, getMaxParanormalPowers } from '@/lib/character-audit-engine';
 import { useAuth } from '@/contexts/AuthContext';
@@ -170,6 +170,7 @@ import { useWeaponBuffs, useUnifiedEffects, useRoundTracking, useActivatedEffect
 // Tipos
 interface MobileCharacterSheetProps {
   character: {
+    creation_data?: unknown;
     id: string;
     name: string;
     class: string;
@@ -570,8 +571,8 @@ export function MobileCharacterSheet({
   }, [character.id, character.nex, character.elemental_affinity, character.paranormal_powers]);
   const ritualLimits = useMemo(() => {
     if (character.class !== 'Ocultista') return null;
-    return getOcultistRituals(character.nex);
-  }, [character.class, character.nex]);
+    return getKnownRitualLimit(character);
+  }, [character]);
 
   // Extrai grupos de armas escolhidos em Especialista em Arma para indicadores visuais
   const especialistaArmaGroups = useMemo(() => {
@@ -610,6 +611,9 @@ export function MobileCharacterSheet({
     general_powers: character.general_powers || [],
     skills: character.skills || {},
     abilities: character.abilities || [],
+    rituals: character.rituals,
+    class_track: character.class_track || undefined,
+    creation_data: character.creation_data,
     inventory: character.inventory || [],
   }), [character]);
 
