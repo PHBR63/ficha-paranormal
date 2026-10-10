@@ -65,6 +65,7 @@ import {
 } from '@/lib/inventory-system';
 import { getAppropriateSlot, EquipmentSlotType } from './EquipmentSlots';
 import type { ExtendedInventoryItem, CharacterDataForInventory } from './InventoryPanel';
+import { InventoryPanel } from './InventoryPanel';
 import type { CatalogWeapon, CatalogArmor, CatalogItem } from '@/lib/catalogs';
 import { validateArmorItem, validateWeaponItem, validateGeneralItem } from '@/hooks/useEquipmentMigration';
 import { useCharacterCategoryReductions, type ExtendedInventoryItemWithReduction } from '@/hooks/useCharacterCategoryReductions';
@@ -76,7 +77,7 @@ interface MobileInventorySheetProps {
   inventory: ExtendedInventoryItem[];
   strength: number;
   patent: string;
-  onInventoryChange?: (newInventory: ExtendedInventoryItem[]) => void;
+  onInventoryChange?: (newInventory: ExtendedInventoryItem[]) => void | Promise<void>;
   readOnly?: boolean;
   characterData?: CharacterDataForInventory;
   /** Intelecto do personagem (para Inventário Otimizado do Técnico) */
@@ -137,6 +138,7 @@ export function MobileInventorySheet({
   characterData,
   intellect,
 }: MobileInventorySheetProps) {
+  const [modificationsOpen, setModificationsOpen] = useState(false);
   // Estados dos catálogos
   const [activeCatalog, setActiveCatalog] = useState<CatalogType>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -613,6 +615,7 @@ export function MobileInventorySheet({
                 {inventory.length} itens
               </Badge>
             </SheetTitle>
+            {!readOnly && <Button variant="outline" onClick={() => setModificationsOpen(true)}>Gerenciar modificações</Button>}
           </SheetHeader>
 
           {/* Status de carga */}
@@ -1018,6 +1021,17 @@ export function MobileInventorySheet({
         </DialogContent>
       </Dialog>
 
+      {/* Reutiliza validações, persistência e modais do painel completo no mobile. */}
+      <Dialog open={modificationsOpen} onOpenChange={setModificationsOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Modificações de equipamentos</DialogTitle>
+            <DialogDescription>Escolha o item e abra suas melhorias. As restrições e o salvamento são os mesmos da ficha completa.</DialogDescription>
+          </DialogHeader>
+          <InventoryPanel inventory={inventory} strength={strength} patent={patent}
+            onInventoryChange={onInventoryChange} characterData={characterData} showEquipment={false} />
+        </DialogContent>
+      </Dialog>
       {/* Modal de detalhes do item */}
       <InventoryItemDetailModal
         open={itemDetailOpen}

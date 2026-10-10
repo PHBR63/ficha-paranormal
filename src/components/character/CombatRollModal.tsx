@@ -1710,9 +1710,6 @@ export function CombatRollModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-card border-primary/30">
-        <WeaponModificationNotes effects={weapon.modificationEffects} />
-          {weapon.ammoType && <CombatAmmunitionSelector ammunition={compatibleAmmunition} selectedId={selectedAmmunitionId} onSelect={setSelectedAmmunitionId}
-            disabled={phase !== 'setup' || attackConfirmation.confirming || !!attackConfirmation.pending} requiresCalibreGrosso={requiresCalibreGrosso} />}
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display text-primary">
             {weapon.type === 'Disparo' ? (
@@ -1724,6 +1721,10 @@ export function CombatRollModal({
           </DialogTitle>
           <DialogDescription className="sr-only">Rolagem de ataque e dano com modificadores e Defesa do alvo.</DialogDescription>
         </DialogHeader>
+
+        <WeaponModificationNotes effects={weapon.modificationEffects} />
+        {weapon.ammoType && <CombatAmmunitionSelector ammunition={compatibleAmmunition} selectedId={selectedAmmunitionId} onSelect={setSelectedAmmunitionId}
+          disabled={phase !== 'setup' || attackConfirmation.confirming || !!attackConfirmation.pending} requiresCalibreGrosso={requiresCalibreGrosso} />}
 
         <div className="space-y-4">
           {/* Info da arma */}
@@ -2579,7 +2580,7 @@ export function CombatRollModal({
                         onClick={handleRollDamage}
                       >
                         <Skull className="w-5 h-5 mr-2" />
-                        ROLAR DANO {attackResult.isCritical && `(${weapon.criticalMultiplier || 'x2'})`}
+                        ROLAR DANO {attackResult.isCritical && `(x${criticalMultiplier})`}
                       </Button>
                     );
                   } else {
@@ -2670,7 +2671,7 @@ export function CombatRollModal({
                     <div className="space-y-2">
                       <div className="flex items-center justify-center gap-2 text-xs text-purple-400 uppercase tracking-wider">
                         <Sparkles className="w-3 h-3" />
-                        <span>Dados Extras (Poderes)</span>
+                        <span>{ammunitionEffects.explosiveDice ? 'Dados Extras (Munição e Poderes)' : 'Dados Extras (Poderes)'}</span>
                       </div>
                       
                       <div className="flex flex-wrap justify-center gap-2">

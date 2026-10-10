@@ -218,15 +218,16 @@ describe.each([['desktop', CombatRollModal], ['mobile', MobileCombatRollModal]] 
   it('Dum dum aumenta o crítico e Explosiva mantém apenas dois dados extras', async () => {
     vi.mocked(rollSkillTest).mockImplementationOnce(() => ({ dice: [20], total: 25, keptDice: 20, skillBonus: 5, otherBonuses: 0, extraDice: 0, isDisadvantage: false, timestamp: new Date(), type: 'attack', label: 'Ataque', isCritical: true }));
     const complete = vi.fn();
-    render(<Modal {...props} weapon={{ ...props.weapon, type: 'Disparo', damage: '2d6', critical: '20', criticalMultiplier: '2', ammoType: 'balas_longas' }}
+    render(<Modal {...props} weapon={{ ...props.weapon, type: 'Disparo', damage: '2d6', critical: '20', criticalMultiplier: '3', ammoType: 'balas_longas' }}
       ammunition={[{ id: 'crit-ammo', name: 'Pacote crítico', catalogType: 'municao', catalogId: 'municao_longa', appliedAmmoModifications: ['dum_dum', 'explosiva'] }]}
       onConfirmAttack={vi.fn().mockResolvedValue(true)} onPEChange={vi.fn()} onRollComplete={complete} />);
     fireEvent.change(screen.getByRole('combobox', { name: 'Munição usada neste ataque' }), { target: { value: 'crit-ammo' } });
     fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
     await waitFor(() => expect(screen.getByRole('button', { name: /rolar dano/i })).toBeEnabled(), { timeout: 5000 });
+    if (_name === 'desktop') expect(screen.getByRole('button', { name: 'ROLAR DANO (x4)' })).toBeEnabled();
     fireEvent.click(screen.getByRole('button', { name: /rolar dano/i }));
     await waitFor(() => expect(complete).toHaveBeenCalledWith(expect.objectContaining({ type: 'damage', extraDice: 2, isCritical: true })));
     const damage = complete.mock.calls.map(([event]) => event).find(event => event.type === 'damage');
-    expect(damage.dice).toHaveLength(8); // 2d6 ×3, mais 2d6 que não multiplicam.
+    expect(damage.dice).toHaveLength(10); // 2d6 ×4, mais 2d6 que não multiplicam.
   });
 });
