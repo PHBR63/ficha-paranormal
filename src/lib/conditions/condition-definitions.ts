@@ -89,6 +89,9 @@ export interface ContextualModifier {
  * Inclui todas as condições do livro básico + Desprevenido e Surpreendido
  */
 export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
+  em_chamas: { id: 'em_chamas', name: 'Em Chamas', icon: '🔥', color: 'destructive', description: 'Pegando fogo.', effect: 'Início do turno: 1d6 de fogo.', removal: 'Ação padrão para apagar com as mãos, ou imersão em água.' },
+  ofuscado: { id: 'ofuscado', name: 'Ofuscado', icon: '☀️', color: 'warning', description: 'Visão prejudicada.', effect: '–1d20 em ataques e Percepção.', removal: 'Duração definida pela fonte; explosivos são controlados no seu painel.' },
+  'camuflagem-total': { id: 'camuflagem-total', name: 'Camuflagem Total', icon: '🌫️', color: 'muted-foreground', description: 'Protegido pela fumaça.', effect: 'Ataques contra você têm 50% de chance de falha, conferida pela mesa.', removal: 'Sair da área ou encerrar a fumaça no painel de explosivos.' },
   // === CONDIÇÕES DE COMBATE ===
   agarrado: {
     id: 'agarrado',

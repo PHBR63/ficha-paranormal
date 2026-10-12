@@ -10,6 +10,7 @@
  */
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { getExplosive } from '@/lib/explosives';
 import { mergeItemModifications, canModifyAmmunition, getInstalledItemModifications, getModificationCategoryError } from '@/lib/inventory-modifications';
 import { calculateAccessorySkillBonuses, validateAccessoryModifications, type AccessoryConfiguration } from '@/lib/accessory-modifications';
 import { canApplyModification } from '@/lib/catalogs/weapons-catalog';
@@ -638,8 +639,8 @@ export function InventoryPanel({
   // Handler para abrir modal de confirmação de uso
   const handleRequestUseItem = (itemId: string) => {
     const item = inventory.find(i => i.id === itemId);
-    if ((item as ExtendedInventoryItem | undefined)?.catalogId === 'granada_fragmentacao') {
-      toast({ title: 'Use o controle Granada de Fragmentação', description: 'Confirme o arremesso no painel da ficha. O mestre resolve a área e os alvos; usar como consumível não aplica a explosão.' });
+    if (getExplosive((item as ExtendedInventoryItem | undefined)?.catalogId)) {
+      toast({ title: 'Use o controle Explosivos', description: 'Confirme o uso no painel da ficha. O mestre resolve a área e os alvos; usar como consumível não aplica os efeitos.' });
       return;
     }
     if (item) {

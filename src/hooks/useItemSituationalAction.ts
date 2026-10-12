@@ -7,7 +7,9 @@ import type { CharacterActivityEvent } from '@/types/character-activity';
 /** Conserva o mesmo pedido após resposta incerta: o servidor recupera o recibo sem rerrolar. */
 export function useItemSituationalAction(characterId: string, onRefetch: () => unknown | Promise<unknown>,
   procedure: 'confirm_character_item_action' | 'confirm_character_fragmentation_throw' |
-    'confirm_character_fragmentation_targets' | 'confirm_character_fragmentation_damage' = 'confirm_character_item_action') {
+    'confirm_character_fragmentation_targets' | 'confirm_character_fragmentation_damage' |
+    'confirm_character_explosive_action' | 'confirm_character_explosive_targets' |
+    'confirm_character_explosive_effect' | 'confirm_character_explosive_control' = 'confirm_character_item_action') {
   const queries = useQueryClient();
   const running = useRef(false);
   const intent = useRef<{ id: string; characterId: string; request: Json } | undefined>(undefined);

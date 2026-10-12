@@ -11,7 +11,7 @@ describe('Fragmentação: confirmação antes de efeitos', () => {
     render(<FragmentationPanel {...props} />);
     const button = screen.getByRole('button', { name: 'Confirmar arremesso e consumir uma granada' });
     expect(button).toBeDisabled();
-    fireEvent.change(screen.getByRole('combobox', { name: 'Granada de Fragmentação' }), { target: { value: 'grenade' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Explosivo' }), { target: { value: 'grenade' } });
     fireEvent.change(screen.getByLabelText('Ponto de impacto'), { target: { value: 'Porta' } });
     expect(button).toBeDisabled();
     fireEvent.click(screen.getByLabelText(/Conferi empunhadura/));

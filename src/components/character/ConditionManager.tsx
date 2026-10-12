@@ -261,7 +261,7 @@ export function ConditionManager({
   // Verifica se tem condições que causam efeito no início do turno
   const hasStartOfTurnEffects = conditions.some(c => {
     const effect = CONDITION_EFFECTS[c.id];
-    return effect?.startOfTurnEffect || ['morrendo', 'enlouquecendo', 'sangrando', 'envenenado', 'em-chamas'].includes(c.id);
+    return effect?.startOfTurnEffect || ['morrendo', 'enlouquecendo', 'sangrando', 'envenenado', 'em-chamas', 'em_chamas'].includes(c.id);
   });
 
   return (

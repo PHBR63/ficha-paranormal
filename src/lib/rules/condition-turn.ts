@@ -48,6 +48,7 @@ export function prepareConditionTurn(conditions: ActiveCondition[], vigor: numbe
     effects: [], bleedingTests: [], removeIndexes: [], notices: [],
   };
   const penalty = getConditionTestDicePenalty(conditions.map(condition => condition.id), 'vigor');
+  let fireResolved = false;
   for (const [index, condition] of conditions.entries()) {
     const id = resolveConditionId(condition.id);
     let formula: string | undefined;
@@ -73,6 +74,9 @@ export function prepareConditionTurn(conditions: ActiveCondition[], vigor: numbe
       if (passed) { resolution.removeIndexes.push(index); continue; }
       formula = '1d6';
     } else if (id === 'em-chamas' || id === 'em_chamas') {
+      // A condição Em Chamas não multiplica o 1d6 por quantidade de fontes registradas.
+      if (fireResolved) continue;
+      fireResolved = true;
       formula = '1d6';
     } else if (id === 'envenenado') {
       formula = condition.params?.poisonDamage;

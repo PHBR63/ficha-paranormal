@@ -3,6 +3,7 @@ import type { Json } from '@/integrations/supabase/types';
 import { resolveConditionId } from '@/lib/conditions/condition-identity';
 import { RITUAL_END_REASONS } from '@/lib/rituals/ritual-ending';
 import { getRitualById } from '@/lib/rituals/ritual-registry';
+import { getExplosiveByType } from '@/lib/explosives';
 
 /** Explica o orçamento salvo na operação, sem aplicar o estado atual a eventos antigos. */
 function describePETurnBudget(value: Json | undefined): string {
@@ -38,6 +39,21 @@ function describeConditionChanges(before: Json | undefined, after: Json | undefi
 export function describeCharacterActivity(event: CharacterActivityEvent): string {
   const payload = event.payload;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return 'Registro sem detalhes';
+  if (payload.kind === 'explosive_event') {
+    const rule = getExplosiveByType(typeof payload.explosiveType === 'string' ? payload.explosiveType : undefined);
+    const result = payload.result as { total?: number; dice?: number[] } | undefined;
+    const install = payload.installation as { total?: number; dice?: number[]; passed?: boolean } | undefined;
+    if (rule?.type === 'mine') return `Mina instalada em ${payload.point} · direção ${payload.direction} · Tática [${install?.dice?.join(', ') ?? ''}] → ${install?.total} / DT 15 · ${install?.passed ? `sucesso; Percepção DT ${install.total} para encontrar` : 'falha; inutilizada'} · 1 mina consumida · detonação registrada separadamente`;
+    return `${rule?.name ?? 'Explosivo'} · ${payload.point} · raio 6 m · 1 unidade consumida${rule?.dice ? ` · [${result?.dice?.join(', ') ?? ''}] → ${result?.total} de ${rule.damage}` : ' · sem dano'}${payload.dt !== null ? ` · ${rule?.resistance} DT ${payload.dt}` : ' · sem resistência'}${rule?.rounds ? ` · duração ${rule.rounds} rodada(s), confirmada pelo mestre` : ''} · alvos/aplicações registrados separadamente`;
+  }
+  if (payload.kind === 'explosive_area') return `Área de ${getExplosiveByType(String(payload.explosiveType))?.name ?? 'explosivo'} confirmada pelo mestre · ${payload.targetCount} alvo(s) nesta confirmação, incluindo exclusões`;
+  if (payload.kind === 'explosive_application') return `Explosivo em ${payload.targetName} · resistência declarada ${payload.resistanceTotal} / DT ${payload.dt ?? 'não se aplica'}${payload.dt !== null ? ` · ${payload.passed ? 'sucesso' : 'falha'}` : ''} · RD declarada ${payload.declaredDamageReduction} · imunidade ao dano ${payload.immuneDamage ? 'confirmada' : 'não declarada'} · imunidade aos efeitos ${payload.immuneEffect ? 'confirmada' : 'não declarada'} · dano ${payload.damage} · PV temporários usados ${payload.temporaryHPUsed} · PV ${payload.hpBefore} → ${payload.hpAfter} · condições ${Array.isArray(payload.addedConditions) && payload.addedConditions.length ? payload.addedConditions.join(', ') : 'nenhuma'} · confirmado pelo mestre`;
+  if (payload.kind === 'explosive_control') {
+    if (payload.action === 'detonate') return `Mina detonada · ação padrão e alcance longo declarados · 12d6 [${Array.isArray(payload.dice) ? payload.dice.join(', ') : ''}] → ${payload.total} de perfuração · sem segundo consumo`;
+    if (payload.action === 'extinguish') return `Chamas apagadas em ${payload.targetName} · ${payload.method === 'water' ? 'imersão em água' : 'ação padrão com as mãos'} · sem teste inventado`;
+    if (payload.action === 'leave') return `${payload.targetName} saiu da fumaça · encerradas somente condições desta fonte`;
+    return `${payload.action === 'expired' ? 'Duração encerrada' : `Rodada confirmada · restam ${payload.remainingRounds} rodada(s)`} · ${payload.ended ? 'efeitos desta fonte encerrados' : 'efeitos continuam ativos'}`;
+  }
   if (payload.kind === 'fragmentation_throw') {
     const result = payload.result as { total?: number; dice?: number[] } | undefined;
     return `Fragmentação · ${payload.point} · raio 6 m · dados [${result?.dice?.join(', ') ?? ''}] · ${result?.total} de perfuração · Reflexos DT ${payload.dt} reduz à metade · 1 granada consumida · alvos e aplicações conferidos separadamente pelo mestre`;

@@ -2,6 +2,9 @@ import type { EffectMechanics } from '../unified-effects-engine';
 
 /** Texto comum aos cadastros legados. Livro Base v1.3, pp. 310–311. */
 export const BASE_CONDITION_TEXT: Record<string, string> = {
+  em_chamas: 'Início do turno: 1d6 de fogo. Ação padrão para apagar com as mãos, ou imersão em água.',
+  ofuscado: '–1d20 em ataques e Percepção.',
+  'camuflagem-total': 'Ataques contra você têm 50% de chance de falha; confira com a mesa.',
   abalado: '–1d20 em testes. Uma nova aplicação torna o personagem apavorado.',
   apavorado: '–2d20 em testes de perícia. Deve fugir da fonte do medo enquanto a perceber em alcance médio.',
   agarrado: 'Desprevenido e imóvel. –1d20 em ataques; só pode atacar com armas leves.',
@@ -40,6 +43,9 @@ export const BASE_CONDITION_REMOVAL: Record<string, string> = {
   ...Object.fromEntries(Object.keys(BASE_CONDITION_TEXT).map(id => [id,
     'Fim da cena, salvo duração ou encerramento específicos definidos pela fonte. Confira com o mestre.'])),
   caido: 'Ação de movimento para levantar-se.',
+  em_chamas: 'Ação padrão para apagar com as mãos, ou imersão em água.',
+  ofuscado: 'Duração definida pela fonte; explosivos são controlados no seu painel.',
+  'camuflagem-total': 'Sair da área ou encerrar a fumaça no painel de explosivos.',
   confuso: 'Resultado 6 no d6 do início de turno, ou encerramento específico definido pela fonte.',
   machucado: 'Ter mais da metade dos PV totais.',
   perturbado: 'Ter pelo menos metade da SAN total; o efeito narrativo da cena exige conferência com o mestre.',
@@ -57,6 +63,9 @@ export const BASE_CONDITION_MECHANICS: Record<string, {
   mechanics: EffectMechanics;
   contextual?: { melee?: Partial<EffectMechanics>; ranged?: Partial<EffectMechanics> };
 }> = {
+  em_chamas: { mechanics: { specialEffects: [BASE_CONDITION_TEXT.em_chamas] } },
+  ofuscado: { mechanics: { testDice: { attacks: -1, skills: { percepcao: -1 } } } },
+  'camuflagem-total': { mechanics: { specialEffects: [BASE_CONDITION_TEXT['camuflagem-total']] } },
   abalado: { mechanics: { testDice: { all: -1 } } },
   apavorado: { mechanics: { testDice: { all: -2 }, specialEffects: ['Deve fugir da fonte do medo'] } },
   agarrado: { mechanics: { cannotMove: true, testDice: { attacks: -1 }, specialEffects: ['Só pode atacar com armas leves'] } },
