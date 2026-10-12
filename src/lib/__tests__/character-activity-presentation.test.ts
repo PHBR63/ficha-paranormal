@@ -130,3 +130,15 @@ describe('Histórico de alterações de condições', () => {
       .toBe('Recursos alterados · PV 11 → 10');
   });
 });
+
+
+describe('Histórico de ocultação e saque', () => {
+  it('distingue rolagem confirmada de ocultação ainda oposta', () => {
+    const text = describeCharacterActivity({ ...event({ kind: 'item_action', actionCost: 'padrão', result: { label: 'Ocultar: Arma', dice: [12, 7], keptDice: 12, total: 17, skillBonus: 0, otherBonuses: 5, equipmentBonus: 5 } }), category: 'roll' });
+    expect(text).toContain('Ocultar: Arma: 17'); expect(text).toContain('Percepção oposta pendente'); expect(text).toContain('revista +10');
+  });
+  it('explica saque/guardar e custos sem inventar gasto de PE', () => {
+    expect(describeCharacterActivity(event({ kind: 'item_action', itemName: 'Arma', action: 'draw', actionCost: 'livre' }))).toContain('Saque confirmado: arma equipada · Ação livre');
+    expect(describeCharacterActivity(event({ kind: 'item_action', itemName: 'Arma', action: 'stow', actionCost: 'movimento' }))).toContain('Guardar confirmado: arma desequipada · Ação movimento');
+  });
+});

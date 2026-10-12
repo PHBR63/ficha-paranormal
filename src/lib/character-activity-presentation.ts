@@ -59,7 +59,8 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     const breakdown = typeof kept === 'number' ? ` · ${selected}${skill !== undefined ? ` ${signed(skill)} perícia` : ''}${other !== undefined ? ` ${signed(other)} outros bônus` : ''}${skill === undefined && bonus !== undefined ? ` ${signed(bonus)} bônus` : ''}` : '';
     const attackCost = payload.kind === 'combat_attack' && typeof payload.peCost === 'number'
       ? ` · Custo ${payload.peCost} PE · PE ${payload.peBefore} → ${payload.peAfter}${temporaryPE}${peBudgetDetails}` : '';
-    return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}`;
+    const itemDetails = payload.kind === 'item_action' ? ` · Ação ${payload.actionCost} · Maior bônus de equipamento +${result.equipmentBonus ?? 0} · Percepção oposta pendente; revista +10 ao observador · Requisitos declarados` : '';
+    return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}`;
   }
   if (event.category === 'ritual') {
     const preparation = payload.grimoirePreparation;
@@ -76,6 +77,7 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}${temporaryPE}${situationalDetails}${details ? ` · ${details}` : ''}${payload.castingOutcome === 'failed_concentration' ? ' · Concentração falhou; efeitos bloqueados, sem estorno de PE' : ''}${costDetails}${peBudgetDetails}`;
   }
   if (payload.kind === 'ritual_knowledge') return `Conferência histórica do mestre · ${typeof payload.ritualId === 'string' ? getRitualById(payload.ritualId)?.name ?? 'Ritual legado' : 'Ritual'} · Fonte: ${payload.source === 'grimoire' ? 'Grimório Ritualístico' : 'memorizado'} · Conhecimento anterior à Lâmina Maldita: ${payload.knownBeforeBlade === true ? 'confirmado' : 'não confirmado'} · ${payload.note} · Sem gasto de PE ou SAN`;
+  if (payload.kind === 'item_action') return `${payload.itemName} · ${payload.action === 'draw' ? 'Saque confirmado: arma equipada' : 'Guardar confirmado: arma desequipada'} · Ação ${payload.actionCost} · Requisitos declarados pela mesa · Sem gasto de PE`;
   if (payload.kind === 'accessory_review') return `${payload.itemName} · ${payload.action === 'review' ? (payload.enabled ? 'Benefício aprovado pelo mestre' : 'Aprovação revogada') : (payload.enabled ? 'Uso confirmado: empunhado / vestido' : 'Uso encerrado')} · ${payload.note || 'Sem gasto de PE ou SAN'}`;
   if (payload.kind === 'scene_expiry') return `Cena ${payload.sceneNumber} encerrada · ${payload.expiredEffectsCount} efeito(s) expirado(s)${describeConditionChanges((payload.before as { conditions?: Json })?.conditions, (payload.after as { conditions?: Json })?.conditions)}`;
   if (payload.kind === 'manual_turn') return `Turno manual confirmado: ${payload.turnBefore} → ${payload.turnAfter} · Sem gasto de PE`;
