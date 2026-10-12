@@ -21,6 +21,9 @@ import { getAttributeDicePool } from './attribute-dice-pool';
 export interface DiceRollResult {
   /** Recibo do servidor quando custo e rolagem já foram gravados juntos. */
   activityOperationId?: string;
+  /** Escolha congelada para histórico e dano deste ataque. */
+  weaponBurst?: import('./weapon-burst').WeaponBurstSnapshot;
+  attackContext?: { attribute: number; baseDicePenalty: number };
   dice: number[];
   keptDice: number;
   skillBonus: number;

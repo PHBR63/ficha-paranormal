@@ -5,6 +5,7 @@ import { activityClient, activityFailure, activityJson, awaitActivityResponse, c
 /** Configuração escolhida; o servidor calcula os custos e valida classe, NEX e arma. */
 export interface CombatCostSelection {
   weaponId: string;
+  burst?: boolean;
   specialAttackIncrements: number;
   sneakAttack: boolean;
   lethalShot: boolean;
@@ -31,7 +32,7 @@ export async function confirmCombatAttack(characterId: string, request: CombatAt
     p_operation_id: request.operationId, p_character_id: characterId,
     p_expected_pe: request.expectedPE, p_expected_cost: request.expectedCost,
     p_expected_turn_key: expectedTurnKey, p_selection: activityJson(request.selection),
-    p_payload: activityJson({ entry: { ...diceHistoryEntry(request.result), type: 'attack' }, label: request.result.label, type: 'attack' }),
+    p_payload: activityJson({ entry: { ...diceHistoryEntry(request.result), type: 'attack' }, label: request.result.label, type: 'attack', weaponBurst: request.result.weaponBurst, attackContext: request.result.attackContext }),
   }));
   if (error) {
     const failure = activityFailure('Ataque não confirmado.', error);
