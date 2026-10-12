@@ -2646,7 +2646,7 @@ export function CombatRollModal({
                       <Dices className="w-3 h-3" />
                       <span>Dados de Dano da Arma</span>
                       <span className="text-muted-foreground/50">
-                        ({weapon.damage})
+                        ({damageResult.dice.length}d{parseDamageString(weapon.damage).size})
                       </span>
                     </div>
                     

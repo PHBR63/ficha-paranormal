@@ -2095,7 +2095,7 @@ export function MobileCombatRollModal({
               >
                 {/* Dados de dano */}
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground uppercase">Dados de Dano</p>
+                  <p className="text-xs text-muted-foreground uppercase">Dados de Dano — arma {damageResult.dice.length}d{parseDamageString(weapon.damage).size}</p>
                   <div className="flex flex-wrap items-center justify-center gap-2">
                     {damageResult.dice.map((die, i) => (
                       <motion.div
