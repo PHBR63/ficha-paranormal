@@ -256,6 +256,7 @@ describe.each([['desktop', CombatRollModal], ['mobile', MobileCombatRollModal]] 
       dice: expect.any(Array), label: expect.stringContaining('Rajada') })), { timeout: 5000 });
     const damage = complete.mock.calls.map(call => call[0]).find(roll => roll.type === 'damage');
     expect(damage.dice).toHaveLength(critical ? 9 : 3);
+    await waitFor(() => expect(screen.getByText(_name === 'desktop' ? `(${critical ? 9 : 3}d10)` : `Dados de Dano — arma ${critical ? 9 : 3}d10`)).toBeVisible(), { timeout: 5000 });
     await waitFor(() => expect(screen.getByRole('button', { name: /novo ataque/i })).toBeEnabled(), { timeout: 5000 });
     fireEvent.click(screen.getByRole('button', { name: /novo ataque/i }));
     await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Disparar em rajada' })).not.toBeChecked());
