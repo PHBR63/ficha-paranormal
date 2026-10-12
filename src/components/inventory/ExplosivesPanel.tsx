@@ -39,8 +39,8 @@ function ThrowForm({ characterId, inventory, onRefetch, blocked, onFreeze }: Pro
     <select id={`grenade-${characterId}`} className="w-full rounded border border-border bg-background p-2" value={itemId} onChange={e => { setItemId(e.target.value); setConfirmed(false); }}>
       <option value="">Escolha o explosivo</option>{items.map(entry => <option key={entry.id} value={entry.id}>{entry.name} · {entry.quantity ?? 1} unidade(s)</option>)}
     </select>
-    <Label htmlFor={`impact-${characterId}`}>Ponto de impacto</Label>
-    <Input id={`impact-${characterId}`} value={point} maxLength={240} onChange={e => { setPoint(e.target.value); setConfirmed(false); }} placeholder="Descreva o ponto em alcance médio" />
+    <Label htmlFor={`impact-${characterId}`}>{mine ? 'Local de instalação' : 'Ponto de impacto'}</Label>
+    <Input id={`impact-${characterId}`} value={point} maxLength={240} onChange={e => { setPoint(e.target.value); setConfirmed(false); }} placeholder={mine ? 'Descreva o local da instalação' : 'Descreva o ponto em alcance médio'} />
     {mine ? <div className="space-y-2"><p>Instalação: ação completa e Tática treinada DT 15. Consome a mina mesmo em falha. O servidor rola INT e treino real; confira os demais modificadores. Sucesso salva a DT para encontrar a mina.</p>
       <Label htmlFor={`direction-${characterId}`}>Direção do cone de 6 m</Label><Input id={`direction-${characterId}`} maxLength={240} value={direction} onChange={e => { setDirection(e.target.value); setConfirmed(false); }} />
       <Label htmlFor={`bonus-${characterId}`}>Outros bônus de Tática conferidos</Label><Input id={`bonus-${characterId}`} type="number" min={-100} max={100} value={bonus} onChange={e => { setBonus(e.target.value); setConfirmed(false); }} />
