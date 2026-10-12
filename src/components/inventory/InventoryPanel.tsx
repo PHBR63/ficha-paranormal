@@ -638,6 +638,10 @@ export function InventoryPanel({
   // Handler para abrir modal de confirmação de uso
   const handleRequestUseItem = (itemId: string) => {
     const item = inventory.find(i => i.id === itemId);
+    if ((item as ExtendedInventoryItem | undefined)?.catalogId === 'granada_fragmentacao') {
+      toast({ title: 'Use o controle Granada de Fragmentação', description: 'Confirme o arremesso no painel da ficha. O mestre resolve a área e os alvos; usar como consumível não aplica a explosão.' });
+      return;
+    }
     if (item) {
       setItemToUse(item);
       setUseItemConfirmOpen(true);

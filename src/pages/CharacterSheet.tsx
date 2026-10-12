@@ -94,6 +94,7 @@ import { DiceRollResult } from '@/lib/dice-roller';
 import { calculateRitualResistanceDT } from '@/lib/rituals/ritual-resistance';
 import { InventoryPanel } from '@/components/inventory/InventoryPanel';
 import { ItemSituationalActionsPanel } from '@/components/inventory/ItemSituationalActionsPanel';
+import { FragmentationPanel } from '@/components/inventory/FragmentationPanel';
 import { AccessoryApprovalPanel } from '@/components/inventory/AccessoryApprovalPanel';
 import { DataErrorBoundary } from '@/components/DataErrorBoundary';
 import { InventoryItem, hasInventarioOtimizado, calculateCarryCapacity } from '@/lib/inventory-system';
@@ -3309,6 +3310,7 @@ export default function CharacterSheet() {
               >
                 <DataErrorBoundary fallbackMessage="Erro ao carregar inventário">
                   <AccessoryApprovalPanel state={bonusSummary.accessories} />
+                  <FragmentationPanel key={`fragmentation-${character.id}`} characterId={character.id} inventory={character.inventory} onRefetch={refetchCharacter} />
                   <ItemSituationalActionsPanel key={character.id} characterId={character.id} inventory={character.inventory}
                     agility={character.agility} skills={character.skills} conditions={activityJson(character.conditions || [])}
                     conditionIds={activeConditionsForSUE} summary={bonusSummary} onRefetch={refetchCharacter} />

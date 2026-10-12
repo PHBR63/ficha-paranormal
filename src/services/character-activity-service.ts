@@ -12,6 +12,10 @@ type ActivityDatabase = { public: {
     character_activity_events: { Row: ActivityRow; Insert: never; Update: never; Relationships: [] };
   }; Views: Record<string, never>; Enums: Record<string, never>; CompositeTypes: Record<string, never>;
   Functions: {
+    confirm_character_fragmentation_throw: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
+    confirm_character_fragmentation_targets: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
+    confirm_character_fragmentation_damage: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
+    get_character_fragmentation: { Args: { p_character_id: string; p_page?: number }; Returns: Json };
     confirm_character_item_action: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     get_character_ritual_situational: { Args: { p_character_id: string; p_ritual_id: string }; Returns: Json };
     confirm_character_ritual_knowledge: { Args: { p_character_id: string; p_ritual_id: string; p_operation_id: string; p_review: Json }; Returns: CharacterActivityEvent };

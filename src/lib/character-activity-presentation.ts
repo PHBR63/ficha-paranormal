@@ -38,6 +38,12 @@ function describeConditionChanges(before: Json | undefined, after: Json | undefi
 export function describeCharacterActivity(event: CharacterActivityEvent): string {
   const payload = event.payload;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return 'Registro sem detalhes';
+  if (payload.kind === 'fragmentation_throw') {
+    const result = payload.result as { total?: number; dice?: number[] } | undefined;
+    return `Fragmentação · ${payload.point} · raio 6 m · dados [${result?.dice?.join(', ') ?? ''}] · ${result?.total} de perfuração · Reflexos DT ${payload.dt} reduz à metade · 1 granada consumida · alvos e aplicações conferidos separadamente pelo mestre`;
+  }
+  if (payload.kind === 'fragmentation_area') return `Fragmentação · área confirmada pelo mestre · ${payload.targetCount} alvo(s), incluindo exclusões · resistências e aplicações individuais`;
+  if (payload.kind === 'fragmentation_damage') return `Fragmentação em ${payload.targetName} · Reflexos declarado ${payload.resistanceTotal} / DT ${payload.dt}: ${payload.passed ? 'sucesso, metade' : 'falha'} · RD declarada ${payload.declaredDamageReduction} · dano ${payload.damage} · PV temporários consumidos ${payload.temporaryHPUsed} · PV ${payload.hpBefore} → ${payload.hpAfter} · aplicado pelo mestre`;
   const peBudgetDetails = describePETurnBudget(payload.peBudget);
   const nested = payload.entry ?? payload.result;
   const result = nested && typeof nested === 'object' && !Array.isArray(nested) ? nested : payload;

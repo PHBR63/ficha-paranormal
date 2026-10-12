@@ -3,6 +3,7 @@ import { confirmCombatAttack } from '@/services/combat-attack-service';
 import { useRitualSituationalContext } from '@/hooks/character/useRitualSituationalContext';
 import { PETurnBudgetPanel } from './PETurnBudgetPanel';
 import { ItemSituationalActionsPanel } from '@/components/inventory/ItemSituationalActionsPanel';
+import { FragmentationPanel } from '@/components/inventory/FragmentationPanel';
 import { AccessoryApprovalPanel } from '@/components/inventory/AccessoryApprovalPanel';
 import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
 import { DEFAULT_CASTING_CONCENTRATION, getCastingWillConfig, rollCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
@@ -1919,6 +1920,7 @@ export function MobileCharacterSheet({
                 state={sustainedState} peCurrent={character.pe_current} onRefetch={onRefetch} mobile />
               <PETurnBudgetPanel characterId={character.id} />
               <AccessoryApprovalPanel state={bonusSummary.accessories} />
+              <FragmentationPanel key={`fragmentation-${character.id}`} characterId={character.id} inventory={character.inventory} onRefetch={onRefetch} />
               <ItemSituationalActionsPanel key={character.id} characterId={character.id} inventory={character.inventory}
                 agility={character.agility} skills={character.skills} conditions={activityJson(character.conditions || [])}
                 conditionIds={parseConditions(character.conditions || []).map(condition => condition.id)} summary={bonusSummary} onRefetch={onRefetch} />
