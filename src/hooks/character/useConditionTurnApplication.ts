@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { activityClient, activityFailure, activityJson, awaitActivityResponse, confirmActivity } from '@/services/character-activity-service';
 import { conditionsAfterTurn, validateTurnResolution, type ConditionTurnResolution } from '@/lib/rules/condition-turn';
@@ -14,6 +15,7 @@ export interface TurnCharacterSnapshot {
 /** Prepara um pedido imutável; repetir após falha conserva UUID, dados e snapshot originais. */
 export function useConditionTurnApplication(character: TurnCharacterSnapshot | null | undefined,
   onConfirmed: (receipt: CharacterActivityEvent) => void) {
+  const queries = useQueryClient();
   const scope = useRef(character?.id);
   scope.current = character?.id;
   const confirmedCallback = useRef(onConfirmed);
@@ -40,6 +42,11 @@ export function useConditionTurnApplication(character: TurnCharacterSnapshot | n
       const { data, error } = await awaitActivityResponse(activityClient.rpc('resolve_character_condition_turn', args));
       if (error) throw activityFailure('O início de turno não foi confirmado.', error);
       const receipt = confirmActivity(data, characterId, operationId);
+      const refreshes = await Promise.allSettled([
+        queries.invalidateQueries({ queryKey: ['temporary-resources', characterId] }),
+        queries.invalidateQueries({ queryKey: ['character-activity', characterId] }),
+      ]);
+      if (refreshes.some(result => result.status === 'rejected')) toast.warning('Turno confirmado. Recarregue para conferir os saldos, sem reaplicar.');
       if (scope.current === characterId) {
         // O pedido já foi confirmado. Falha de atualização da tela não pode virar nova aplicação.
         try { confirmedCallback.current(receipt); }

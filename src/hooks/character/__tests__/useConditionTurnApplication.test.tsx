@@ -2,7 +2,8 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConditionTurnApplication } from '../useConditionTurnApplication';
 import { prepareConditionTurn } from '@/lib/rules/condition-turn';
-const mocks=vi.hoisted(() => ({rpc:vi.fn(),confirmed:vi.fn()}));
+const mocks=vi.hoisted(() => ({rpc:vi.fn(),confirmed:vi.fn(),invalidate:vi.fn()}));
+vi.mock('@tanstack/react-query', () => ({ useQueryClient: () => ({ invalidateQueries: mocks.invalidate }) }));
 vi.mock('@/services/character-activity-service',async importOriginal => ({
   ...await importOriginal<typeof import('@/services/character-activity-service')>(),
   activityClient:{rpc:mocks.rpc},confirmActivity:mocks.confirmed,
@@ -11,6 +12,13 @@ const character={id:'94ba0000-0000-4000-8000-000000000001',vigor:2,hp_current:10
   conditions:[{id:'sangrando',name:'Sangrando',turnsRemaining:null,addedAt:'2026-10-06'},{id:'caseira',name:'Caseira',params:{poisonDamage:'2',valor:7},turnsRemaining:null,addedAt:'2026-10-06'}]};
 beforeEach(() => {vi.clearAllMocks();mocks.confirmed.mockReturnValue({id:'receipt',character_id:character.id,payload:{}});});
 describe('Pedido transacional de início de turno',() => {
+  it('recarrega temporários somente após recibo confirmado, sem depender do realtime',async () => {
+    mocks.rpc.mockResolvedValue({data:{},error:null});
+    const {result}=renderHook(() => useConditionTurnApplication(character,vi.fn()));
+    const execute=result.current(prepareConditionTurn([],2));
+    expect(mocks.invalidate).not.toHaveBeenCalled(); await execute();
+    expect(mocks.invalidate).toHaveBeenCalledWith({queryKey:['temporary-resources',character.id]});
+  });
   it('libera espera sem resposta e recupera o mesmo pedido sem trocar UUID',async () => {
     vi.useFakeTimers();
     try {

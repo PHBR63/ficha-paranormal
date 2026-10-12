@@ -37,7 +37,14 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
       }
       const event = confirmActivity(response.data, command.characterId, command.id);
       intent.current = undefined; setUncertain(false); setReceipt(event);
-      await queries.invalidateQueries({ queryKey: ['character-activity', command.characterId] });
+      const targetId = command.request && typeof command.request === 'object' && !Array.isArray(command.request)
+        && typeof command.request.targetId === 'string' ? command.request.targetId : command.characterId;
+      // O recibo é definitivo; saldos são recarregados mesmo se o realtime estiver indisponível.
+      const refreshes = await Promise.allSettled([...new Set([command.characterId, targetId])].flatMap(id => [
+        queries.invalidateQueries({ queryKey: ['character-activity', id] }),
+        queries.invalidateQueries({ queryKey: ['temporary-resources', id] }),
+      ]));
+      if (refreshes.some(result => result.status === 'rejected')) setError('Ação confirmada. Recarregue para conferir os saldos; não repita a aplicação.');
       try { if (await onRefetch() === null) throw new Error('Ficha não atualizada'); }
       catch { setError('A ação foi confirmada, mas a ficha não atualizou. Recarregue para conferir; não repita a ação.'); }
     } catch (failure) {
