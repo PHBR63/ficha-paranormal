@@ -44,6 +44,9 @@ export interface WeaponEntry {
   special?: string; // Propriedades especiais
   notes?: string;
   ammoType?: string;
+  catalogId?: string;
+  weaponType?: string;
+  properties?: string[];
   appliedModifications?: string[];
   modificationAttackBonus?: number;
   modificationEffects?: string[]; // Tipo de munição

@@ -231,3 +231,109 @@ describe.each([['desktop', CombatRollModal], ['mobile', MobileCombatRollModal]] 
     expect(damage.dice).toHaveLength(10); // 2d6 ×4, mais 2d6 que não multiplicam.
   });
 });
+
+
+describe.each([['desktop', CombatRollModal], ['mobile', MobileCombatRollModal]] as const)('Rajada no ataque e dano: %s', (_name, Modal) => {
+  it.each([false, true])('aplica penalidade e dado da arma antes do crítico=%s', async critical => {
+    vi.mocked(rollSkillTest).mockReturnValueOnce({ type: 'attack', dice: [18, 20], keptDice: 20, total: 25,
+      skillBonus: 5, otherBonuses: 0, extraDice: 0, isCritical: critical, isDisadvantage: false, timestamp: new Date(), label: 'Ataque QA' });
+    const confirm = vi.fn().mockResolvedValue(true); const complete = vi.fn();
+    render(<Modal {...props} attributes={{ ...props.attributes, agility: 3 }} skills={{ pontaria: 1 }}
+      weapon={{ id: 'qa-burst', name: 'Fuzil QA', type: 'Disparo', damage: '2d10', critical: '19', criticalMultiplier: 'x3', catalogId: 'fuzil_assalto' }}
+      onConfirmAttack={confirm} onPEChange={vi.fn()} onRollComplete={complete} />);
+    const toggle = screen.getByRole('checkbox', { name: 'Disparar em rajada' });
+    expect(toggle).not.toBeChecked(); fireEvent.click(toggle);
+    expect(screen.getByText(/Dados da arma em rajada: 3d10; no crítico ×3: 9d10/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    expect(rollSkillTest).toHaveBeenCalledWith(expect.objectContaining({ attributeValue: 3, dicePenalty: 1 }));
+    expect(confirm.mock.calls[0][0].selection.burst).toBe(true);
+    expect(confirm.mock.calls[0][0].result.weaponBurst.extraWeaponDice).toBe(1);
+    await waitFor(() => expect(screen.getByRole('button', { name: /rolar dano/i })).toBeEnabled(), { timeout: 5000 });
+    expect(screen.getByRole('checkbox', { name: 'Disparar em rajada' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /rolar dano/i }));
+    await waitFor(() => expect(complete).toHaveBeenCalledWith(expect.objectContaining({ type: 'damage',
+      dice: expect.any(Array), label: expect.stringContaining('Rajada') })), { timeout: 5000 });
+    const damage = complete.mock.calls.map(call => call[0]).find(roll => roll.type === 'damage');
+    expect(damage.dice).toHaveLength(critical ? 9 : 3);
+    await waitFor(() => expect(screen.getByRole('button', { name: /novo ataque/i })).toBeEnabled(), { timeout: 5000 });
+    fireEvent.click(screen.getByRole('button', { name: /novo ataque/i }));
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Disparar em rajada' })).not.toBeChecked());
+  });
+  it('Compensador cancela penalidade de rajada, não condições', async () => {
+    const confirm = vi.fn().mockResolvedValue(true);
+    render(<Modal {...props} attributes={{ ...props.attributes, agility: 3 }} activeConditions={['fraco']}
+      weapon={{ id: 'qa-burst', name: 'Fuzil QA', type: 'Disparo', damage: '2d10', catalogId: 'fuzil_assalto', appliedModifications: ['compensador'] }}
+      onConfirmAttack={confirm} onPEChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Disparar em rajada' }));
+    expect(screen.getByText(/Compensador anula o −1d20/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    expect(confirm.mock.calls[0][0].result.weaponBurst.dicePenalty).toBe(0);
+    expect(rollSkillTest).toHaveBeenCalledWith(expect.objectContaining({ dicePenalty: 1 }));
+  });
+  it('não oferece rajada para pistola semiautomática e habilita com Ferrolho', () => {
+    const weapon = { id: 'qa-pistol', name: 'Pistola', type: 'Disparo' as const, damage: '1d12', special: 'Semiautomática' };
+    const view = render(<Modal {...props} weapon={weapon} onConfirmAttack={vi.fn()} onPEChange={vi.fn()} />);
+    expect(screen.queryByRole('checkbox', { name: 'Disparar em rajada' })).toBeNull();
+    view.rerender(<Modal {...props} weapon={{ ...weapon, appliedModifications: ['ferrolho_automatico'] }} onConfirmAttack={vi.fn()} onPEChange={vi.fn()} />);
+    expect(screen.getByRole('checkbox', { name: 'Disparar em rajada' })).toBeInTheDocument();
+  });
+});
+
+
+describe.each([['desktop', CombatRollModal], ['mobile', MobileCombatRollModal]] as const)('Interações da rajada: %s', (name, Modal) => {
+  it.each([false, true])('preserva Dum dum/Explosiva e dano máximo=%s', async maximum => {
+    vi.mocked(rollSkillTest).mockReturnValueOnce({ type: 'attack', dice: [20], keptDice: 20, total: 25,
+      skillBonus: 5, otherBonuses: 0, extraDice: 0, isCritical: true, isDisadvantage: false, timestamp: new Date(), label: 'Ataque QA' });
+    const complete = vi.fn();
+    render(<Modal {...props} weapon={{ id: 'qa-burst-ammo', name: 'Fuzil QA', type: 'Disparo', damage: '2d10', critical: '19', criticalMultiplier: 'x2', catalogId: 'fuzil_assalto', ammoType: 'balas_longas' }}
+      advancedBonuses={{ atirarParaMatar: maximum }}
+      ammunition={[{ id: 'qa-ammo', name: 'Pacote QA', catalogType: 'municao', catalogId: 'municao_longa', appliedAmmoModifications: ['dum_dum', 'explosiva'] }]}
+      onConfirmAttack={vi.fn().mockResolvedValue(true)} onPEChange={vi.fn()} onRollComplete={complete} />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Munição usada neste ataque' }), { target: { value: 'qa-ammo' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Disparar em rajada' }));
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /rolar dano/i })).toBeEnabled(), { timeout: 5000 });
+    fireEvent.click(screen.getByRole('button', { name: /rolar dano/i }));
+    await waitFor(() => expect(complete.mock.calls.some(([roll]) => roll.type === 'damage')).toBe(true), { timeout: 5000 });
+    const damage = complete.mock.calls.map(([roll]) => roll).find(roll => roll.type === 'damage');
+    expect(damage.dice).toHaveLength(11); // (2+1)d10 ×3 de crítico, mais 2d6 Explosiva.
+    expect(damage.extraDice).toBe(2);
+    if (maximum) expect(damage.dice.slice(0, 9)).toEqual(Array(9).fill(10));
+  });
+  it('crítico com total insuficiente não libera dano de rajada', async () => {
+    vi.mocked(rollSkillTest).mockReturnValueOnce({ type: 'attack', dice: [20], keptDice: 20, total: 25,
+      skillBonus: 5, otherBonuses: 0, extraDice: 0, isCritical: true, isDisadvantage: false, timestamp: new Date(), label: 'Ataque QA' });
+    const complete = vi.fn();
+    render(<Modal {...props} weapon={{ id: 'qa-burst-miss', name: 'Fuzil QA', type: 'Disparo', damage: '2d10', catalogId: 'fuzil_assalto' }}
+      onConfirmAttack={vi.fn().mockResolvedValue(true)} onPEChange={vi.fn()} onRollComplete={complete} />);
+    fireEvent.change(screen.getByPlaceholderText(name === 'desktop' ? 'DT' : '--'), { target: { value: '30' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Disparar em rajada' }));
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(complete).toHaveBeenCalledOnce(), { timeout: 5000 });
+    const damageButton = screen.queryByRole('button', { name: /rolar dano/i });
+    if (damageButton) { expect(damageButton).toBeDisabled(); fireEvent.click(damageButton); }
+    expect(complete.mock.calls.some(([roll]) => roll.type === 'damage')).toBe(false);
+  });
+});
+
+
+describe.each([['desktop', CombatRollModal], ['mobile', MobileCombatRollModal]] as const)('Reenvio de rajada: %s', (_name, Modal) => {
+  it('conserva escolha e dados na resposta incerta e impede fechar antes de recuperar', async () => {
+    const confirm = vi.fn().mockRejectedValueOnce(new Error('Resposta incerta')).mockResolvedValueOnce(true);
+    const close = vi.fn(); const complete = vi.fn();
+    render(<Modal {...props} onClose={close} weapon={{ id: 'qa-burst-retry', name: 'Fuzil QA', type: 'Disparo', damage: '2d10', catalogId: 'fuzil_assalto' }}
+      onConfirmAttack={confirm} onPEChange={vi.fn()} onRollComplete={complete} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Disparar em rajada' }));
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Resposta incerta'));
+    expect(screen.getByRole('checkbox', { name: 'Disparar em rajada' })).toBeDisabled();
+    fireEvent.keyDown(document, { key: 'Escape' }); expect(close).not.toHaveBeenCalled();
+    const request = confirm.mock.calls[0][0];
+    fireEvent.click(screen.getByRole('button', { name: /tentar confirmar ataque/i }));
+    await waitFor(() => expect(complete).toHaveBeenCalledOnce());
+    expect(confirm.mock.calls[1][0]).toBe(request);
+    expect(rollSkillTest).toHaveBeenCalledOnce();
+  });
+});

@@ -1,3 +1,6 @@
+import { parseWeaponDamage as parseDamageString } from '@/lib/weapon-damage-formula';
+import { resolveWeaponBurst, burstWeaponDiceCount } from '@/lib/weapon-burst';
+import { WeaponBurstSelector } from './WeaponBurstSelector';
 import { getCompatibleAmmunition, getAmmunitionEffects, type CombatAmmunition } from '@/lib/ammunition-effects';
 import { CombatAmmunitionSelector } from './CombatAmmunitionSelector';
 import { WeaponModificationNotes } from './WeaponModificationNotes';
@@ -77,6 +80,9 @@ interface WeaponEntry {
   special?: string;
   notes?: string;
   ammoType?: string;
+  catalogId?: string;
+  weaponType?: string;
+  properties?: string[];
   appliedModifications?: string[];
   modificationAttackBonus?: number;
   modificationEffects?: string[];
@@ -208,15 +214,7 @@ interface CombatRollModalProps {
 type CombatPhase = 'setup' | 'attack' | 'damage' | 'complete';
 
 // Função para parsear string de dano (ex: "2d6+3")
-function parseDamageString(damage: string): { count: number; size: number; bonus: number } {
-  const match = damage.match(/(\d+)d(\d+)([+-]\d+)?/i);
-  if (!match) return { count: 1, size: 6, bonus: 0 };
-  return {
-    count: parseInt(match[1]) || 1,
-    size: parseInt(match[2]) || 6,
-    bonus: match[3] ? parseInt(match[3]) : 0,
-  };
-}
+
 
 // Componente de dado animado
 function AnimatedDie({ value, delay = 0, isKept = false, isCritical = false }: { 
@@ -484,12 +482,16 @@ export function CombatRollModal({
 
   const attackConfirmation = useConfirmedDiceRoll();
   const preparingAttack = useRef(false);
+  const [burstEnabled, setBurstEnabled] = useState(false);
+  useEffect(() => { setBurstEnabled(false); }, [open, weapon?.id]);
+  const burst = resolveWeaponBurst(weapon, burstEnabled);
 
   // Reset ao abrir/fechar
   const handleClose = () => {
-    if (attackConfirmation.confirming) return;
+    if (attackConfirmation.confirming || attackConfirmation.pending) return;
     attackConfirmation.reset();
     setPhase('setup');
+    setBurstEnabled(false);
     setSelectedBonuses([]);
     setAttackResult(null);
     setDamageResult(null);
@@ -535,9 +537,10 @@ export function CombatRollModal({
   }, [weapon, skills]);
 
   const rangedAttack = weapon?.type === 'Disparo' || weapon?.type === 'Arremesso';
-  const attackDicePenalty = getConditionTestDicePenalty(activeConditions,
+  const attackBaseDicePenalty = getConditionTestDicePenalty(activeConditions,
     rangedAttack ? 'agility' : 'strength', attackSkill.name, rangedAttack ? 'ranged' : 'melee')
     + getCombatPowerDicePenalty([...activeConditionalBonuses, ...selectedBonuses]);
+  const attackDicePenalty = attackBaseDicePenalty + burst.dicePenalty;
   const attackDicePool = getAttributeDicePool(attackAttribute, attackDicePenalty);
 
   // Calcular bônus disponíveis baseado nas habilidades do personagem
@@ -1305,8 +1308,12 @@ export function CombatRollModal({
       criticalThreshold: effectiveCritical,
     });
 
+    result.weaponBurst = burst;
+    result.attackContext = { attribute: attackAttribute, baseDicePenalty: attackBaseDicePenalty };
+    if (burst.enabled) result.label += ' — Rajada';
     const selection: CombatCostSelection = {
       weaponId: weapon.id,
+      burst: burst.enabled,
       specialAttackIncrements: specialAttackConfig.enabled ? specialAttackConfig.attackIncrements + specialAttackConfig.damageIncrements : 0,
       sneakAttack: !!(isInfiltrador && sneakAttackConfig.enabled),
       lethalShot: !!(isAtiradorElite && disparoLetalConfig.enabled),
@@ -1357,7 +1364,7 @@ export function CombatRollModal({
 
   // Rolar dano
   const handleRollDamage = () => {
-    if (!weapon || !attackResult) return;
+    if (!weapon || !attackResult || (targetDefense !== null && attackResult.total < targetDefense)) return;
 
     const parsed = parseDamageString(weapon.damage);
     const isCritical = attackResult.isCritical;
@@ -1377,7 +1384,7 @@ export function CombatRollModal({
     );
     
     // Calcular dados base (multiplicados se crítico)
-    let diceCount = isCritical ? parsed.count * criticalMultiplier : parsed.count;
+    let diceCount = burstWeaponDiceCount(parsed.count, attackResult.weaponBurst, isCritical, criticalMultiplier);
     
     // Bônus de dano numérico
     let damageBonus = parsed.bonus;
@@ -1665,7 +1672,7 @@ export function CombatRollModal({
       // O histórico inclui cada dado adicional, sem recalcular nem sortear de novo.
       const historyDice = [...mainDice, ...allExtraDice, ...weaponBuffDice];
       onRollComplete?.({
-        type: 'damage', label: `Dano: ${weapon.name}${selectedAmmunition ? ` — ${selectedAmmunition.name}` : ''}${total < 1 ? ' (mínimo 1)' : ''}`,
+        weaponBurst: attackResult.weaponBurst, type: 'damage', label: `Dano: ${weapon.name}${attackResult.weaponBurst?.enabled ? ' — Rajada' : ''}${selectedAmmunition ? ` — ${selectedAmmunition.name}` : ''}${total < 1 ? ' (mínimo 1)' : ''}`,
         dice: historyDice, keptDice: historyDice.reduce((sum, die) => sum + die, 0),
         skillBonus: 0, otherBonuses: damageBonus, extraDice: allExtraDice.length + weaponBuffDice.length,
         total: Math.max(1, total), isCritical, isDisadvantage: false, timestamp: new Date(),
@@ -1723,6 +1730,8 @@ export function CombatRollModal({
         </DialogHeader>
 
         <WeaponModificationNotes effects={weapon.modificationEffects} />
+          <WeaponBurstSelector weapon={weapon} damage={weapon.damage} criticalMultiplier={criticalMultiplier} enabled={burst.enabled} onChange={setBurstEnabled}
+            disabled={phase !== 'setup' || attackConfirmation.confirming || !!attackConfirmation.pending} />
         {weapon.ammoType && <CombatAmmunitionSelector ammunition={compatibleAmmunition} selectedId={selectedAmmunitionId} onSelect={setSelectedAmmunitionId}
           disabled={phase !== 'setup' || attackConfirmation.confirming || !!attackConfirmation.pending} requiresCalibreGrosso={requiresCalibreGrosso} />}
 
@@ -2596,6 +2605,7 @@ export function CombatRollModal({
                           className="w-full"
                           onClick={() => {
                             setPhase('setup');
+                            setBurstEnabled(false);
                             setAttackResult(null);
                           }}
                         >
@@ -2904,6 +2914,7 @@ export function CombatRollModal({
                     className="flex-1"
                     onClick={() => {
                       setPhase('setup');
+                      setBurstEnabled(false);
                       setAttackResult(null);
                       setDamageResult(null);
                       setBuffDiceResult(null);

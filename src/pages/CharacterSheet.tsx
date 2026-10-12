@@ -211,6 +211,7 @@ import { TemplateSaveModal } from '@/components/templates/TemplateSaveModal';
 
 // Interface estendida para itens do inventário com todos os campos persistidos
 interface InventoryItemPersisted {
+  catalogId?: string;
   id?: string;
   name: string;
   category: string;
@@ -2491,6 +2492,7 @@ export default function CharacterSheet() {
       appliedModifications: item.appliedModifications,
       modificationAttackBonus: item.attackBonus,
       modificationEffects: item.specialEffects,
+      catalogId: item.catalogId, weaponType: item.weaponType, properties: item.properties,
       ammoType: item.ammoType,
     }));
 

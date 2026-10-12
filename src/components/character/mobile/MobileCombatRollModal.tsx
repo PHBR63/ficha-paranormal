@@ -1,3 +1,6 @@
+import { parseWeaponDamage as parseDamageString } from '@/lib/weapon-damage-formula';
+import { resolveWeaponBurst, burstWeaponDiceCount } from '@/lib/weapon-burst';
+import { WeaponBurstSelector } from '../WeaponBurstSelector';
 import { getCompatibleAmmunition, getAmmunitionEffects, type CombatAmmunition } from '@/lib/ammunition-effects';
 import { CombatAmmunitionSelector } from '../CombatAmmunitionSelector';
 import { WeaponModificationNotes } from '../WeaponModificationNotes';
@@ -184,15 +187,7 @@ interface MobileCombatRollModalProps {
 type CombatPhase = 'setup' | 'attack' | 'damage' | 'complete';
 
 // Parse damage string (ex: "2d6+3")
-function parseDamageString(damage: string): { count: number; size: number; bonus: number } {
-  const match = damage.match(/(\d+)d(\d+)([+-]\d+)?/i);
-  if (!match) return { count: 1, size: 6, bonus: 0 };
-  return {
-    count: parseInt(match[1]) || 1,
-    size: parseInt(match[2]) || 6,
-    bonus: match[3] ? parseInt(match[3]) : 0,
-  };
-}
+
 
 // Componente de dado animado compacto
 function AnimatedDie({ value, delay = 0, isKept = false, isCritical = false }: { 
@@ -446,12 +441,16 @@ export function MobileCombatRollModal({
 
   const attackConfirmation = useConfirmedDiceRoll();
   const preparingAttack = useRef(false);
+  const [burstEnabled, setBurstEnabled] = useState(false);
+  useEffect(() => { setBurstEnabled(false); }, [open, weapon?.id]);
+  const burst = resolveWeaponBurst(weapon, burstEnabled);
 
   // Reset ao fechar
   const handleClose = useCallback(() => {
-    if (attackConfirmation.confirming) return;
+    if (attackConfirmation.confirming || attackConfirmation.pending) return;
     attackConfirmation.reset();
     setPhase('setup');
+    setBurstEnabled(false);
     setSelectedBonuses([]);
     setAttackResult(null);
     setDamageResult(null);
@@ -495,9 +494,10 @@ export function MobileCombatRollModal({
   }, [weapon, skills]);
 
   const rangedAttack = weapon?.type === 'Disparo' || weapon?.type === 'Arremesso';
-  const attackDicePenalty = getConditionTestDicePenalty(activeConditions,
+  const attackBaseDicePenalty = getConditionTestDicePenalty(activeConditions,
     rangedAttack ? 'agility' : 'strength', attackSkill.name, rangedAttack ? 'ranged' : 'melee')
     + getCombatPowerDicePenalty([...activeConditionalBonuses, ...selectedBonuses]);
+  const attackDicePenalty = attackBaseDicePenalty + burst.dicePenalty;
   const attackDicePool = getAttributeDicePool(attackAttribute, attackDicePenalty);
 
   // Bônus disponíveis - ATUALIZADO com poderes paranormais e rituais
@@ -1158,8 +1158,12 @@ export function MobileCombatRollModal({
       label: `Ataque com ${weapon.name}`,
     });
 
+    result.weaponBurst = burst;
+    result.attackContext = { attribute: attackAttribute, baseDicePenalty: attackBaseDicePenalty };
+    if (burst.enabled) result.label += ' — Rajada';
     const selection: CombatCostSelection = {
       weaponId: weapon.id,
+      burst: burst.enabled,
       specialAttackIncrements: specialAttackConfig.enabled ? specialAttackConfig.attackIncrements + specialAttackConfig.damageIncrements : 0,
       sneakAttack: !!(isInfiltrador && sneakAttackConfig.enabled),
       lethalShot: !!(isAtiradorElite && disparoLetalConfig.enabled),
@@ -1219,11 +1223,11 @@ export function MobileCombatRollModal({
       },
 
     }).finally(() => { preparingAttack.current = false; setIsRolling(false); });
-  }, [ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, isAtiradorElite, disparoLetalConfig, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
+  }, [burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, isAtiradorElite, disparoLetalConfig, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
-    if (!weapon || !attackResult) return;
+    if (!weapon || !attackResult || (targetDefense !== null && attackResult.total < targetDefense)) return;
     
     setIsRolling(true);
     
@@ -1241,7 +1245,7 @@ export function MobileCombatRollModal({
       );
       
       // Dados base
-      let diceCount = isCritical ? parsed.count * criticalMultiplier : parsed.count;
+      let diceCount = burstWeaponDiceCount(parsed.count, attackResult.weaponBurst, isCritical, criticalMultiplier);
       
       // Bônus de dano
       let damageBonus = parsed.bonus;
@@ -1457,7 +1461,7 @@ export function MobileCombatRollModal({
       // O histórico inclui cada dado adicional, sem recalcular nem sortear de novo.
       const historyDice = [...mainDice, ...allExtraDice, ...weaponBuffDice];
       onRollComplete?.({
-        type: 'damage', label: `Dano: ${weapon.name}${selectedAmmunition ? ` — ${selectedAmmunition.name}` : ''}${total < 1 ? ' (mínimo 1)' : ''}`,
+        weaponBurst: attackResult.weaponBurst, type: 'damage', label: `Dano: ${weapon.name}${attackResult.weaponBurst?.enabled ? ' — Rajada' : ''}${selectedAmmunition ? ` — ${selectedAmmunition.name}` : ''}${total < 1 ? ' (mínimo 1)' : ''}`,
         dice: historyDice, keptDice: historyDice.reduce((sum, die) => sum + die, 0),
         skillBonus: 0, otherBonuses: damageBonus, extraDice: allExtraDice.length + weaponBuffDice.length,
         total: Math.max(1, total), isCritical, isDisadvantage: false, timestamp: new Date(),
@@ -1495,7 +1499,7 @@ export function MobileCombatRollModal({
       setIsRolling(false);
       setPhase('damage');
     }, 500);
-  }, [selectedAmmunition, ammunitionEffects.explosiveDice, abilities, isInfiltrador, sneakAttackConfig, weapon, attackResult, selectedBonuses, availableBonuses, attributes, unifiedEffects, maquinaDeMatarActive, criticalMultiplier, advancedBonuses, trackCombatBonuses, weaponBuffBonuses, weaponBuffs, passiveBonuses, manualDamageMod, nex, onRollComplete]);
+  }, [targetDefense, selectedAmmunition, ammunitionEffects.explosiveDice, abilities, isInfiltrador, sneakAttackConfig, weapon, attackResult, selectedBonuses, availableBonuses, attributes, unifiedEffects, maquinaDeMatarActive, criticalMultiplier, advancedBonuses, trackCombatBonuses, weaponBuffBonuses, weaponBuffs, passiveBonuses, manualDamageMod, nex, onRollComplete]);
 
   if (!weapon) return null;
 
@@ -1554,6 +1558,8 @@ export function MobileCombatRollModal({
 
         <MobileDrawerBody>
           <WeaponModificationNotes effects={weapon.modificationEffects} />
+          <WeaponBurstSelector weapon={weapon} damage={weapon.damage} criticalMultiplier={criticalMultiplier} enabled={burst.enabled} onChange={setBurstEnabled}
+            disabled={phase !== 'setup' || attackConfirmation.confirming || !!attackConfirmation.pending} />
           {weapon.ammoType && <CombatAmmunitionSelector ammunition={compatibleAmmunition} selectedId={selectedAmmunitionId} onSelect={setSelectedAmmunitionId}
             disabled={phase !== 'setup' || attackConfirmation.confirming || !!attackConfirmation.pending} requiresCalibreGrosso={requiresCalibreGrosso} />}
           <AnimatePresence mode="wait">
@@ -2314,6 +2320,7 @@ export function MobileCombatRollModal({
                             icon: <RotateCcw className="w-4 h-4" />,
                             onClick: () => {
                               setPhase('setup');
+                              setBurstEnabled(false);
                               setAttackResult(null);
                             },
                             variant: 'outline',
@@ -2369,6 +2376,7 @@ export function MobileCombatRollModal({
                             icon: <RotateCcw className="w-4 h-4" />,
                             onClick: () => {
                               setPhase('setup');
+                              setBurstEnabled(false);
                               setAttackResult(null);
                             },
                             type: 'primary',
@@ -2414,6 +2422,7 @@ export function MobileCombatRollModal({
                   icon: <Sword className="w-4 h-4" />,
                   onClick: () => {
                     setPhase('setup');
+                    setBurstEnabled(false);
                     setAttackResult(null);
                     setDamageResult(null);
                     setBuffDiceResult(null);

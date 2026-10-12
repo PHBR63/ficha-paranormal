@@ -59,8 +59,11 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     const breakdown = typeof kept === 'number' ? ` · ${selected}${skill !== undefined ? ` ${signed(skill)} perícia` : ''}${other !== undefined ? ` ${signed(other)} outros bônus` : ''}${skill === undefined && bonus !== undefined ? ` ${signed(bonus)} bônus` : ''}` : '';
     const attackCost = payload.kind === 'combat_attack' && typeof payload.peCost === 'number'
       ? ` · Custo ${payload.peCost} PE · PE ${payload.peBefore} → ${payload.peAfter}${temporaryPE}${peBudgetDetails}` : '';
+    const burst = payload.weaponBurst;
+    const burstDetails = burst && typeof burst === 'object' && !Array.isArray(burst) && burst.enabled === true
+      ? ` · Rajada: ${burst.compensated ? 'Compensador anula a penalidade' : '−1d20 no ataque'} · +1 dado da arma, multiplicado no crítico` : '';
     const itemDetails = payload.kind === 'item_action' ? ` · Ação ${payload.actionCost} · Maior bônus de equipamento +${result.equipmentBonus ?? 0} · Percepção oposta pendente; revista +10 ao observador · Requisitos declarados` : '';
-    return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}`;
+    return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}${burstDetails}`;
   }
   if (event.category === 'ritual') {
     const preparation = payload.grimoirePreparation;
