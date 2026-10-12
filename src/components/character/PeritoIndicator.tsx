@@ -68,7 +68,7 @@ export const PeritoIndicator = memo(function PeritoIndicator({
               animate={{ scale: 1, opacity: 1 }}
               className={cn(
                 "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium",
-                "bg-secondary/20 text-secondary border border-secondary/30",
+                "bg-secondary/20 text-detail-accent border border-secondary/30",
                 className
               )}
             >
@@ -85,9 +85,9 @@ export const PeritoIndicator = memo(function PeritoIndicator({
                     key={idx}
                     className="flex items-center gap-1.5 text-xs text-foreground"
                   >
-                    <BookOpen className="w-3 h-3 text-secondary" />
+                    <BookOpen className="w-3 h-3 text-detail-accent" />
                     <span>{name}</span>
-                    <span className="text-[9px] px-1 py-0.5 bg-secondary/20 rounded text-secondary">
+                    <span className="text-[9px] px-1 py-0.5 bg-secondary/20 rounded text-detail-accent">
                       +{peritoData.dice}
                     </span>
                   </div>
@@ -117,12 +117,12 @@ export const PeritoIndicator = memo(function PeritoIndicator({
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded flex items-center justify-center bg-secondary/20">
-            <Sparkles className="w-3.5 h-3.5 text-secondary" />
+            <Sparkles className="w-3.5 h-3.5 text-detail-accent" />
           </div>
           <span className="text-xs font-medium">Perito</span>
         </div>
         
-        <div className="flex items-center gap-1 px-2 py-0.5 bg-secondary/20 text-secondary rounded-full text-[10px] font-semibold">
+        <div className="flex items-center gap-1 px-2 py-0.5 bg-secondary/20 text-detail-accent rounded-full text-[10px] font-semibold">
           <Zap className="w-3 h-3" />
           <span>+{peritoData.dice} ({peritoData.cost} PE)</span>
         </div>
@@ -134,7 +134,7 @@ export const PeritoIndicator = memo(function PeritoIndicator({
           <motion.div
             key={idx}
             layout
-            className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-secondary/10 text-secondary border border-secondary/20"
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-secondary/10 text-detail-accent border border-secondary/20"
           >
             <BookOpen className="w-3 h-3" />
             <span>{name}</span>
@@ -147,16 +147,16 @@ export const PeritoIndicator = memo(function PeritoIndicator({
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           <span>Escalonamento por NEX:</span>
           <div className="flex gap-1">
-            <span className={cn("px-1 rounded", nex >= 5 && nex < 25 ? "bg-secondary/20 text-secondary" : "")}>
+            <span className={cn("px-1 rounded", nex >= 5 && nex < 25 ? "bg-secondary/20 text-detail-accent" : "")}>
               1d6
             </span>
-            <span className={cn("px-1 rounded", nex >= 25 && nex < 55 ? "bg-secondary/20 text-secondary" : "")}>
+            <span className={cn("px-1 rounded", nex >= 25 && nex < 55 ? "bg-secondary/20 text-detail-accent" : "")}>
               → 1d8
             </span>
-            <span className={cn("px-1 rounded", nex >= 55 && nex < 85 ? "bg-secondary/20 text-secondary" : "")}>
+            <span className={cn("px-1 rounded", nex >= 55 && nex < 85 ? "bg-secondary/20 text-detail-accent" : "")}>
               → 1d10
             </span>
-            <span className={cn("px-1 rounded", nex >= 85 ? "bg-secondary/20 text-secondary" : "")}>
+            <span className={cn("px-1 rounded", nex >= 85 ? "bg-secondary/20 text-detail-accent" : "")}>
               → 1d12
             </span>
           </div>

@@ -119,11 +119,11 @@ const DAMAGE_TYPE_COLORS: Record<string, string> = {
   'morte': 'text-paranormal',
   'sangue': 'text-hp',
   'energia': 'text-pe',
-  'conhecimento': 'text-secondary',
+  'conhecimento': 'text-detail-accent',
   'medo': 'text-muted-foreground',
   'elétrico': 'text-pe',
   'fogo': 'text-destructive',
-  'frio': 'text-secondary',
+  'frio': 'text-detail-accent',
   'mental': 'text-paranormal',
   'verdadeiro': 'text-foreground',
   'corte': 'text-hp',
@@ -262,7 +262,7 @@ const SummaryStep = memo(function SummaryStep({
               icon={Shield} 
               label="Defesa" 
               value={`+${effect.defenseModifier}`}
-              color="text-secondary"
+              color="text-detail-accent"
             />
           )}
           {hasAttackBonus && (
@@ -606,7 +606,7 @@ const BuffsStep = memo(function BuffsStep({
             transition={{ delay: 0.1 }}
             className="flex items-center gap-2 p-2 rounded-lg bg-secondary/30 border border-secondary/30"
           >
-            <Shield className="w-5 h-5 text-secondary" />
+            <Shield className="w-5 h-5 text-detail-accent" />
             <div className="flex-1">
               <span className="text-sm font-medium">Defesa</span>
               <p className="text-[10px] text-muted-foreground">+{effect.defenseModifier}</p>

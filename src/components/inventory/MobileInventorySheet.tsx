@@ -123,7 +123,7 @@ const TYPE_FILTERS: { id: ItemTypeFilter; label: string; icon: typeof Sword }[] 
 // Configuração dos botões de adicionar
 const ADD_BUTTONS = [
   { type: 'weapon' as const, label: 'Arma', icon: Sword, color: 'text-destructive' },
-  { type: 'armor' as const, label: 'Proteção', icon: Shield, color: 'text-secondary' },
+  { type: 'armor' as const, label: 'Proteção', icon: Shield, color: 'text-detail-accent' },
   { type: 'item' as const, label: 'Item', icon: FlaskConical, color: 'text-green-400' },
 ];
 
@@ -774,7 +774,7 @@ export function MobileInventorySheet({
                       className={cn(
                         "flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-all flex-shrink-0",
                         isActive
-                          ? "bg-secondary/20 text-secondary"
+                          ? "bg-secondary/20 text-detail-accent"
                           : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
                       )}
                     >

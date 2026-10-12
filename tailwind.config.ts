@@ -66,6 +66,7 @@ export default {
   			]
   		},
   		colors: {
+			'detail-accent': 'hsl(var(--detail-accent))',
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',

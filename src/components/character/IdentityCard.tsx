@@ -38,7 +38,7 @@ export function IdentityCard({
   // Cor temática por classe
   const classColors: Record<string, string> = {
     'Combatente': 'border-destructive/50',
-    'Especialista': 'border-secondary/50',
+    'Especialista': 'border-detail-accent/50',
     'Ocultista': 'border-paranormal/50',
   };
 
@@ -99,7 +99,7 @@ export function IdentityCard({
               key={nex}
               initial={{ scale: 1.2 }}
               animate={{ scale: 1 }}
-              className="font-display text-3xl text-secondary"
+              className="font-display text-3xl text-detail-accent"
             >
               {nex}%
             </motion.p>

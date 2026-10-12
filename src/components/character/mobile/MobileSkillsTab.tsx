@@ -264,7 +264,7 @@ export const MobileSkillsTab = memo(function MobileSkillsTab({
                 className={cn(
                   "px-2 py-1 rounded text-[10px] transition-all",
                   sortBy === option.id
-                    ? "bg-secondary/20 text-secondary"
+                    ? "bg-secondary/20 text-detail-accent"
                     : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
                 )}
               >

@@ -47,7 +47,7 @@ const changeTypeConfig: Record<string, {
   },
   skill: {
     icon: BookOpen,
-    color: 'text-secondary',
+    color: 'text-detail-accent',
     label: 'Perícia'
   },
   info: {

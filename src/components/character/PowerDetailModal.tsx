@@ -74,7 +74,7 @@ const powerTypeConfig: Record<PowerType, {
   },
   origin: {
     icon: User,
-    color: 'text-secondary',
+    color: 'text-detail-accent',
     bgColor: 'bg-secondary/10',
     borderColor: 'border-secondary/30',
     label: 'Poder de Origem',

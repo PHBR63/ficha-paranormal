@@ -39,7 +39,7 @@ export function SheetAccordionSection({
     default: 'text-primary',
     paranormal: 'text-paranormal',
     destructive: 'text-destructive',
-    secondary: 'text-secondary',
+    secondary: 'text-detail-accent',
   };
 
   return (

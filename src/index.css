@@ -64,6 +64,8 @@
     /* Cor secundária */
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
+    /* Destaque legível para texto/ícones; secondary permanece uma superfície. */
+    --detail-accent: 195 85% 28%;
     
     /* Elementos muted/suaves */
     --muted: 210 40% 96%;
@@ -178,6 +180,7 @@
     /* Secundário */
     --secondary: 260 20% 20%;
     --secondary-foreground: 210 40% 98%;
+    --detail-accent: 190 85% 75%;
 
     /* Muted - elementos suaves */
     --muted: 260 15% 30%;

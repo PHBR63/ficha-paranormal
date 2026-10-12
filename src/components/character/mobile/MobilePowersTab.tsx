@@ -538,7 +538,7 @@ export const MobilePowersTab = memo(function MobilePowersTab({
           </div>
         )}
         {originPowers.length > 0 && (
-          <div className="flex-shrink-0 px-3 py-1.5 bg-secondary/10 rounded-full text-[10px] text-secondary">
+          <div className="flex-shrink-0 px-3 py-1.5 bg-secondary/10 rounded-full text-[10px] text-detail-accent">
             {originPowers.length} Origem
           </div>
         )}
@@ -789,7 +789,7 @@ export const MobilePowersTab = memo(function MobilePowersTab({
       {originPowers.length > 0 && (
         <MobileCollapsibleSection 
           title="PODERES DE ORIGEM" 
-          icon={<User className="w-4 h-4 text-secondary" />}
+          icon={<User className="w-4 h-4 text-detail-accent" />}
           badge={originPowers.length}
         >
           <div className="space-y-2">
@@ -813,7 +813,7 @@ export const MobilePowersTab = memo(function MobilePowersTab({
                       <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{power.description}</p>
                     )}
                   </div>
-                  <ChevronRight className="w-4 h-4 text-secondary/50 flex-shrink-0 ml-2" />
+                  <ChevronRight className="w-4 h-4 text-detail-accent/90 flex-shrink-0 ml-2" />
                 </div>
               </button>
             ))}

@@ -32,7 +32,7 @@ const CLASS_ICONS: Record<string, LucideIcon> = {
 // Cores das classes - usando IDs de CLASS_IDS (fonte da verdade)
 const CLASS_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   [CLASS_IDS.COMBATENTE]: { bg: 'bg-destructive/10', border: 'border-destructive/30', text: 'text-destructive' },
-  [CLASS_IDS.ESPECIALISTA]: { bg: 'bg-secondary/10', border: 'border-secondary/30', text: 'text-secondary' },
+  [CLASS_IDS.ESPECIALISTA]: { bg: 'bg-detail-accent/10', border: 'border-detail-accent/50', text: 'text-detail-accent' },
   [CLASS_IDS.OCULTISTA]: { bg: 'bg-paranormal/10', border: 'border-paranormal/30', text: 'text-paranormal' },
   Sobrevivente: { bg: 'bg-warning/10', border: 'border-warning/30', text: 'text-warning' }, // Cor única para Sobrevivente
 };

@@ -190,7 +190,7 @@ export function LiveDossierPreview({
               <span className={cn(
                 'px-2 py-0.5 rounded text-xs font-bold',
                 theme?.bg || 'bg-secondary/20',
-                theme?.text || 'text-secondary'
+                theme?.text || 'text-detail-accent'
               )}>
                 NEX {formData.nex}%
               </span>
@@ -305,9 +305,9 @@ export function LiveDossierPreview({
 
               {/* PE */}
               <div className="text-center p-1.5 rounded bg-secondary/10 border border-secondary/20">
-                <Zap className="w-3 h-3 mx-auto text-secondary mb-0.5" />
-                <p className="text-[10px] text-secondary/70">PE</p>
-                <p className="font-display text-sm text-secondary">{derivedStats.pe}</p>
+                <Zap className="w-3 h-3 mx-auto text-detail-accent mb-0.5" />
+                <p className="text-[10px] text-detail-accent/90">PE</p>
+                <p className="font-display text-sm text-detail-accent">{derivedStats.pe}</p>
               </div>
 
               {/* SAN */}

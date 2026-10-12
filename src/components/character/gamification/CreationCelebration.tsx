@@ -172,7 +172,7 @@ export function CreationCelebration({
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ delay: i * 0.1 }}
                     >
-                      <Star className="w-4 h-4 text-secondary fill-secondary" />
+                      <Star className="w-4 h-4 text-detail-accent fill-detail-accent" />
                     </motion.div>
                   ))}
                 </motion.div>
