@@ -5,7 +5,9 @@ import type { Json } from '@/integrations/supabase/types';
 import type { CharacterActivityEvent } from '@/types/character-activity';
 
 /** Conserva o mesmo pedido após resposta incerta: o servidor recupera o recibo sem rerrolar. */
-export function useItemSituationalAction(characterId: string, onRefetch: () => unknown | Promise<unknown>) {
+export function useItemSituationalAction(characterId: string, onRefetch: () => unknown | Promise<unknown>,
+  procedure: 'confirm_character_item_action' | 'confirm_character_fragmentation_throw' |
+    'confirm_character_fragmentation_targets' | 'confirm_character_fragmentation_damage' = 'confirm_character_item_action') {
   const queries = useQueryClient();
   const running = useRef(false);
   const intent = useRef<{ id: string; characterId: string; request: Json } | undefined>(undefined);
@@ -20,12 +22,12 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
     if (!intent.current || intent.current.characterId !== characterId) intent.current = { id: crypto.randomUUID(), characterId, request };
     const command = intent.current;
     try {
-      const response = await awaitActivityResponse(activityClient.rpc('confirm_character_item_action', {
+      const response = await awaitActivityResponse(activityClient.rpc(procedure, {
         p_operation_id: command.id, p_character_id: command.characterId, p_request: command.request,
       }));
       if (response.error) {
         // Erros determinísticos do banco não executaram a transação. Rede/timeout exigem recuperação.
-        if (['22023', '40001', '42501', '23505', '55004'].includes(response.error.code)) { intent.current = undefined; setUncertain(false); }
+        if (['22023', '22P02', '40001', '42501', '23505', '55004'].includes(response.error.code)) { intent.current = undefined; setUncertain(false); }
         throw new Error(response.error.code === '42501' ? 'Você não tem permissão para esta ficha.'
           : response.error.code === '40001' ? 'A ficha ou o item mudou. Atualize a página antes de tentar novamente.'
           : response.error.code === '55004' || response.error.code === '22023' ? response.error.message
