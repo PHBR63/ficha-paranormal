@@ -431,7 +431,7 @@ function HelpPanel({
                     <p className="text-muted-foreground font-medium">Ações por turno:</p>
                     <div className="flex flex-wrap gap-1">
                       <span className="px-2 py-0.5 bg-primary/20 text-primary rounded">Padrão</span>
-                      <span className="px-2 py-0.5 bg-secondary/20 text-secondary rounded">Movimento</span>
+                      <span className="px-2 py-0.5 bg-secondary/20 text-detail-accent rounded">Movimento</span>
                       <span className="px-2 py-0.5 bg-accent/20 text-accent-foreground rounded">Reação</span>
                       <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded">Livre</span>
                     </div>

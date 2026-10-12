@@ -160,7 +160,7 @@ export function StepReview({
           <div className="flex items-start gap-2">
             <EditButton stepId="concept" />
             <div className="text-right">
-              <span className="font-display text-4xl text-secondary">{formData.nex}%</span>
+              <span className="font-display text-4xl text-detail-accent">{formData.nex}%</span>
               <p className="text-xs text-muted-foreground">NEX</p>
             </div>
           </div>

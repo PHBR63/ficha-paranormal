@@ -112,7 +112,7 @@ export function DiceRoller({
               <p>Perícia: <span className="text-accent">+{result.skillBonus}</span></p>
             )}
             {result.otherBonuses > 0 && (
-              <p>Bônus: <span className="text-secondary">+{result.otherBonuses}</span></p>
+              <p>Bônus: <span className="text-detail-accent">+{result.otherBonuses}</span></p>
             )}
           </div>
 

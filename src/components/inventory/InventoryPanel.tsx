@@ -158,7 +158,7 @@ function normalizeInventoryItemType(rawType: unknown): ItemType {
 
 const ITEM_TYPE_CONFIG: Record<ItemType, { label: string; icon: typeof Package; color: string }> = {
   weapon: { label: 'Armas', icon: Sword, color: 'text-destructive' },
-  armor: { label: 'Proteções', icon: Shield, color: 'text-secondary' },
+  armor: { label: 'Proteções', icon: Shield, color: 'text-detail-accent' },
   consumable: { label: 'Consumíveis', icon: FlaskConical, color: 'text-green-400' },
   ritual: { label: 'Componentes Rituais', icon: Scroll, color: 'text-paranormal' },
   valuable: { label: 'Itens Valiosos', icon: Gem, color: 'text-yellow-400' },
@@ -1198,7 +1198,7 @@ export function InventoryPanel({
     ? 'text-destructive' 
     : loadPercentage > 75 
       ? 'text-yellow-400' 
-      : 'text-secondary';
+      : 'text-detail-accent';
 
   return (
     <div className="space-y-4">

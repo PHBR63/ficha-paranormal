@@ -132,7 +132,7 @@ export function StatsPreviewWidget({
   
   const classColors = {
     Combatente: 'from-destructive/20 to-destructive/5 border-destructive/30',
-    Especialista: 'from-secondary/20 to-secondary/5 border-secondary/30',
+    Especialista: 'from-detail-accent/20 to-detail-accent/5 border-detail-accent/40',
     Ocultista: 'from-paranormal/20 to-paranormal/5 border-paranormal/30',
   };
 

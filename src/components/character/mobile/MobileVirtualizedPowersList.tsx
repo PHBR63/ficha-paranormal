@@ -72,7 +72,7 @@ const PowerListItem = memo(function PowerListItem({
       case 'general':
         return 'text-success';
       case 'origin':
-        return 'text-secondary';
+        return 'text-detail-accent';
       case 'ritual':
         return 'text-paranormal';
       default:

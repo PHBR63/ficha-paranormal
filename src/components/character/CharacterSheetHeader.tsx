@@ -1077,9 +1077,9 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1 cursor-help">
-                    <Shield className="w-4 h-4 text-secondary" />
+                    <Shield className="w-4 h-4 text-detail-accent" />
                     <span className="text-muted-foreground">RD</span>
-                    <span className="font-display text-lg text-secondary">{armorRD}</span>
+                    <span className="font-display text-lg text-detail-accent">{armorRD}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">

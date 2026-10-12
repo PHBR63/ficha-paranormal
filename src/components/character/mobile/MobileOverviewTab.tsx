@@ -571,7 +571,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
           {[
             { label: 'AGI', value: attributeValidation.normalized.agility, color: 'text-primary' },
             { label: 'FOR', value: attributeValidation.normalized.strength, color: 'text-destructive' },
-            { label: 'INT', value: attributeValidation.normalized.intellect, color: 'text-secondary' },
+            { label: 'INT', value: attributeValidation.normalized.intellect, color: 'text-detail-accent' },
             { label: 'PRE', value: attributeValidation.normalized.presence, color: 'text-paranormal' },
             { label: 'VIG', value: attributeValidation.normalized.vigor, color: 'text-accent' },
           ].map(attr => (

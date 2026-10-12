@@ -263,7 +263,7 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h3 className="font-display text-sm tracking-wider text-secondary mb-3">
+            <h3 className="font-display text-sm tracking-wider text-detail-accent mb-3">
               ✓ PERÍCIAS DA ORIGEM (automático)
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -273,7 +273,7 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
                 return (
                   <div
                     key={skillId}
-                    className="flex items-center gap-2 px-3 py-2 bg-secondary/20 text-secondary rounded-sm"
+                    className="flex items-center gap-2 px-3 py-2 bg-secondary/20 text-detail-accent rounded-sm"
                   >
                     <Check className="w-3 h-3" />
                     <span className="text-sm">{skill.name}</span>
@@ -378,7 +378,7 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
             </div>
             <p className={cn(
               'font-display text-2xl',
-              remainingFreePoints === 0 ? 'text-success' : 'text-secondary'
+              remainingFreePoints === 0 ? 'text-success' : 'text-detail-accent'
             )}>
               {usedFreePoints} / {totalFreePoints}
             </p>
@@ -570,7 +570,7 @@ export function StepSkills({ formData, updateFormData, buildResult }: StepSkills
                               </div>
                               <div className="text-right">
                                 {isTrained ? (
-                                  <span className="font-display text-lg text-secondary">+5</span>
+                                  <span className="font-display text-lg text-detail-accent">+5</span>
                                 ) : (
                                   <span className="text-xs text-muted-foreground">não treinada</span>
                                 )}
