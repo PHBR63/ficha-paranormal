@@ -547,7 +547,7 @@ export const MobileConditionManager = memo(function MobileConditionManager({
   const existingConditionIds = useMemo(() => conditions.map(c => c.id), [conditions]);
   const hasMorrendo = conditions.some(c => c.id === 'morrendo');
   const hasStartOfTurnEffects = conditions.some(c => 
-    ['sangrando', 'envenenado', 'em-chamas', 'morrendo', 'enlouquecendo'].includes(c.id)
+    ['sangrando', 'envenenado', 'em-chamas', 'em_chamas', 'morrendo', 'enlouquecendo'].includes(c.id)
   );
 
   return (
