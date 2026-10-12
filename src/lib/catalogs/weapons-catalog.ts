@@ -829,7 +829,7 @@ export const EXPLOSIVES: CatalogWeapon[] = [
   {
     id: 'granada_incendiaria',
     name: 'Granada Incendiária',
-    category: 'II',
+    category: 'I',
     type: 'thrown',
     damage: '6d6',
     damageType: 'Fogo',
