@@ -8,6 +8,12 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('preserva penalidade em dados e oposição pendente da furtividade', () => {
+    const text = describeCharacterActivity(event({ kind: 'post_attack_stealth', itemName: 'Pistola', situationalDicePenalty: 1,
+      silencerApplied: true, result: { dice: [13], keptDice: 13, skillBonus: 5, equipmentBonus: 0, declaredOtherBonuses: 2, total: 20 } }));
+    expect(text).toContain('−1d20'); expect(text).toContain('Silenciador reduz dois dados');
+    expect(text).toContain('Percepção oposta pendente'); expect(text).toContain('→ 20');
+  });
   it('mostra fonte, consulta separada, ação e adicional incluído no custo', () => {
     const text = describeCharacterActivity({ ...event({ ritualName: 'Amaldiçoar Arma', peCost: 2, situationalResolution: 'server_checked', castingSource: 'grimoire', execution: 'Movimento', bladeExtraPE: 1, grimoirePreparation: { readingConfirmed: true } }), category: 'ritual' });
     expect(text).toContain('Fonte: Grimório Ritualístico');

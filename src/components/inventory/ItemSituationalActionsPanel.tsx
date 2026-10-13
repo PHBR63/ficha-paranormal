@@ -11,6 +11,7 @@ import { getConditionTestDicePenalty } from '@/lib/conditions/condition-test-pen
 import type { BonusSummary } from '@/hooks/useBonusSummaryFromSUE';
 import type { TestDiceModifiers } from '@/lib/unified-effects-engine';
 import type { Json } from '@/integrations/supabase/types';
+import { PostAttackStealthPanel } from './PostAttackStealthPanel';
 
 interface Props {
   characterId: string; inventory: SituationalItem[]; agility: number;
@@ -75,6 +76,8 @@ export function ItemSituationalActionsPanel({ characterId, inventory, agility, s
     </Button>
     {state.error && <p role="alert" className="text-sm text-red-300">{state.error}</p>}
     {state.receipt && <p role="status" className="break-words text-sm text-foreground">Confirmado no servidor: {describeCharacterActivity(state.receipt)}</p>}
+    <PostAttackStealthPanel characterId={characterId} inventory={inventory} agility={agility} skills={skills}
+      conditions={conditions} conditionIds={conditionIds} summary={summary} onRefetch={onRefetch} />
     <p className="text-xs text-muted-foreground">Livro Base: pp. 44, 60–62, 64 e 87. Este painel não aplica Saque Rápido nem gerencia o orçamento geral de ações.</p>
   </section>;
 }

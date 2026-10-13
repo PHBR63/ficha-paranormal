@@ -12,6 +12,7 @@ type ActivityDatabase = { public: {
     character_activity_events: { Row: ActivityRow; Insert: never; Update: never; Relationships: [] };
   }; Views: Record<string, never>; Enums: Record<string, never>; CompositeTypes: Record<string, never>;
   Functions: {
+    confirm_character_post_attack_stealth: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     confirm_character_explosive_action: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     confirm_character_explosive_targets: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     confirm_character_explosive_effect: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
