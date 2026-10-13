@@ -33,6 +33,33 @@ const props = {
   characterClass: 'Combatente', abilities: [], paranormalPowers: [], hasAffinity: false, nex: 5,
 };
 
+describe.each([['desktop',CombatRollModal],['mobile',MobileCombatRollModal]] as const)('Camuflagem: %s', (_name,Modal) => {
+  it('requer contexto confirmado e cobertura total bloqueia antes da rolagem', () => {
+    render(<Modal {...props} onPEChange={vi.fn()} onConfirmAttack={vi.fn().mockResolvedValue(true)} />);
+    fireEvent.change(screen.getByRole('combobox',{name:'Camuflagem do alvo'}),{target:{value:'total'}});
+    expect(screen.getByRole('button',{name:/rolar ataque/i})).toBeDisabled();
+    fireEvent.click(screen.getByLabelText('Conferi a camuflagem, a situação de visão e a possibilidade de atacar este alvo com a mesa.'));
+    expect(screen.getByRole('button',{name:/rolar ataque/i})).toBeEnabled();
+    fireEvent.click(screen.getByLabelText('Alvo tem cobertura total — não pode ser atacado.'));
+    expect(screen.getByRole('button',{name:/rolar ataque/i})).toBeDisabled();
+    expect(rollSkillTest).not.toHaveBeenCalled();
+  });
+  it('recibo de falha por camuflagem bloqueia o dano sem Defesa, inclusive crítico', async () => {
+    const confirm=vi.fn(async request => {
+      request.result.isCritical=true;
+      request.result.concealmentResult={level:'total',attackerBlind:false,heatVisionApplied:false,chance:50,die:1,failed:true,targetDefense:null};
+      return true;
+    });
+    render(<Modal {...props} onPEChange={vi.fn()} onConfirmAttack={confirm} />);
+    fireEvent.change(screen.getByRole('combobox',{name:'Camuflagem do alvo'}),{target:{value:'total'}});
+    fireEvent.click(screen.getByLabelText('Conferi a camuflagem, a situação de visão e a possibilidade de atacar este alvo com a mesa.'));
+    fireEvent.click(screen.getByRole('button',{name:/rolar ataque/i}));
+    await waitFor(()=>expect(screen.getByText(/falha por camuflagem; dano bloqueado/)).toBeInTheDocument(),{timeout:5000});
+    expect(screen.queryByRole('button',{name:/rolar dano/i})).not.toBeInTheDocument();
+    expect(confirm.mock.calls[0][0].selection.concealment).toBe('total');
+  });
+});
+
 describe.each([
   ['desktop', CombatRollModal], ['mobile', MobileCombatRollModal],
 ] as const)('Mira de Elite no dano: %s', (_name, Modal) => {

@@ -23,6 +23,7 @@ export interface DiceRollResult {
   activityOperationId?: string;
   /** Escolha congelada para histórico e dano deste ataque. */
   weaponBurst?: import('./weapon-burst').WeaponBurstSnapshot;
+  concealmentResult?: import('./attack-concealment').ConcealmentResult;
   attackContext?: { attribute: number; baseDicePenalty: number };
   dice: number[];
   keptDice: number;

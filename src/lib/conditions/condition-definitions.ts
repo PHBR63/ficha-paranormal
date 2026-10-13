@@ -91,7 +91,7 @@ export interface ContextualModifier {
 export const CONDITIONS: Record<string, Omit<Condition, 'turnsRemaining'>> = {
   em_chamas: { id: 'em_chamas', name: 'Em Chamas', icon: '🔥', color: 'destructive', description: 'Pegando fogo.', effect: 'Início do turno: 1d6 de fogo.', removal: 'Ação padrão para apagar com as mãos, ou imersão em água.' },
   ofuscado: { id: 'ofuscado', name: 'Ofuscado', icon: '☀️', color: 'warning', description: 'Visão prejudicada.', effect: '–1d20 em ataques e Percepção.', removal: 'Duração definida pela fonte; explosivos são controlados no seu painel.' },
-  'camuflagem-total': { id: 'camuflagem-total', name: 'Camuflagem Total', icon: '🌫️', color: 'muted-foreground', description: 'Protegido pela fumaça.', effect: 'Ataques contra você têm 50% de chance de falha, conferida pela mesa.', removal: 'Sair da área ou encerrar a fumaça no painel de explosivos.' },
+  'camuflagem-total': { id: 'camuflagem-total', name: 'Camuflagem Total', icon: '🌫️', color: 'muted-foreground', description: 'Visão impedida para os observadores afetados.', effect: 'Ataques contra você têm 50% de chance de falha; confirme o contexto no painel de ataque.', removal: 'Confira o encerramento da fonte com o mestre; na fumaça, sair da área ou encerrar o efeito no painel de explosivos.' },
   // === CONDIÇÕES DE COMBATE ===
   agarrado: {
     id: 'agarrado',

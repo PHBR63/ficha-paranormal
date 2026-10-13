@@ -1,5 +1,8 @@
 import { parseWeaponDamage as parseDamageString } from '@/lib/weapon-damage-formula';
 import { resolveWeaponBurst, burstWeaponDiceCount } from '@/lib/weapon-burst';
+import { attackCanRollDamage, type AttackVisibilitySelection } from '@/lib/attack-concealment';
+import { resolveConditionId } from '@/lib/conditions/condition-identity';
+import { AttackVisibilityControls, AttackConcealmentSummary } from '../AttackVisibilityControls';
 import { WeaponBurstSelector } from '../WeaponBurstSelector';
 import { getCompatibleAmmunition, getAmmunitionEffects, type CombatAmmunition } from '@/lib/ammunition-effects';
 import { CombatAmmunitionSelector } from '../CombatAmmunitionSelector';
@@ -296,7 +299,11 @@ export function MobileCombatRollModal({
   } | null>(null);
   const [manualAttackMod, setManualAttackMod] = useState(0);
   const [manualDamageMod, setManualDamageMod] = useState(0); // NOVO - paridade desktop
-  const [targetDefense, setTargetDefense] = useState<number | null>(null); // NOVO - paridade desktop
+  const [targetDefense, setTargetDefense] = useState<number | null>(null);
+  const [visibility, setVisibility] = useState<AttackVisibilitySelection>({ level: 'none', confirmed: false, totalCover: false });
+  const attackerBlind = activeConditions.some(id => resolveConditionId(id) === 'cego');
+  const visibilityUnavailable = visibility.totalCover || ((visibility.level !== 'none' || attackerBlind) && !visibility.confirmed)
+    || ((visibility.level !== 'none' || attackerBlind) && !onConfirmAttack);
   const [isRolling, setIsRolling] = useState(false);
   
   // Estado separado para dados do buff (Amaldiçoar Arma, etc.) - NOVO
@@ -442,7 +449,8 @@ export function MobileCombatRollModal({
   const attackConfirmation = useConfirmedDiceRoll();
   const preparingAttack = useRef(false);
   const [burstEnabled, setBurstEnabled] = useState(false);
-  useEffect(() => { setBurstEnabled(false); }, [open, weapon?.id]);
+  useEffect(() => { setBurstEnabled(false);
+    setVisibility(value => ({ ...value, confirmed: false })); }, [open, weapon?.id]);
   const burst = resolveWeaponBurst(weapon, burstEnabled);
 
   // Reset ao fechar
@@ -451,6 +459,7 @@ export function MobileCombatRollModal({
     attackConfirmation.reset();
     setPhase('setup');
     setBurstEnabled(false);
+    setVisibility(value => ({ ...value, confirmed: false }));
     setSelectedBonuses([]);
     setAttackResult(null);
     setDamageResult(null);
@@ -458,6 +467,7 @@ export function MobileCombatRollModal({
     setManualAttackMod(0);
     setManualDamageMod(0);
     setTargetDefense(null);
+    setVisibility({ level: 'none', confirmed: false, totalCover: false });
     setIsRolling(false);
     setActiveTechniqueEffects(null);
     resetSpecialAttack();
@@ -1142,7 +1152,7 @@ export function MobileCombatRollModal({
   const rollAttack = useCallback(() => {
     if (preparingAttack.current || attackConfirmation.confirming) return;
     if (attackConfirmation.pending) { void attackConfirmation.confirm(); return; }
-    if (!weapon || !canAffordPE || confirmationUnavailable || ammunitionUnavailable) return;
+    if (!weapon || !canAffordPE || confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable) return;
     preparingAttack.current = true;
 
     setIsRolling(true);
@@ -1163,6 +1173,8 @@ export function MobileCombatRollModal({
     if (burst.enabled) result.label += ' — Rajada';
     const selection: CombatCostSelection = {
       weaponId: weapon.id,
+      concealment: visibility.level, concealmentConfirmed: visibility.confirmed || (visibility.level === 'none' && !attackerBlind),
+      totalCover: visibility.totalCover, attackerBlind, targetDefense,
       burst: burst.enabled,
       specialAttackIncrements: specialAttackConfig.enabled ? specialAttackConfig.attackIncrements + specialAttackConfig.damageIncrements : 0,
       sneakAttack: !!(isInfiltrador && sneakAttackConfig.enabled),
@@ -1186,7 +1198,7 @@ export function MobileCombatRollModal({
         const isFumble = result.dice.every(d => d === 1);
 
         // Verifica se acertou (regra personalizada: crítico NÃO é acerto automático)
-        const didHit = targetDefense !== null ? result.total >= targetDefense : true;
+        const didHit = attackCanRollDamage(result, targetDefense);
 
         if (isFumble) {
           combatFeedback.triggerFumble();
@@ -1223,11 +1235,11 @@ export function MobileCombatRollModal({
       },
 
     }).finally(() => { preparingAttack.current = false; setIsRolling(false); });
-  }, [burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, isAtiradorElite, disparoLetalConfig, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
+  }, [visibility, attackerBlind, visibilityUnavailable, burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, isAtiradorElite, disparoLetalConfig, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
-    if (!weapon || !attackResult || (targetDefense !== null && attackResult.total < targetDefense)) return;
+    if (!weapon || !attackResult || !attackCanRollDamage(attackResult, targetDefense)) return;
     
     setIsRolling(true);
     
@@ -1504,9 +1516,8 @@ export function MobileCombatRollModal({
   if (!weapon) return null;
 
   // Verificar se acertou (se targetDefense foi definido)
-  const hitResult = attackResult && targetDefense 
-    ? attackResult.total >= targetDefense ? 'hit' : 'miss' 
-    : null;
+  const hitResult = attackResult?.concealmentResult?.failed ? 'miss' : attackResult && targetDefense !== null
+    ? attackCanRollDamage(attackResult, targetDefense) ? 'hit' : 'miss' : null;
 
   return (
     <MobileDrawer open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
@@ -1558,6 +1569,9 @@ export function MobileCombatRollModal({
 
         <MobileDrawerBody>
           <WeaponModificationNotes effects={weapon.modificationEffects} />
+          <AttackVisibilityControls value={visibility} onChange={setVisibility} weapon={weapon} blind={attackerBlind}
+            disabled={phase !== 'setup' || attackConfirmation.confirming || !!attackConfirmation.pending} />
+          <AttackConcealmentSummary result={attackResult?.concealmentResult} />
           <WeaponBurstSelector weapon={weapon} damage={weapon.damage} criticalMultiplier={criticalMultiplier} enabled={burst.enabled} onChange={setBurstEnabled}
             disabled={phase !== 'setup' || attackConfirmation.confirming || !!attackConfirmation.pending} />
           {weapon.ammoType && <CombatAmmunitionSelector ammunition={compatibleAmmunition} selectedId={selectedAmmunitionId} onSelect={setSelectedAmmunitionId}
@@ -2061,7 +2075,7 @@ export function MobileCombatRollModal({
                         ) : (
                           <>
                             <X className="w-4 h-4" />
-                            <span className="font-medium">Errou (Def {targetDefense})</span>
+                            <span className="font-medium">{attackResult.concealmentResult?.failed ? 'Errou por camuflagem' : `Errou (Def ${targetDefense})`}</span>
                           </>
                         )}
                       </div>
@@ -2281,7 +2295,7 @@ export function MobileCombatRollModal({
                     ) : <Target className="w-5 h-5" />,
                     onClick: rollAttack,
                     type: 'primary',
-                    disabled: attackConfirmation.confirming || isRolling || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable)),
+                    disabled: attackConfirmation.confirming || isRolling || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable)),
                   }
                 ]}
               />
@@ -2306,8 +2320,7 @@ export function MobileCombatRollModal({
               {/* REGRA PERSONALIZADA: Crítico NÃO é acerto automático */}
               {(() => {
                 // Pode rolar dano apenas se: sem defesa informada OU total >= defesa
-                const canRollDamage = targetDefense === null || 
-                  (attackResult && attackResult.total >= targetDefense);
+                const canRollDamage = attackResult && attackCanRollDamage(attackResult, targetDefense);
                 
                 if (canRollDamage) {
                   return (
@@ -2321,6 +2334,7 @@ export function MobileCombatRollModal({
                             onClick: () => {
                               setPhase('setup');
                               setBurstEnabled(false);
+    setVisibility(value => ({ ...value, confirmed: false }));
                               setAttackResult(null);
                             },
                             variant: 'outline',
@@ -2377,6 +2391,7 @@ export function MobileCombatRollModal({
                             onClick: () => {
                               setPhase('setup');
                               setBurstEnabled(false);
+    setVisibility(value => ({ ...value, confirmed: false }));
                               setAttackResult(null);
                             },
                             type: 'primary',
@@ -2423,6 +2438,7 @@ export function MobileCombatRollModal({
                   onClick: () => {
                     setPhase('setup');
                     setBurstEnabled(false);
+    setVisibility(value => ({ ...value, confirmed: false }));
                     setAttackResult(null);
                     setDamageResult(null);
                     setBuffDiceResult(null);

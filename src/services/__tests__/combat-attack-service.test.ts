@@ -14,6 +14,26 @@ const receipt = { id: operation, operation_id: operation, character_id: characte
 beforeEach(() => vi.resetAllMocks());
 
 describe('ataque confirmado pelo servidor', () => {
+  it('recupera d10 do recibo sem incorporá-lo ao pedido e sem mudar seu hash', async () => {
+    const attack=request();
+    attack.selection={...attack.selection,concealment:'total',concealmentConfirmed:true,totalCover:false,attackerBlind:false,targetDefense:null};
+    const concealmentResult={level:'total',attackerBlind:false,heatVisionApplied:false,chance:50,die:2,failed:true,targetDefense:null};
+    fake.rpc.mockResolvedValue({data:{...receipt,payload:{...receipt.payload,concealmentResult}},error:null});
+    await confirmCombatAttack(character,attack,null);
+    expect(attack.result.concealmentResult).toEqual(concealmentResult);
+    await confirmCombatAttack(character,attack,null);
+    expect(fake.rpc.mock.calls[0]).toEqual(fake.rpc.mock.calls[1]);
+    expect(fake.rpc.mock.calls[0][1].p_payload.entry).not.toHaveProperty('concealmentResult');
+    expect(fake.rpc.mock.calls[0][1].p_payload.entry).not.toHaveProperty('success');
+  });
+  it('não libera dano com recibo de camuflagem ausente ou face inválida', async () => {
+    const attack=request(); attack.selection.concealment='total';
+    fake.rpc.mockResolvedValue({data:receipt,error:null});
+    await expect(confirmCombatAttack(character,attack,null)).rejects.toThrow('Camuflagem não confirmada');
+    expect(attack.result.activityOperationId).toBeUndefined();
+    fake.rpc.mockResolvedValue({data:{...receipt,payload:{...receipt.payload,concealmentResult:{level:'total',attackerBlind:false,heatVisionApplied:false,chance:50,die:11,failed:false,targetDefense:null}}},error:null});
+    await expect(confirmCombatAttack(character,attack,null)).rejects.toThrow('divergente');
+  });
   it('conserva UUID, custo e dados sorteados na recuperação após falha', async () => {
     const attack = request();
     fake.rpc.mockResolvedValueOnce({ data: null, error: { code: '' } });

@@ -8,6 +8,10 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('explica chance, d10 e benefício a partir do recibo confirmado', () => {
+    const text=describeCharacterActivity({...event({kind:'combat_attack',entry:{label:'Ataque',total:20,results:[20]},concealmentResult:{level:'total',attackerBlind:false,heatVisionApplied:false,chance:50,die:4,failed:true,targetDefense:10}}),category:'roll'});
+    expect(text).toContain('chance 50%'); expect(text).toContain('d10 4'); expect(text).toContain('falha por camuflagem; dano bloqueado');
+  });
   it('preserva penalidade em dados e oposição pendente da furtividade', () => {
     const text = describeCharacterActivity(event({ kind: 'post_attack_stealth', itemName: 'Pistola', situationalDicePenalty: 1,
       silencerApplied: true, result: { dice: [13], keptDice: 13, skillBonus: 5, equipmentBonus: 0, declaredOtherBonuses: 2, total: 20 } }));

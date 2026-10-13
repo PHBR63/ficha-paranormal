@@ -1,4 +1,5 @@
 import type { DiceRollResult } from '@/lib/dice-roller';
+import { parseConcealmentResult, type ConcealmentLevel } from '@/lib/attack-concealment';
 import { diceHistoryEntry } from '@/lib/roll-history-adapter';
 import { activityClient, activityFailure, activityJson, awaitActivityResponse, confirmActivity, validateActivityId } from './character-activity-service';
 
@@ -6,6 +7,11 @@ import { activityClient, activityFailure, activityJson, awaitActivityResponse, c
 export interface CombatCostSelection {
   weaponId: string;
   burst?: boolean;
+  concealment?: ConcealmentLevel;
+  concealmentConfirmed?: boolean;
+  totalCover?: boolean;
+  attackerBlind?: boolean;
+  targetDefense?: number | null;
   specialAttackIncrements: number;
   sneakAttack: boolean;
   lethalShot: boolean;
@@ -28,16 +34,19 @@ export async function confirmCombatAttack(characterId: string, request: CombatAt
   if (![request.expectedPE, request.expectedCost].every(value => Number.isSafeInteger(value) && value >= 0 && value <= 1000000)) {
     throw new Error('Saldo ou custo inválido. Recarregue a ficha.');
   }
+  // O d10 retornado não entra no pedido de recuperação: seu hash conserva a intenção original.
+  const entry = diceHistoryEntry(request.result);
+  delete entry.concealmentResult; delete entry.success; delete entry.targetDT;
   const { data, error } = await awaitActivityResponse(activityClient.rpc('confirm_character_combat_attack', {
     p_operation_id: request.operationId, p_character_id: characterId,
     p_expected_pe: request.expectedPE, p_expected_cost: request.expectedCost,
     p_expected_turn_key: expectedTurnKey, p_selection: activityJson(request.selection),
-    p_payload: activityJson({ entry: { ...diceHistoryEntry(request.result), type: 'attack' }, label: request.result.label, type: 'attack', weaponBurst: request.result.weaponBurst, attackContext: request.result.attackContext }),
+    p_payload: activityJson({ entry: { ...entry, type: 'attack' }, label: request.result.label, type: 'attack', weaponBurst: request.result.weaponBurst, attackContext: request.result.attackContext }),
   }));
   if (error) {
     const failure = activityFailure('Ataque não confirmado.', error);
     // Uma recusa explícita desfaz a transação; erro de rede conserva a intenção.
-    throw Object.assign(failure, { serverRejected: ['55002', '40001', '42501', '23505', '22023', '0A000'].includes(error.code ?? '') });
+    throw Object.assign(failure, { serverRejected: ['55002', '55004', '40001', '42501', '23505', '22023', '0A000'].includes(error.code ?? '') });
   }
   const receipt = confirmActivity(data, characterId, request.operationId);
   const payload = receipt.payload;
@@ -45,6 +54,7 @@ export async function confirmCombatAttack(characterId: string, request: CombatAt
     throw new Error('O servidor não confirmou o histórico e o custo do ataque.');
   }
   // Evita um segundo registro pelo callback legado de apresentação.
+  if (request.selection.concealment !== undefined) request.result.concealmentResult = parseConcealmentResult(payload.concealmentResult);
   request.result.activityOperationId = receipt.operation_id;
   window.dispatchEvent(new CustomEvent('character-server-updated', { detail: characterId }));
   return true;

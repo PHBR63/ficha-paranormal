@@ -1,4 +1,5 @@
 import type { DiceRollResult } from '@/lib/dice-roller';
+import { parseConcealmentResult } from '@/lib/attack-concealment';
 import type { RollHistoryEntry } from '@/components/character/mobile/MobileRollHistory';
 import type { CharacterActivityEvent } from '@/types/character-activity';
 
@@ -10,6 +11,9 @@ export function diceHistoryEntry(roll: DiceRollResult): Omit<RollHistoryEntry, '
     skillBonus: roll.skillBonus, otherBonuses: roll.otherBonuses, total: roll.total,
     critical: roll.isCritical, isDisadvantage: roll.isDisadvantage,
     extraDice: roll.extraDice, criticalThreshold: roll.criticalThreshold,
+    concealmentResult: roll.concealmentResult,
+    ...(roll.concealmentResult ? { targetDT: roll.concealmentResult.targetDefense ?? undefined,
+      success: roll.concealmentResult.failed ? false : roll.concealmentResult.targetDefense === null ? undefined : roll.total >= roll.concealmentResult.targetDefense } : {}),
   };
 }
 
@@ -27,6 +31,7 @@ export function activityRollEntries(events: CharacterActivityEvent[], characterI
     if (['diceType', 'diceMultiplier'].some(key => entry[key] !== undefined && (!Number.isInteger(entry[key]) || Number(entry[key]) < 1))) return [];
     if (['critical', 'criticalFail', 'success', 'isDisadvantage'].some(key => entry[key] !== undefined && typeof entry[key] !== 'boolean')) return [];
     const timestamp = new Date(event.created_at);
+    if (entry.concealmentResult !== undefined) { try { parseConcealmentResult(entry.concealmentResult); } catch { return []; } }
     if (!Number.isFinite(timestamp.getTime())) return [];
     return [{ ...entry, id: event.id, timestamp } as unknown as RollHistoryEntry];
   });
@@ -42,5 +47,6 @@ export function entryDiceResult(entry: RollHistoryEntry): DiceRollResult {
     isDisadvantage: entry.isDisadvantage ?? false, isCritical: entry.critical ?? false,
     timestamp: entry.timestamp, type: entry.type === 'initiative' || entry.type === 'ritual' ? 'skill' : entry.type,
     label: entry.label,
+    concealmentResult: entry.concealmentResult,
   };
 }
