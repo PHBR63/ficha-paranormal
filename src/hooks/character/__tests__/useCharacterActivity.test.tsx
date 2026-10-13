@@ -14,6 +14,20 @@ const operationId = '00000000-0000-4000-8000-000000000003';
 function wrapper({ children }: { children: ReactNode }) { return <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{children}</QueryClientProvider>; }
 beforeEach(() => { vi.restoreAllMocks(); localStorage.clear(); fake.user.id = 'owner'; fake.subscriptions.length = 0; vi.clearAllMocks(); fake.list.mockResolvedValue([]); fake.sessions.mockResolvedValue([]); fake.record.mockRejectedValue(new Error('Sem conexão')); });
 describe('isolamento e recuperação de atividade', () => {
+  it('recibo confirmado atualiza histórico sem realtime e ignora aviso de outra ficha', async () => {
+    const {result,unmount}=renderHook(()=>useCharacterActivity(characterA),{wrapper});
+    await waitFor(()=>expect(result.current.isLoading).toBe(false));
+    const before=fake.list.mock.calls.length;
+    await act(async()=>{window.dispatchEvent(new CustomEvent('character-server-updated',{detail:characterB}));});
+    expect(fake.list).toHaveBeenCalledTimes(before);
+    fake.list.mockResolvedValue([{id:operationId,character_id:characterA,payload:{total:12}}]);
+    await act(async()=>{window.dispatchEvent(new CustomEvent('character-server-updated',{detail:characterA}));});
+    await waitFor(()=>expect(result.current.events).toHaveLength(1));
+    expect(result.current.events[0].id).toBe(operationId);
+    unmount(); const after=fake.list.mock.calls.length;
+    await act(async()=>{window.dispatchEvent(new CustomEvent('character-server-updated',{detail:characterA}));});
+    expect(fake.list).toHaveBeenCalledTimes(after);
+  });
   it('guarda a rolagem na ficha original sem aviso tardio na ficha seguinte', async () => {
     let reject!: (error: Error) => void;
     fake.record.mockImplementationOnce(() => new Promise<void>((_resolve, fail) => { reject = fail; }));

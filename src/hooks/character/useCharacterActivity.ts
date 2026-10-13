@@ -109,6 +109,10 @@ export function useCharacterActivity(characterId: string) {
       window.dispatchEvent(new CustomEvent('character-server-updated', { detail: characterId }));
     };
     const onResume = () => { if (document.visibilityState === 'visible') refreshCharacter(); };
+    // Recibos RPC também atualizam o feed quando o realtime não entregou a mudança.
+    const onServerUpdated = (event: Event) => {
+      if (active && (event as CustomEvent<string>).detail === characterId) void refresh().catch(() => {});
+    };
     const channel = supabase.channel(`activity:${userId}:${characterId}:${crypto.randomUUID()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'character_activity_events', filter: `character_id=eq.${characterId}` }, () => { void refresh(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'character_activity_visibility', filter: `character_id=eq.${characterId}` }, () => { void refresh(); })
@@ -116,11 +120,13 @@ export function useCharacterActivity(characterId: string) {
       .subscribe(status => { if (active && status === 'SUBSCRIBED') { refreshCharacter(); void refresh(); void recoverPending(); } });
     document.addEventListener('visibilitychange', onResume);
     window.addEventListener('online', onResume);
+    window.addEventListener('character-server-updated', onServerUpdated);
     return () => {
       active = false;
       void supabase.removeChannel(channel);
       document.removeEventListener('visibilitychange', onResume);
       window.removeEventListener('online', onResume);
+      window.removeEventListener('character-server-updated', onServerUpdated);
     };
   }, [userId, characterId, refresh, recoverPending, queryClient]);
   const addRoll = useCallback(async (payload: ActivityPayload, operationId: string = crypto.randomUUID()): Promise<boolean> => {
