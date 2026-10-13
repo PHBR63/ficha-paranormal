@@ -1,4 +1,5 @@
-import { repairLegacyCatalogArmor } from '@/lib/legacy-modification-repair';
+import { repairLegacyCatalogArmor, repairMissingWeaponFields } from '@/lib/legacy-modification-repair';
+import { getWeaponById } from '@/lib/catalogs/weapons-catalog';
 /**
  * Hook para migração automática de equipamentos no inventário
  * Corrige armaduras, armas e itens existentes que estejam com dados incompletos
@@ -161,7 +162,7 @@ function migrateArmorItem(item: InventoryItem): InventoryItem {
 }
 
 function migrateWeaponItem(item: InventoryItem): InventoryItem {
-  const catalogWeapon = findWeaponByName(item.name);
+  const catalogWeapon = (typeof item.catalogId === 'string' ? getWeaponById(item.catalogId) : undefined) ?? findWeaponByName(item.name);
   
   if (!catalogWeapon) {
     console.warn(`[EquipmentMigration] Arma não encontrada: ${item.name}`);
@@ -176,20 +177,7 @@ function migrateWeaponItem(item: InventoryItem): InventoryItem {
   }
   
   console.log(`[EquipmentMigration] Corrigindo arma "${item.name}"`);
-  return {
-    ...item,
-    damage: catalogWeapon.damage,
-    damageType: catalogWeapon.damageType,
-    critical: catalogWeapon.critical,
-    criticalMultiplier: catalogWeapon.criticalMultiplier,
-    range: catalogWeapon.range,
-    proficiency: catalogWeapon.proficiency,
-    properties: item.properties || catalogWeapon.properties,
-    special: item.special || catalogWeapon.special,
-    spaces: catalogWeapon.spaces,
-    weaponType: catalogWeapon.type,
-    category: catalogWeapon.category,
-  };
+  return repairMissingWeaponFields(item, catalogWeapon);
 }
 
 function migrateGeneralItem(item: InventoryItem): InventoryItem {
@@ -332,21 +320,9 @@ export function validateArmorItem(item: InventoryItem): InventoryItem {
 export function validateWeaponItem(item: InventoryItem): InventoryItem {
   if (item.itemType !== 'weapon' && !item.weaponType && !item.damage) return item;
 
-  const catalogWeapon = findWeaponByName(item.name);
+  const catalogWeapon = (typeof item.catalogId === 'string' ? getWeaponById(item.catalogId) : undefined) ?? findWeaponByName(item.name);
   if (catalogWeapon) {
-    return {
-      ...item,
-      damage: item.damage ?? catalogWeapon.damage,
-      damageType: item.damageType ?? catalogWeapon.damageType,
-      critical: item.critical ?? catalogWeapon.critical,
-      criticalMultiplier: item.criticalMultiplier ?? catalogWeapon.criticalMultiplier,
-      range: item.range ?? catalogWeapon.range,
-      proficiency: item.proficiency ?? catalogWeapon.proficiency,
-      properties: item.properties ?? catalogWeapon.properties,
-      spaces: item.spaces ?? catalogWeapon.spaces,
-      weaponType: item.weaponType ?? catalogWeapon.type,
-      category: item.category ?? catalogWeapon.category,
-    };
+    return repairMissingWeaponFields(item, catalogWeapon);
   }
   
   return {
