@@ -11,6 +11,23 @@ import { useItemSituationalAction } from '../useItemSituationalAction';
 
 const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>;
 describe('confirmação e recuperação de ação de item', () => {
+  it('invalida histórico filtrado de origem/alvo pela chave real, sem atingir outra ficha', async () => {
+    const client = new QueryClient();
+    const source = ['character-activity', 'user', 'ficha', 'roll'];
+    const target = ['character-activity', 'user', 'alvo', 'all'];
+    const other = ['character-activity', 'user', 'outra', 'all'];
+    [source, target, other, ['temporary-resources', 'ficha'], ['temporary-resources', 'alvo']]
+      .forEach(key => client.setQueryData(key, ['registro preservado']));
+    const provider = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    rpc.mockReset().mockResolvedValue({ data: { id: 'recibo' }, error: null });
+    const hook = renderHook(() => useItemSituationalAction('ficha', vi.fn()), { wrapper: provider });
+    await act(async () => hook.result.current.confirm({ targetId: 'alvo' }));
+    expect(client.getQueryState(source)?.isInvalidated).toBe(true);
+    expect(client.getQueryState(target)?.isInvalidated).toBe(true);
+    expect(client.getQueryState(other)?.isInvalidated).toBe(false);
+    expect(client.getQueryState(['temporary-resources', 'alvo'])?.isInvalidated).toBe(true);
+    expect(client.getQueryData(other)).toEqual(['registro preservado']);
+  });
   it('recupera resposta incerta com mesmo UUID e payload, mesmo se a interface mudou', async () => {
     rpc.mockReset().mockRejectedValueOnce(new Error('Sem conexão')).mockResolvedValueOnce({ data: { id: 'recibo' }, error: null });
     const refetch = vi.fn(); const hook = renderHook(() => useItemSituationalAction('ficha', refetch), { wrapper });

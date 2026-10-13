@@ -42,7 +42,8 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
         && typeof command.request.targetId === 'string' ? command.request.targetId : command.characterId;
       // O recibo é definitivo; saldos são recarregados mesmo se o realtime estiver indisponível.
       const refreshes = await Promise.allSettled([...new Set([command.characterId, targetId])].flatMap(id => [
-        queries.invalidateQueries({ queryKey: ['character-activity', id] }),
+        // O histórico usa [família, usuário, ficha, filtros]; a ficha está na terceira posição.
+        queries.invalidateQueries({ predicate: query => query.queryKey[0] === 'character-activity' && query.queryKey[2] === id }),
         queries.invalidateQueries({ queryKey: ['temporary-resources', id] }),
       ]));
       if (refreshes.some(result => result.status === 'rejected')) setError('Ação confirmada. Recarregue para conferir os saldos; não repita a aplicação.');
