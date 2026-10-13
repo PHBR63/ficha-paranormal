@@ -39,6 +39,12 @@ function describeConditionChanges(before: Json | undefined, after: Json | undefi
 export function describeCharacterActivity(event: CharacterActivityEvent): string {
   const payload = event.payload;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return 'Registro sem detalhes';
+  if (payload.kind === 'post_attack_stealth') {
+    const result = payload.result;
+    if (!result || typeof result !== 'object' || Array.isArray(result)) return 'Furtividade após ataque: registro incompleto; confira o histórico.';
+    const dice = Array.isArray(result.dice) ? result.dice.join(', ') : '';
+    return `Esconder-se após atacar com ${payload.itemName} · Ação livre no fim do turno declarado · Penalidade situacional −${payload.situationalDicePenalty}d20${payload.silencerApplied ? ' · Silenciador reduz dois dados' : ''}${payload.gatunoApplied ? ' · Gatuno remove a penalidade de movimento' : ''} · Dados [${dice}], ${result.isDisadvantage ? 'menor' : 'maior'} ${result.keptDice} · treino +${result.skillBonus} · equipamento +${result.equipmentBonus} · outros bônus declarados ${result.declaredOtherBonuses} → ${result.total} · Percepção oposta pendente por observador; ocultação não garantida · Sem gasto de PE`;
+  }
   if (payload.kind === 'explosive_event') {
     const rule = getExplosiveByType(typeof payload.explosiveType === 'string' ? payload.explosiveType : undefined);
     const result = payload.result as { total?: number; dice?: number[] } | undefined;

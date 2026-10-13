@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BonusSummary } from '@/hooks/useBonusSummaryFromSUE';
 const state = vi.hoisted(() => ({ busy: false, uncertain: false, error: '', receipt: null, confirm: vi.fn(), recover: vi.fn() }));
 vi.mock('@/hooks/useItemSituationalAction', () => ({ useItemSituationalAction: () => state }));
+vi.mock('../PostAttackStealthPanel', () => ({ PostAttackStealthPanel: () => null }));
 import { ItemSituationalActionsPanel } from '../ItemSituationalActionsPanel';
 
 const props = { characterId: 'ficha', agility: 0, skills: {}, conditions: [], conditionIds: [],
