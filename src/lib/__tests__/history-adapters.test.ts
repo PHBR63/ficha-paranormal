@@ -15,6 +15,13 @@ const entry = { type: 'attack', label: 'Ataque', results: [20, 10], diceCount: 2
   skillBonus: 5, otherBonuses: -10, bonus: -5, total: 15, critical: false, extraDice: 1, criticalThreshold: 19 };
 
 describe('projeção conservadora de históricos', () => {
+  it('recupera d10 e falha sem atribuir registros de outra ficha', () => {
+    const concealmentResult={level:'total' as const,attackerBlind:false,heatVisionApplied:false,chance:50,die:3,failed:true,targetDefense:10};
+    const [record]=activityRollEntries([event({entry:{...entry,concealmentResult,success:false}})],characterId);
+    expect(entryDiceResult(record).concealmentResult).toEqual(concealmentResult);
+    expect(diceHistoryEntry(entryDiceResult(record)).success).toBe(false);
+    expect(activityRollEntries([event({entry:{...entry,concealmentResult}})],'outra')).toEqual([]);
+  });
   it('mostra a falha e os dados confirmados da concentração no histórico resumido', () => {
     const payload = { ritualId: 'eletrocussao', peCost: 1, peBefore: 10, peAfter: 9,
       castingOutcome: 'failed_concentration', concentration: { tests: [{ trigger: 'dano', dice: [11, 5, 12],

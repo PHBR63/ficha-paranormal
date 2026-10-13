@@ -4,6 +4,7 @@ import { resolveConditionId } from '@/lib/conditions/condition-identity';
 import { RITUAL_END_REASONS } from '@/lib/rituals/ritual-ending';
 import { getRitualById } from '@/lib/rituals/ritual-registry';
 import { getExplosiveByType } from '@/lib/explosives';
+import { describeConcealment, parseConcealmentResult } from '@/lib/attack-concealment';
 
 /** Explica o orçamento salvo na operação, sem aplicar o estado atual a eventos antigos. */
 function describePETurnBudget(value: Json | undefined): string {
@@ -91,7 +92,12 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     const burstDetails = burst && typeof burst === 'object' && !Array.isArray(burst) && burst.enabled === true
       ? ` · Rajada: ${burst.compensated ? 'Compensador anula a penalidade' : '−1d20 no ataque'} · +1 dado da arma, multiplicado no crítico` : '';
     const itemDetails = payload.kind === 'item_action' ? ` · Ação ${payload.actionCost} · Maior bônus de equipamento +${result.equipmentBonus ?? 0} · Percepção oposta pendente; revista +10 ao observador · Requisitos declarados` : '';
-    return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}${burstDetails}`;
+    let concealmentDetails = '';
+    if (payload.kind === 'combat_attack') {
+      try { concealmentDetails = payload.concealmentResult ? ` · ${describeConcealment(parseConcealmentResult(payload.concealmentResult))}` : ' · Camuflagem: resolução manual em registro anterior'; }
+      catch { concealmentDetails = ' · Camuflagem: registro exige conferência'; }
+    }
+    return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}${burstDetails}${concealmentDetails}`;
   }
   if (event.category === 'ritual') {
     const preparation = payload.grimoirePreparation;

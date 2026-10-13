@@ -1,5 +1,8 @@
 import { parseWeaponDamage as parseDamageString } from '@/lib/weapon-damage-formula';
 import { resolveWeaponBurst, burstWeaponDiceCount } from '@/lib/weapon-burst';
+import { attackCanRollDamage, type AttackVisibilitySelection } from '@/lib/attack-concealment';
+import { resolveConditionId } from '@/lib/conditions/condition-identity';
+import { AttackVisibilityControls, AttackConcealmentSummary } from './AttackVisibilityControls';
 import { WeaponBurstSelector } from './WeaponBurstSelector';
 import { getCompatibleAmmunition, getAmmunitionEffects, type CombatAmmunition } from '@/lib/ammunition-effects';
 import { CombatAmmunitionSelector } from './CombatAmmunitionSelector';
@@ -435,6 +438,10 @@ export function CombatRollModal({
   const [manualAttackMod, setManualAttackMod] = useState(0);
   const [manualDamageMod, setManualDamageMod] = useState(0);
   const [targetDefense, setTargetDefense] = useState<number | null>(null);
+  const [visibility, setVisibility] = useState<AttackVisibilitySelection>({ level: 'none', confirmed: false, totalCover: false });
+  const attackerBlind = activeConditions.some(id => resolveConditionId(id) === 'cego');
+  const visibilityUnavailable = visibility.totalCover || ((visibility.level !== 'none' || attackerBlind) && !visibility.confirmed)
+    || ((visibility.level !== 'none' || attackerBlind) && !onConfirmAttack);
   
   // === ESTADO PARA TÉCNICAS DO ANIQUILADOR ===
   const [showTechniqueModal, setShowTechniqueModal] = useState(false);
@@ -483,7 +490,8 @@ export function CombatRollModal({
   const attackConfirmation = useConfirmedDiceRoll();
   const preparingAttack = useRef(false);
   const [burstEnabled, setBurstEnabled] = useState(false);
-  useEffect(() => { setBurstEnabled(false); }, [open, weapon?.id]);
+  useEffect(() => { setBurstEnabled(false);
+    setVisibility(value => ({ ...value, confirmed: false })); }, [open, weapon?.id]);
   const burst = resolveWeaponBurst(weapon, burstEnabled);
 
   // Reset ao abrir/fechar
@@ -492,6 +500,7 @@ export function CombatRollModal({
     attackConfirmation.reset();
     setPhase('setup');
     setBurstEnabled(false);
+    setVisibility(value => ({ ...value, confirmed: false }));
     setSelectedBonuses([]);
     setAttackResult(null);
     setDamageResult(null);
@@ -499,6 +508,7 @@ export function CombatRollModal({
     setManualAttackMod(0);
     setManualDamageMod(0);
     setTargetDefense(null);
+    setVisibility({ level: 'none', confirmed: false, totalCover: false });
     setActiveTechniqueEffects(null);
     resetSpecialAttack();
     resetSneakAttack();
@@ -1292,7 +1302,7 @@ export function CombatRollModal({
   const handleRollAttack = () => {
     if (preparingAttack.current || attackConfirmation.confirming) return;
     if (attackConfirmation.pending) { void attackConfirmation.confirm(); return; }
-    if (!weapon || !canAffordPE || confirmationUnavailable || ammunitionUnavailable) return;
+    if (!weapon || !canAffordPE || confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable) return;
     preparingAttack.current = true;
 
     // Feedback de rolagem
@@ -1313,6 +1323,8 @@ export function CombatRollModal({
     if (burst.enabled) result.label += ' — Rajada';
     const selection: CombatCostSelection = {
       weaponId: weapon.id,
+      concealment: visibility.level, concealmentConfirmed: visibility.confirmed || (visibility.level === 'none' && !attackerBlind),
+      totalCover: visibility.totalCover, attackerBlind, targetDefense,
       burst: burst.enabled,
       specialAttackIncrements: specialAttackConfig.enabled ? specialAttackConfig.attackIncrements + specialAttackConfig.damageIncrements : 0,
       sneakAttack: !!(isInfiltrador && sneakAttackConfig.enabled),
@@ -1334,7 +1346,7 @@ export function CombatRollModal({
         const isFumble = result.dice.every(d => d === 1);
 
         // Verifica se acertou (regra personalizada: crítico NÃO é acerto automático)
-        const didHit = targetDefense !== null ? result.total >= targetDefense : true;
+        const didHit = attackCanRollDamage(result, targetDefense);
 
         if (isFumble) {
           combatFeedback.triggerFumble();
@@ -1364,7 +1376,7 @@ export function CombatRollModal({
 
   // Rolar dano
   const handleRollDamage = () => {
-    if (!weapon || !attackResult || (targetDefense !== null && attackResult.total < targetDefense)) return;
+    if (!weapon || !attackResult || !attackCanRollDamage(attackResult, targetDefense)) return;
 
     const parsed = parseDamageString(weapon.damage);
     const isCritical = attackResult.isCritical;
@@ -1730,6 +1742,9 @@ export function CombatRollModal({
         </DialogHeader>
 
         <WeaponModificationNotes effects={weapon.modificationEffects} />
+          <AttackVisibilityControls value={visibility} onChange={setVisibility} weapon={weapon} blind={attackerBlind}
+            disabled={phase !== 'setup' || attackConfirmation.confirming || !!attackConfirmation.pending} />
+          <AttackConcealmentSummary result={attackResult?.concealmentResult} />
           <WeaponBurstSelector weapon={weapon} damage={weapon.damage} criticalMultiplier={criticalMultiplier} enabled={burst.enabled} onChange={setBurstEnabled}
             disabled={phase !== 'setup' || attackConfirmation.confirming || !!attackConfirmation.pending} />
         {weapon.ammoType && <CombatAmmunitionSelector ammunition={compatibleAmmunition} selectedId={selectedAmmunitionId} onSelect={setSelectedAmmunitionId}
@@ -2442,7 +2457,7 @@ export function CombatRollModal({
                   className="w-full font-display"
                   size="lg"
                   onClick={handleRollAttack}
-                  disabled={attackConfirmation.confirming || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable))}
+                  disabled={attackConfirmation.confirming || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable))}
                 >
                   <Dices className="w-5 h-5 mr-2" />
                   {attackConfirmation.confirming ? "CONFIRMANDO PE…" : attackConfirmation.pending ? "TENTAR CONFIRMAR ATAQUE" : "ROLAR ATAQUE"}
@@ -2528,7 +2543,7 @@ export function CombatRollModal({
                       transition={{ delay: 0.4 }}
                       className={cn(
                         "p-3 rounded-lg border-2 text-center",
-                        attackResult.total >= targetDefense
+                        attackCanRollDamage(attackResult, targetDefense)
                           ? "bg-green-500/10 border-green-500/50 text-green-500"
                           : attackResult.isCritical
                             ? "bg-amber-500/10 border-amber-500/50 text-amber-500"
@@ -2536,7 +2551,7 @@ export function CombatRollModal({
                       )}
                     >
                       <div className="flex items-center justify-center gap-2">
-                        {attackResult.total >= targetDefense ? (
+                        {attackCanRollDamage(attackResult, targetDefense) ? (
                           <>
                             <Target className="w-5 h-5" />
                             <span className="font-display font-bold text-lg">ACERTOU!</span>
@@ -2575,8 +2590,7 @@ export function CombatRollModal({
                 {(() => {
                   // REGRA PERSONALIZADA: Crítico NÃO é acerto automático
                   // Pode rolar dano apenas se: sem defesa informada OU total >= defesa
-                  const canRollDamage = targetDefense === null || 
-                    attackResult.total >= targetDefense;
+                  const canRollDamage = attackCanRollDamage(attackResult, targetDefense);
                   
                   if (canRollDamage) {
                     return (
@@ -2606,6 +2620,7 @@ export function CombatRollModal({
                           onClick={() => {
                             setPhase('setup');
                             setBurstEnabled(false);
+    setVisibility(value => ({ ...value, confirmed: false }));
                             setAttackResult(null);
                           }}
                         >
@@ -2630,12 +2645,12 @@ export function CombatRollModal({
               >
                 {/* Resultado do ataque (resumo) */}
                 <div className="p-2 rounded bg-muted/50 text-center">
-                  <p className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground">
                     Ataque: <span className="font-bold text-foreground">{attackResult?.total}</span>
                     {attackResult?.isCritical && (
                       <Badge variant="default" className="ml-2 bg-amber-500">CRÍTICO</Badge>
                     )}
-                  </p>
+                  </div>
                 </div>
 
                 {/* Seção de Dados de Dano */}
@@ -2915,6 +2930,7 @@ export function CombatRollModal({
                     onClick={() => {
                       setPhase('setup');
                       setBurstEnabled(false);
+    setVisibility(value => ({ ...value, confirmed: false }));
                       setAttackResult(null);
                       setDamageResult(null);
                       setBuffDiceResult(null);

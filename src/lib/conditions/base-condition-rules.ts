@@ -4,7 +4,7 @@ import type { EffectMechanics } from '../unified-effects-engine';
 export const BASE_CONDITION_TEXT: Record<string, string> = {
   em_chamas: 'Início do turno: 1d6 de fogo. Ação padrão para apagar com as mãos, ou imersão em água.',
   ofuscado: '–1d20 em ataques e Percepção.',
-  'camuflagem-total': 'Ataques contra você têm 50% de chance de falha; confira com a mesa.',
+  'camuflagem-total': 'Ataques contra você têm 50% de chance de falha; confirme camuflagem total no painel de ataque com a mesa.',
   abalado: '–1d20 em testes. Uma nova aplicação torna o personagem apavorado.',
   apavorado: '–2d20 em testes de perícia. Deve fugir da fonte do medo enquanto a perceber em alcance médio.',
   agarrado: 'Desprevenido e imóvel. –1d20 em ataques; só pode atacar com armas leves.',

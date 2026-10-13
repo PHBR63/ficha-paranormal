@@ -58,6 +58,7 @@ export interface RollHistoryEntry {
   extraDice?: number;
   criticalThreshold?: number;
   isDisadvantage?: boolean;
+  concealmentResult?: import('@/lib/attack-concealment').ConcealmentResult;
   total: number;
   // Contexto adicional
   targetDT?: number;
