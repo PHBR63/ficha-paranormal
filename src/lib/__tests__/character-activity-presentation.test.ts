@@ -12,6 +12,15 @@ describe('Histórico de alterações de condições', () => {
     const text=describeCharacterActivity({...event({kind:'combat_attack',entry:{label:'Ataque',total:20,results:[20]},concealmentResult:{level:'total',attackerBlind:false,heatVisionApplied:false,chance:50,die:4,failed:true,targetDefense:10}}),category:'roll'});
     expect(text).toContain('chance 50%'); expect(text).toContain('d10 4'); expect(text).toContain('falha por camuflagem; dano bloqueado');
   });
+  it('mostra alcance, situação declarada, Mira e possibilidade de revisão', () => {
+    const text = describeCharacterActivity({ ...event({ kind: 'combat_attack', entry: { label: 'Ataque', total: 19, results: [14] },
+      sneakAttackResult: { range: 'long', targetStatus: 'flat_footed', telescopicSightApplied: true,
+        weaponMaximumRange: 3, declaredBy: 'player', masterReview: 'available', applied: true, roundLimitChecked: true } }), category: 'roll' });
+    expect(text).toContain('alvo desprevenido em alcance longo');
+    expect(text).toContain('Mira Telescópica verificada');
+    expect(text).toContain('mestre pode revisar');
+    expect(text).toContain('1 PE da habilidade cobrado');
+  });
   it('preserva penalidade em dados e oposição pendente da furtividade', () => {
     const text = describeCharacterActivity(event({ kind: 'post_attack_stealth', itemName: 'Pistola', situationalDicePenalty: 1,
       silencerApplied: true, result: { dice: [13], keptDice: 13, skillBonus: 5, equipmentBonus: 0, declaredOtherBonuses: 2, total: 20 } }));

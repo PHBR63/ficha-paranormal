@@ -21,6 +21,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { validateSneakAttackDeclaration, hasTelescopicSight, type AttackRange, type SneakAttackDeclaration, type SneakAttackWeapon, type SneakTargetStatus } from '@/lib/sneak-attack-context';
 
 // =====================================================
 // Tipos e Interfaces
@@ -30,6 +31,7 @@ import { cn } from '@/lib/utils';
 export interface SneakAttackConfig {
   /** Se o Ataque Furtivo está habilitado para o próximo ataque */
   enabled: boolean;
+  declaration: Partial<SneakAttackDeclaration> | null;
 }
 
 /** Resultado calculado do Ataque Furtivo */
@@ -46,6 +48,8 @@ export interface SneakAttackResult {
 
 /** Props do componente SneakAttackSelector */
 export interface SneakAttackSelectorProps {
+  /** Arma equipada usada para explicar e conferir a exceção da Mira. */
+  weapon: SneakAttackWeapon | null;
   /** NEX do personagem (determina dados base) */
   nex: number;
   /** PE atual do personagem */
@@ -110,6 +114,7 @@ export function calculateSneakAttackResult(
 export function createEmptySneakAttackConfig(): SneakAttackConfig {
   return {
     enabled: false,
+    declaration: null,
   };
 }
 
@@ -118,6 +123,7 @@ export function createEmptySneakAttackConfig(): SneakAttackConfig {
 // =====================================================
 
 export function SneakAttackSelector({
+  weapon,
   nex,
   currentPE,
   config,
@@ -138,8 +144,38 @@ export function SneakAttackSelector({
   
   // Handler do toggle
   const handleToggle = useCallback((enabled: boolean) => {
-    onConfigChange({ enabled });
-  }, [onConfigChange]);
+    onConfigChange({ ...config, enabled });
+  }, [config, onConfigChange]);
+
+  const contextError = config.enabled ? validateSneakAttackDeclaration(weapon, config.declaration) : null;
+  const updateDeclaration = (part: Partial<SneakAttackDeclaration>) => {
+    const next = { ...config.declaration, ...part };
+    onConfigChange({ ...config, declaration: next });
+  };
+  const contextControls = config.enabled && (
+    <div className="mt-3 space-y-2 border-t border-purple-500/20 pt-3">
+      <p className="text-xs text-muted-foreground">Declare a situação do alvo; o mestre poderá revisar. {hasTelescopicSight(weapon) ? 'Mira Telescópica instalada: Ataque Furtivo em qualquer alcance da arma.' : 'Sem Mira: alvo desprevenido até curto ou flanqueado corpo a corpo.'}</p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <label className="text-xs font-medium">Alcance declarado
+          <select aria-label="Alcance do Ataque Furtivo" value={config.declaration?.range ?? ''}
+            onChange={event => updateDeclaration({ range: event.target.value as AttackRange })}
+            className="mt-1 w-full rounded-md border border-border bg-background p-2 text-foreground">
+            <option value="">Selecione</option>
+            <option value="melee">Corpo a corpo</option><option value="short">Curto</option>
+            <option value="medium">Médio</option><option value="long">Longo</option><option value="extreme">Extremo</option>
+          </select>
+        </label>
+        <label className="text-xs font-medium">Condição do alvo
+          <select aria-label="Condição do alvo para Ataque Furtivo" value={config.declaration?.targetStatus ?? ''}
+            onChange={event => updateDeclaration({ targetStatus: event.target.value as SneakTargetStatus })}
+            className="mt-1 w-full rounded-md border border-border bg-background p-2 text-foreground">
+            <option value="">Selecione</option><option value="flat_footed">Desprevenido</option><option value="flanked">Flanqueado</option>
+          </select>
+        </label>
+      </div>
+      {contextError && <p role="alert" className="text-xs text-destructive">{contextError}</p>}
+    </div>
+  );
   
   // === VARIANTE COMPACTA (MOBILE) ===
   if (variant === 'compact') {
@@ -159,7 +195,7 @@ export function SneakAttackSelector({
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-medium">Ataque Furtivo</span>
               <span className="text-xs text-muted-foreground">
-                +{result.finalDice}d6 • 1 PE
+                +{result.finalDice}d6 • 1 PE se acertar
               </span>
             </div>
             {assassinarActive && (
@@ -193,6 +229,7 @@ export function SneakAttackSelector({
             </motion.div>
           )}
         </AnimatePresence>
+        {contextControls}
       </div>
     );
   }
@@ -218,8 +255,8 @@ export function SneakAttackSelector({
                 <Info className="h-4 w-4 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
-                <p className="font-medium mb-1">Ataque Furtivo (1 PE)</p>
-                <p>1x/rodada contra alvo desprevenido (corpo a corpo, curto ou flanqueando).</p>
+                <p className="font-medium mb-1">Ataque Furtivo (1 PE no acerto)</p>
+                <p>1x/rodada: alvo desprevenido até alcance curto, ou flanqueado corpo a corpo. Com Mira Telescópica, o desprevenido pode estar em qualquer alcance da arma.</p>
                 <p className="mt-1 text-purple-300">+{result.dice}d6 dano extra (NEX {nex}%)</p>
               </TooltipContent>
             </Tooltip>
@@ -241,7 +278,7 @@ export function SneakAttackSelector({
             className="text-xs"
           >
             <Zap className="h-3 w-3 mr-1" />
-            1 PE
+            1 PE se acertar
           </Badge>
           
           <Switch
@@ -288,6 +325,7 @@ export function SneakAttackSelector({
           </motion.div>
         )}
       </AnimatePresence>
+      {contextControls}
     </div>
   );
 }

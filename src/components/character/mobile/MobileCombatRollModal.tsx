@@ -78,6 +78,7 @@ import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 // O hook useCombatRollWithSUE encapsula rollAttackWithContext e rollDamageWithContext
 // com integração completa ao SUE para bônus automáticos
 import { useCombatRollWithSUE, type WeaponEntryCompat } from '@/hooks/use-combat-roll-with-sue';
+import { validateSneakAttackDeclaration, type SneakAttackDeclaration } from '@/lib/sneak-attack-context';
 import { getSkillBonus } from '@/lib/character-data';
 import { ComputedEffects } from '@/lib/unified-effects-engine';
 import { WeaponBuff, ELEMENT_BUFF_COLORS, useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput, useCombatFeedback } from '@/hooks';
@@ -333,6 +334,13 @@ export function MobileCombatRollModal({
   
   // Verifica se é Infiltrador
   const isInfiltrador = classTrack === 'infiltrador';
+  const sneakAttackError = isInfiltrador && sneakAttackConfig.enabled
+    ? !onConfirmAttack ? 'Ataque Furtivo exige confirmação pelo servidor.'
+      : targetDefense === null ? 'Informe a Defesa do alvo para cobrar Ataque Furtivo somente no acerto.'
+        : !Number.isSafeInteger(targetDefense) || targetDefense < 0 || targetDefense > 1000
+          ? 'Defesa do alvo inválida. Informe um valor entre 0 e 1000.'
+        : validateSneakAttackDeclaration(weapon, sneakAttackConfig.declaration)
+    : null;
   
   // Verifica se é Atirador de Elite
   const isAtiradorElite = useMemo(() => 
@@ -449,8 +457,11 @@ export function MobileCombatRollModal({
   const attackConfirmation = useConfirmedDiceRoll();
   const preparingAttack = useRef(false);
   const [burstEnabled, setBurstEnabled] = useState(false);
-  useEffect(() => { setBurstEnabled(false);
-    setVisibility(value => ({ ...value, confirmed: false })); }, [open, weapon?.id]);
+  useEffect(() => {
+    setBurstEnabled(false);
+    setVisibility(value => ({ ...value, confirmed: false }));
+    resetSneakAttack();
+  }, [open, weapon?.id, resetSneakAttack]);
   const burst = resolveWeaponBurst(weapon, burstEnabled);
 
   // Reset ao fechar
@@ -1152,7 +1163,7 @@ export function MobileCombatRollModal({
   const rollAttack = useCallback(() => {
     if (preparingAttack.current || attackConfirmation.confirming) return;
     if (attackConfirmation.pending) { void attackConfirmation.confirm(); return; }
-    if (!weapon || !canAffordPE || confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable) return;
+    if (!weapon || !canAffordPE || confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable || sneakAttackError) return;
     preparingAttack.current = true;
 
     setIsRolling(true);
@@ -1178,6 +1189,7 @@ export function MobileCombatRollModal({
       burst: burst.enabled,
       specialAttackIncrements: specialAttackConfig.enabled ? specialAttackConfig.attackIncrements + specialAttackConfig.damageIncrements : 0,
       sneakAttack: !!(isInfiltrador && sneakAttackConfig.enabled),
+      ...(isInfiltrador && sneakAttackConfig.enabled ? { sneakAttackContext: sneakAttackConfig.declaration as SneakAttackDeclaration } : {}),
       lethalShot: !!(isAtiradorElite && disparoLetalConfig.enabled),
       techniques: [...(activeTechniqueEffects?.selectedTechniques ?? [])],
       lethalCount: activeTechniqueEffects?.letalCount ?? 0,
@@ -1235,7 +1247,7 @@ export function MobileCombatRollModal({
       },
 
     }).finally(() => { preparingAttack.current = false; setIsRolling(false); });
-  }, [visibility, attackerBlind, visibilityUnavailable, burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, isAtiradorElite, disparoLetalConfig, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
+  }, [visibility, attackerBlind, visibilityUnavailable, burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, sneakAttackError, isAtiradorElite, disparoLetalConfig, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
@@ -1735,6 +1747,11 @@ export function MobileCombatRollModal({
                     variant="compact"
                   />
                 )}
+                {isInfiltrador && (
+                  <SneakAttackSelector weapon={weapon} nex={nex} currentPE={currentPE + temporaryPE}
+                    assassinarActive={advancedBonuses.assassinar || false} config={sneakAttackConfig}
+                    onConfigChange={setSneakAttackConfig} variant="compact" />
+                )}
                 
                 {/* === DISPARO LETAL (Atirador de Elite NEX 40%+) === */}
                 {isAtiradorElite && nex >= 40 && (
@@ -1976,7 +1993,7 @@ export function MobileCombatRollModal({
                       : "bg-destructive/10 border-destructive/30"
                   )}>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm">Custo de PE</span>
+                      <span className="text-sm">{isInfiltrador && sneakAttackConfig.enabled ? 'Custo máximo de PE' : 'Custo de PE'}</span>
                       <div className="text-right">
                         <span className={cn(
                           "font-display text-lg",
@@ -2016,6 +2033,16 @@ export function MobileCombatRollModal({
                 exit={{ opacity: 0, x: 20 }}
                 className="py-6 text-center space-y-4"
               >
+                {attackResult.sneakAttackResult && (
+                  <p role="status" className="rounded border border-purple-500/30 bg-purple-950/30 p-2 text-sm">
+                    {attackResult.sneakAttackResult.applied
+                      ? 'Ataque Furtivo aplicado: 1 PE cobrado neste acerto.'
+                      : 'Ataque Furtivo não aplicado: ataque falhou; 0 PE da habilidade cobrado.'}
+                    {!attackResult.sneakAttackResult.applied
+                      ? ' Uso da rodada preservado.'
+                      : !attackResult.sneakAttackResult.roundLimitChecked && ' Limite por rodada: conferência da mesa.'}
+                  </p>
+                )}
                 {/* Dados */}
                 <div className="flex items-center justify-center gap-2">
                   {attackResult.dice.map((die, i) => (
@@ -2274,6 +2301,7 @@ export function MobileCombatRollModal({
 
         {temporaryPE > 0 && <p className="text-sm text-muted-foreground">PE disponíveis: {currentPE} normais + {temporaryPE} temporários. Temporários são consumidos primeiro.</p>}
         {confirmationUnavailable && !attackConfirmation.pending && <p role="status" className="p-3 text-sm text-muted-foreground">{confirmationUnavailable}</p>}
+        {sneakAttackError && !attackConfirmation.pending && <p role="alert" className="p-3 text-sm text-destructive">{sneakAttackError}</p>}
         {attackConfirmation.error && (
           <p role="alert" className="p-3 text-sm text-destructive">{attackConfirmation.error}</p>
         )}
@@ -2295,7 +2323,7 @@ export function MobileCombatRollModal({
                     ) : <Target className="w-5 h-5" />,
                     onClick: rollAttack,
                     type: 'primary',
-                    disabled: attackConfirmation.confirming || isRolling || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable)),
+                    disabled: attackConfirmation.confirming || isRolling || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable || !!sneakAttackError)),
                   }
                 ]}
               />
@@ -2333,6 +2361,7 @@ export function MobileCombatRollModal({
                             icon: <RotateCcw className="w-4 h-4" />,
                             onClick: () => {
                               setPhase('setup');
+                              resetSneakAttack();
                               setBurstEnabled(false);
     setVisibility(value => ({ ...value, confirmed: false }));
                               setAttackResult(null);
@@ -2390,6 +2419,7 @@ export function MobileCombatRollModal({
                             icon: <RotateCcw className="w-4 h-4" />,
                             onClick: () => {
                               setPhase('setup');
+                              resetSneakAttack();
                               setBurstEnabled(false);
     setVisibility(value => ({ ...value, confirmed: false }));
                               setAttackResult(null);
@@ -2437,6 +2467,7 @@ export function MobileCombatRollModal({
                   icon: <Sword className="w-4 h-4" />,
                   onClick: () => {
                     setPhase('setup');
+                    resetSneakAttack();
                     setBurstEnabled(false);
     setVisibility(value => ({ ...value, confirmed: false }));
                     setAttackResult(null);

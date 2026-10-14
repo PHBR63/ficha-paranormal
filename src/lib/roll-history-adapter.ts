@@ -1,5 +1,6 @@
 import type { DiceRollResult } from '@/lib/dice-roller';
 import { parseConcealmentResult } from '@/lib/attack-concealment';
+import { parseSneakAttackResult } from '@/lib/sneak-attack-context';
 import type { RollHistoryEntry } from '@/components/character/mobile/MobileRollHistory';
 import type { CharacterActivityEvent } from '@/types/character-activity';
 
@@ -12,6 +13,7 @@ export function diceHistoryEntry(roll: DiceRollResult): Omit<RollHistoryEntry, '
     critical: roll.isCritical, isDisadvantage: roll.isDisadvantage,
     extraDice: roll.extraDice, criticalThreshold: roll.criticalThreshold,
     concealmentResult: roll.concealmentResult,
+    sneakAttackResult: roll.sneakAttackResult,
     ...(roll.concealmentResult ? { targetDT: roll.concealmentResult.targetDefense ?? undefined,
       success: roll.concealmentResult.failed ? false : roll.concealmentResult.targetDefense === null ? undefined : roll.total >= roll.concealmentResult.targetDefense } : {}),
   };
@@ -32,8 +34,19 @@ export function activityRollEntries(events: CharacterActivityEvent[], characterI
     if (['critical', 'criticalFail', 'success', 'isDisadvantage'].some(key => entry[key] !== undefined && typeof entry[key] !== 'boolean')) return [];
     const timestamp = new Date(event.created_at);
     if (entry.concealmentResult !== undefined) { try { parseConcealmentResult(entry.concealmentResult); } catch { return []; } }
+    // Retratos anteriores à cobrança no acerto continuam como rolagens legíveis,
+    // sem atribuir a eles uma confirmação de PE que não existia.
+    let safeEntry = entry;
+    if (entry.sneakAttackResult !== undefined) {
+      try { parseSneakAttackResult(entry.sneakAttackResult); }
+      catch {
+        const snapshot = entry.sneakAttackResult;
+        if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot) || 'applied' in snapshot) return [];
+        safeEntry = { ...entry, sneakAttackResult: undefined };
+      }
+    }
     if (!Number.isFinite(timestamp.getTime())) return [];
-    return [{ ...entry, id: event.id, timestamp } as unknown as RollHistoryEntry];
+    return [{ ...safeEntry, id: event.id, timestamp } as unknown as RollHistoryEntry];
   });
 }
 
@@ -48,5 +61,6 @@ export function entryDiceResult(entry: RollHistoryEntry): DiceRollResult {
     timestamp: entry.timestamp, type: entry.type === 'initiative' || entry.type === 'ritual' ? 'skill' : entry.type,
     label: entry.label,
     concealmentResult: entry.concealmentResult,
+    sneakAttackResult: entry.sneakAttackResult,
   };
 }

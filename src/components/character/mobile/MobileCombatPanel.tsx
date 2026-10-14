@@ -39,6 +39,7 @@ export interface WeaponEntry {
   ammoCurrent?: number;
   ammoMax?: number;
   range?: string;
+  baseRange?: string;
   critical?: string;
   criticalMultiplier?: string;
   special?: string;

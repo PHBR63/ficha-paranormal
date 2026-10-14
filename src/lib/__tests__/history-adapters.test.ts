@@ -15,6 +15,20 @@ const entry = { type: 'attack', label: 'Ataque', results: [20, 10], diceCount: 2
   skillBonus: 5, otherBonuses: -10, bonus: -5, total: 15, critical: false, extraDice: 1, criticalThreshold: 19 };
 
 describe('projeção conservadora de históricos', () => {
+  it('recupera declaração furtiva confirmada por ficha e rejeita retrato inválido', () => {
+    const sneakAttackResult = { range: 'long', targetStatus: 'flat_footed', telescopicSightApplied: true,
+      weaponMaximumRange: 3, declaredBy: 'player', masterReview: 'available', applied: true, roundLimitChecked: true } as const;
+    const [record] = activityRollEntries([event({ entry: { ...entry, sneakAttackResult } })], characterId);
+    expect(entryDiceResult(record).sneakAttackResult).toEqual(sneakAttackResult);
+    expect(activityRollEntries([event({ entry: { ...entry, sneakAttackResult: { ...sneakAttackResult, weaponMaximumRange: 8 } } })])).toEqual([]);
+    const [legacy] = activityRollEntries([event({ entry: { ...entry, sneakAttackResult: {
+      range: 'long', targetStatus: 'flat_footed', telescopicSightApplied: true,
+      weaponMaximumRange: 3, declaredBy: 'player', masterReview: 'available',
+    } } })]);
+    expect(legacy.label).toBe('Ataque');
+    expect(legacy.sneakAttackResult).toBeUndefined();
+    expect(activityRollEntries([event({ entry: { ...entry, sneakAttackResult } })], 'outra-ficha')).toEqual([]);
+  });
   it('recupera d10 e falha sem atribuir registros de outra ficha', () => {
     const concealmentResult={level:'total' as const,attackerBlind:false,heatVisionApplied:false,chance:50,die:3,failed:true,targetDefense:10};
     const [record]=activityRollEntries([event({entry:{...entry,concealmentResult,success:false}})],characterId);

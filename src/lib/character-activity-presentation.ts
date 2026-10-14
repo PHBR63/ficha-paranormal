@@ -5,6 +5,7 @@ import { RITUAL_END_REASONS } from '@/lib/rituals/ritual-ending';
 import { getRitualById } from '@/lib/rituals/ritual-registry';
 import { getExplosiveByType } from '@/lib/explosives';
 import { describeConcealment, parseConcealmentResult } from '@/lib/attack-concealment';
+import { parseSneakAttackResult } from '@/lib/sneak-attack-context';
 
 /** Explica o orçamento salvo na operação, sem aplicar o estado atual a eventos antigos. */
 function describePETurnBudget(value: Json | undefined): string {
@@ -93,11 +94,21 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
       ? ` · Rajada: ${burst.compensated ? 'Compensador anula a penalidade' : '−1d20 no ataque'} · +1 dado da arma, multiplicado no crítico` : '';
     const itemDetails = payload.kind === 'item_action' ? ` · Ação ${payload.actionCost} · Maior bônus de equipamento +${result.equipmentBonus ?? 0} · Percepção oposta pendente; revista +10 ao observador · Requisitos declarados` : '';
     let concealmentDetails = '';
+    let sneakDetails = '';
     if (payload.kind === 'combat_attack') {
       try { concealmentDetails = payload.concealmentResult ? ` · ${describeConcealment(parseConcealmentResult(payload.concealmentResult))}` : ' · Camuflagem: resolução manual em registro anterior'; }
       catch { concealmentDetails = ' · Camuflagem: registro exige conferência'; }
+      if (payload.sneakAttackResult) {
+        try {
+          const sneak = parseSneakAttackResult(payload.sneakAttackResult);
+          const distance = { melee: 'corpo a corpo', short: 'curto', medium: 'médio', long: 'longo', extreme: 'extremo' }[sneak.range];
+          sneakDetails = ` · Ataque Furtivo: alvo ${sneak.targetStatus === 'flanked' ? 'flanqueado' : 'desprevenido'} em alcance ${distance}${sneak.telescopicSightApplied ? ' · Mira Telescópica verificada' : ''} · ${sneak.applied ? 'acertou: 1 PE da habilidade cobrado' : 'não acertou: 0 PE da habilidade cobrado'} · ${!sneak.applied ? 'uso da rodada preservado' : sneak.roundLimitChecked ? 'limite da rodada conferido' : 'limite da rodada: conferência da mesa'} · Declaração do jogador; mestre pode revisar`;
+        } catch { sneakDetails = ' · Ataque Furtivo: registro exige conferência'; }
+      } else if (payload.selection && typeof payload.selection === 'object' && !Array.isArray(payload.selection) && payload.selection.sneakAttack === true) {
+        sneakDetails = ' · Ataque Furtivo: contexto não verificado em registro anterior';
+      }
     }
-    return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}${burstDetails}${concealmentDetails}`;
+    return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}${burstDetails}${concealmentDetails}${sneakDetails}`;
   }
   if (event.category === 'ritual') {
     const preparation = payload.grimoirePreparation;
