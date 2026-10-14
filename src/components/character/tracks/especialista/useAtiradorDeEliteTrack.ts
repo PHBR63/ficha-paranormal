@@ -60,9 +60,8 @@ export const ATIRADOR_ABILITIES: AtiradorAbility[] = [
     minNex: 40,
     peCost: 1,
     isPassive: false,
-    perRound: true, // Uma vez por rodada
-    description: 'Uma vez por rodada, quando faz a ação Mirar, você pode gastar 1 PE para aumentar em +2 a margem de ameaça do próximo ataque até o final de seu próximo turno.',
-    shortEffect: '+2 margem de ameaça (1x/rodada)',
+    description: 'Quando faz a ação Mirar, você pode gastar 1 PE para aumentar em +2 a margem de ameaça do próximo ataque até o final de seu próximo turno.',
+    shortEffect: '+2 margem de ameaça no próximo ataque após Mirar',
     effectId: TRACK_EFFECT_IDS.DISPARO_LETAL,
     effectDuration: 'next-turn', // Até o final do próximo turno
   },

@@ -1,4 +1,4 @@
-import { ALL_CLASS_POWERS } from "@/lib/class-powers/power-registry";
+import { CLASS_ONLY_POWERS } from "@/lib/class-powers/power-registry";
 import type { ActiveClassPower } from "./class-power-effects-adapter";
 
 type SavedChoice = {
@@ -7,7 +7,7 @@ type SavedChoice = {
   chosenValues: string[];
 };
 
-/** Converte habilidades e escolhas para o motor de efeitos, incluindo poderes concedidos. */
+/** Converte poderes de classe e escolhas para o motor; habilidades de trilha entram pelo adaptador de trilha. */
 export function characterPowerInput(
   abilities: string[],
   classId: string,
@@ -16,7 +16,7 @@ export function characterPowerInput(
 ): ActiveClassPower[] {
   const result: ActiveClassPower[] = [];
   for (const ability of abilities) {
-    const matches = ALL_CLASS_POWERS.filter(
+    const matches = CLASS_ONLY_POWERS.filter(
       (p) => p.id === ability || p.name === ability,
     );
     const power = matches.find((p) => p.classId === classId) || matches[0];
