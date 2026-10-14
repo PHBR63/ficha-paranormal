@@ -46,7 +46,10 @@ export async function confirmCombatAttack(characterId: string, request: CombatAt
     p_payload: activityJson({ entry: { ...entry, type: 'attack' }, label: request.result.label, type: 'attack', weaponBurst: request.result.weaponBurst, attackContext: request.result.attackContext }),
   }));
   if (error) {
-    const failure = activityFailure('Ataque não confirmado.', error);
+    // Traduz somente esta recusa conhecida; outras mensagens do banco permanecem ocultas.
+    const failure = error.code === '22023' && error.message === 'Ataque Furtivo já aplicado nesta rodada ou turno.'
+      ? new Error('Ataque não confirmado. Ataque Furtivo já foi usado nesta rodada ou turno. Nenhum PE foi cobrado; aguarde o próximo turno para ativá-lo novamente.')
+      : activityFailure('Ataque não confirmado.', error);
     // Uma recusa explícita desfaz a transação; erro de rede conserva a intenção.
     throw Object.assign(failure, { serverRejected: ['55002', '55004', '40001', '42501', '23505', '22023', '0A000'].includes(error.code ?? '') });
   }

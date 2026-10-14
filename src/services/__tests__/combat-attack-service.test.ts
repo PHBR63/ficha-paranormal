@@ -14,6 +14,12 @@ const receipt = { id: operation, operation_id: operation, character_id: characte
 beforeEach(() => vi.resetAllMocks());
 
 describe('ataque confirmado pelo servidor', () => {
+  it('explica o limite de Ataque Furtivo sem expor outras mensagens do banco', async () => {
+    fake.rpc.mockResolvedValueOnce({ data: null, error: { code: '22023', message: 'Ataque Furtivo já aplicado nesta rodada ou turno.' } });
+    await expect(confirmCombatAttack(character, request(), 'manual:1')).rejects.toThrow('já foi usado nesta rodada ou turno');
+    fake.rpc.mockResolvedValueOnce({ data: null, error: { code: '22023', message: 'detalhe interno desconhecido' } });
+    await expect(confirmCombatAttack(character, request(), 'manual:1')).rejects.toThrow('Os dados da operação são inválidos');
+  });
   it('recupera d10 do recibo sem incorporá-lo ao pedido e sem mudar seu hash', async () => {
     const attack=request();
     attack.selection={...attack.selection,concealment:'total',concealmentConfirmed:true,totalCover:false,attackerBlind:false,targetDefense:null};
