@@ -1,6 +1,4 @@
 import type { ActiveCondition } from '@/components/character/ConditionManager';
-import { getAttributeDicePool } from '../attribute-dice-pool';
-import { getConditionTestDicePenalty } from '../conditions/condition-test-penalty';
 import { resolveConditionId } from '../conditions/condition-identity';
 import { BASE_RULES_PROFILE } from './base-profile';
 
@@ -15,6 +13,8 @@ export interface TurnEffect {
 export interface ConditionTurnResolution {
   profile: typeof BASE_RULES_PROFILE.id;
   revision: number;
+  /** Bônus declarado para o teste de Vigor; os dados de Sangrando são sorteados no servidor. */
+  bleedingModifier: number;
   effects: TurnEffect[];
   bleedingTests: Array<{ index: number; dice: number[]; kept: number; modifier: number; total: number; dt: number; passed: boolean }>;
   removeIndexes: number[];
@@ -32,7 +32,7 @@ export function parseRecurringDamage(formula: string): { count: number; faces: n
   return { count: Number(match[1]), faces: Number(match[2]), bonus: Number(match[4] ?? 0) * (match[3] === '-' ? -1 : 1) };
 }
 
-/** Sorteia uma prévia uma única vez. Não grava PV nem encerra condições por duração presumida. */
+/** Prepara efeitos declarados; Sangrando não sorteia dados nem altera PV no navegador. */
 export function prepareConditionTurn(conditions: ActiveCondition[], vigor: number, modifier = 0,
   random: () => number = Math.random): ConditionTurnResolution {
   if (!Number.isSafeInteger(vigor) || Math.abs(vigor) > 100 || !Number.isSafeInteger(modifier) || Math.abs(modifier) > 1000) {
@@ -44,11 +44,11 @@ export function prepareConditionTurn(conditions: ActiveCondition[], vigor: numbe
     return Math.floor(value * faces) + 1;
   };
   const resolution: ConditionTurnResolution = {
-    profile: BASE_RULES_PROFILE.id, revision: BASE_RULES_PROFILE.revision,
+    profile: BASE_RULES_PROFILE.id, revision: BASE_RULES_PROFILE.revision, bleedingModifier: modifier,
     effects: [], bleedingTests: [], removeIndexes: [], notices: [],
   };
-  const penalty = getConditionTestDicePenalty(conditions.map(condition => condition.id), 'vigor');
   let fireResolved = false;
+  let bleedingDeclared = false;
   for (const [index, condition] of conditions.entries()) {
     const id = resolveConditionId(condition.id);
     let formula: string | undefined;
@@ -65,14 +65,11 @@ export function prepareConditionTurn(conditions: ActiveCondition[], vigor: numbe
         resolution.notices.push(`Confuso: d6 = ${die}. Ataque com a arma empunhada o ser mais próximo; se estiver sozinho, role apenas o dano contra si. Resolva alvo e ataque com o mestre.`);
       }
     } else if (id === 'sangrando') {
-      const pool = getAttributeDicePool(vigor, penalty);
-      const dice = Array.from({ length: pool.count }, () => roll(20));
-      const kept = pool.keep === 'highest' ? Math.max(...dice) : Math.min(...dice);
-      const total = kept + modifier;
-      const passed = total >= 20; // Política personalizada do 20 natural.
-      resolution.bleedingTests.push({ index, dice, kept, modifier, total, dt: 20, passed });
-      if (passed) { resolution.removeIndexes.push(index); continue; }
-      formula = '1d6';
+      if (!bleedingDeclared) {
+        resolution.notices.push('Sangrando: teste de Vigor DT 20 e eventual 1d6 de perda de PV são resolvidos pelo servidor na confirmação. Não recebe RD; PV temporários gerais são gastos primeiro. O 20 natural segue a regra personalizada da mesa.');
+        bleedingDeclared = true;
+      }
+      continue;
     } else if (id === 'em-chamas' || id === 'em_chamas') {
       // A condição Em Chamas não multiplica o 1d6 por quantidade de fontes registradas.
       if (fireResolved) continue;

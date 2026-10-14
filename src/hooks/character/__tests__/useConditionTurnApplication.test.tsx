@@ -49,7 +49,9 @@ describe('Pedido transacional de início de turno',() => {
     await execute();expect(onConfirmed).toHaveBeenCalledOnce();
     const first=mocks.rpc.mock.calls[0][1],second=mocks.rpc.mock.calls[1][1];
     expect(second).toEqual(first); expect(first.p_expected.vigor).toBe(2);
-    expect(first.p_values).toEqual({hp:9,pe:4,san:15});
+    expect(first.p_values).toEqual({hp:10,pe:4,san:15});
+    expect(first.p_resolution.bleedingTests).toEqual([]);
+    expect(mocks.rpc.mock.calls[0][0]).toBe('confirm_character_condition_turn');
     expect(first.p_conditions.some((entry:{id:string;params?:{valor:number}}) => entry.id === 'caseira' && entry.params?.valor === 7)).toBe(true);
   });
   it('recibo de outra ficha não atualiza a ficha aberta depois',async () => {
@@ -62,7 +64,7 @@ describe('Pedido transacional de início de turno',() => {
   it('erro de atualização visual após confirmação não transforma commit em falha de aplicação',async () => {
     mocks.rpc.mockResolvedValue({data:{},error:null});
     const {result}=renderHook(() => useConditionTurnApplication(character,() => {throw new Error('Tela falhou');}));
-    await expect(result.current(prepareConditionTurn([],2))()).resolves.toBeUndefined();
+    await expect(result.current(prepareConditionTurn([],2))()).resolves.toMatchObject({id:'receipt'});
     expect(mocks.rpc).toHaveBeenCalledOnce();
   });
 });

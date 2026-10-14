@@ -39,7 +39,7 @@ export function useConditionTurnApplication(character: TurnCharacterSnapshot | n
         san_max: character.san_max, conditions: character.conditions }),
       p_conditions: activityJson(serializeConditions(newConditions)), p_resolution: activityJson(resolution) };
     return async () => {
-      const { data, error } = await awaitActivityResponse(activityClient.rpc('resolve_character_condition_turn', args));
+      const { data, error } = await awaitActivityResponse(activityClient.rpc('confirm_character_condition_turn', args));
       if (error) throw activityFailure('O início de turno não foi confirmado.', error);
       const receipt = confirmActivity(data, characterId, operationId);
       const refreshes = await Promise.allSettled([
@@ -52,6 +52,7 @@ export function useConditionTurnApplication(character: TurnCharacterSnapshot | n
         try { confirmedCallback.current(receipt); }
         catch { toast.warning('Turno confirmado no servidor. Recarregue a ficha para atualizar a visualização.'); }
       }
+      return receipt;
     };
   };
 }

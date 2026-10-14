@@ -7,13 +7,13 @@ const conditions: ActiveCondition[] = [{ id:'sangrando',name:'Sangrando',turnsRe
 afterEach(() => vi.restoreAllMocks());
 const preview = () => {
   fireEvent.click(screen.getByRole('button', { name:'Resolver início de turno' }));
-  fireEvent.click(screen.getByRole('button', { name:'Preparar testes e dados' }));
+  fireEvent.click(screen.getByRole('button', { name:'Conferir efeitos do turno' }));
 };
 describe('Confirmação de início de turno', () => {
   it('prévia e cancelamento não alteram recursos', () => {
     vi.spyOn(Math,'random').mockReturnValue(.5);
     const prepare = vi.fn(); render(<ConditionTurnResolver conditions={conditions} vigor={1} prepareApplication={prepare} />);
-    preview(); expect(screen.getByText(/total 11 contra DT 20/)).toBeInTheDocument();
+    preview(); expect(screen.getByText(/resolvidos pelo servidor na confirmação/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name:'Cancelar' })); expect(prepare).not.toHaveBeenCalled();
   });
   it('falha não informa sucesso; retry usa o mesmo pedido e os mesmos dados', async () => {
@@ -26,7 +26,16 @@ describe('Confirmação de início de turno', () => {
     expect(screen.queryByText('Efeitos confirmados e registrados no histórico da ficha.')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name:'Repetir a mesma confirmação' }));
     await screen.findByText('Efeitos confirmados e registrados no histórico da ficha.');
-    expect(prepare).toHaveBeenCalledTimes(1); expect(apply).toHaveBeenCalledTimes(2); expect(random).toHaveBeenCalledTimes(2);
+    expect(prepare).toHaveBeenCalledTimes(1); expect(apply).toHaveBeenCalledTimes(2); expect(random).not.toHaveBeenCalled();
+  });
+  it('mostra os dados de Sangrando somente depois do recibo do servidor', async () => {
+    const apply = vi.fn().mockResolvedValue({payload:{resolution:{bleedingTests:[{dice:[18],total:18,passed:false}],
+      effects:[{conditionId:'sangrando',finalAmount:4}]}}});
+    render(<ConditionTurnResolver conditions={conditions} vigor={1} prepareApplication={() => apply} />);
+    preview();
+    expect(screen.queryByText(/dados \[18\]/)).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'Confirmar efeitos na ficha'}));
+    expect(await screen.findByText(/dados \[18\], total 18 contra DT 20/)).toHaveTextContent('temporários são gastos primeiro');
   });
   it('ignora clique duplicado e impede cancelamento enquanto aguarda o servidor', async () => {
     vi.spyOn(Math,'random').mockReturnValue(.5);
@@ -43,7 +52,7 @@ describe('Confirmação de início de turno', () => {
     const view = render(<ConditionTurnResolver conditions={conditions} vigor={1} prepareApplication={first} />);
     fireEvent.click(screen.getByRole('button',{ name:'Resolver início de turno' }));
     view.rerender(<ConditionTurnResolver conditions={[]} vigor={5} prepareApplication={other} />);
-    fireEvent.click(screen.getByRole('button',{ name:'Preparar testes e dados' }));
+    fireEvent.click(screen.getByRole('button',{ name:'Conferir efeitos do turno' }));
     fireEvent.click(screen.getByRole('button',{ name:'Confirmar efeitos na ficha' }));
     await waitFor(() => expect(first).toHaveBeenCalledOnce()); expect(other).not.toHaveBeenCalled();
   });
