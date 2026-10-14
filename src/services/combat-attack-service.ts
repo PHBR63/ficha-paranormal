@@ -17,6 +17,7 @@ export interface CombatCostSelection {
   sneakAttack: boolean;
   sneakAttackContext?: SneakAttackDeclaration;
   lethalShot: boolean;
+  mirarDeclared?: boolean;
   techniques: string[];
   lethalCount: number;
   otherPaidBonuses: string[];
