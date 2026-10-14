@@ -234,15 +234,16 @@ describe('Integração: getTrackEffects ↔ consolidateEffects (SUE)', () => {
   });
 
   describe('Trilha Infiltrador', () => {
-    it('Ataque Furtivo deve adicionar dados extras de dano', () => {
+    it('Ataque Furtivo fica disponível sem somar dano passivo', () => {
       const result = consolidateTrackEffectsForTest(
         'infiltrador',
         50,
         ['track-ataque-furtivo-trilha']
       );
       
-      // Ataque Furtivo adiciona dados extras
-      expect(result.damage.extraDice.length).toBeGreaterThanOrEqual(1);
+      expect(result.sneakAttack.available).toBe(true);
+      expect(result.sneakAttack.baseDice).toBe(2);
+      expect(result.damage.extraDice).toEqual([]);
     });
 
     it('Assassinar deve dobrar dados do Ataque Furtivo', () => {
@@ -392,7 +393,7 @@ describe('Integração: SUE ↔ getTrackCombatBonuses', () => {
     expect(combatBonuses.criticalMarginBonus).toBe(2);
   });
 
-  it('Infiltrador com Ataque Furtivo deve retornar dados extras', () => {
+  it('Infiltrador mantém Ataque Furtivo na mecânica dedicada', () => {
     const activatedIds = ['track-ataque-furtivo-trilha'];
     
     const combatBonuses = getTrackCombatBonuses(
@@ -403,8 +404,9 @@ describe('Integração: SUE ↔ getTrackCombatBonuses', () => {
       activatedIds
     );
     
-    // Deve ter dados extras de dano
-    expect(combatBonuses.extraDamageDice.length).toBeGreaterThanOrEqual(1);
+    expect(combatBonuses.extraDamageDice).toEqual([]);
+    expect(getTrackEffects('infiltrador', 50, DEFAULT_ATTRIBUTES, activatedIds)
+      .some(effect => effect.mechanics.sneakAttack?.baseDice === 1)).toBe(true);
   });
 });
 

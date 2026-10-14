@@ -314,6 +314,7 @@ export function MobileCharacterSheet({
   // Estados dos modais de combate mobile
   const [combatModalOpen, setCombatModalOpen] = useState(false);
   const [selectedWeapon, setSelectedWeapon] = useState<WeaponEntry | null>(null);
+  const [pendingAttack, setPendingAttack] = useState(false);
   const [diceModalOpen, setDiceModalOpen] = useState(false);
   const [diceModalConfig, setDiceModalConfig] = useState<{
     skillName: string;
@@ -947,9 +948,10 @@ export function MobileCharacterSheet({
 
   // Handler para abrir combate com arma
   const handleOpenCombat = useCallback((weapon: WeaponEntry) => {
-    setSelectedWeapon(weapon);
+    // Não substitui a intenção pendente por outra arma enquanto o servidor não responder.
+    if (!pendingAttack) setSelectedWeapon(weapon);
     setCombatModalOpen(true);
-  }, []);
+  }, [pendingAttack]);
 
   // Memo de poderes ativáveis para rolagens (paridade com desktop)
   // Extrai perícias escolhidas para Perito de class_power_choices
@@ -2570,9 +2572,10 @@ export function MobileCharacterSheet({
         <MobileCombatRollModal
           ammunition={character.inventory.filter(item => item.itemType === 'consumable') as any}
           open={combatModalOpen}
-          onClose={() => {
+          onClose={(pending = false) => {
+            setPendingAttack(pending);
             setCombatModalOpen(false);
-            setSelectedWeapon(null);
+            if (!pending) setSelectedWeapon(null);
           }}
           weapon={selectedWeapon}
           attributes={{

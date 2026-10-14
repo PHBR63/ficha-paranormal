@@ -197,12 +197,14 @@ export function CombatWeaponsTable({
   // Estado do modal de combate
   const [selectedWeapon, setSelectedWeapon] = useState<WeaponEntry | null>(null);
   const [combatModalOpen, setCombatModalOpen] = useState(false);
+  const [pendingAttack, setPendingAttack] = useState(false);
 
   // Handler de clique na arma
   const handleWeaponClick = (weapon: WeaponEntry) => {
     // Se temos os dados necessários, abre o modal de combate completo
     if (attributes && skills && currentPE !== undefined && onPEChange) {
-      setSelectedWeapon(weapon);
+      // Um retry incerto pertence à arma e ao sorteio originais.
+      if (!pendingAttack) setSelectedWeapon(weapon);
       setCombatModalOpen(true);
     } else if (onRollAttack) {
       // Fallback para comportamento antigo
@@ -388,9 +390,10 @@ export function CombatWeaponsTable({
         <CombatRollModal
           ammunition={ammunition}
           open={combatModalOpen}
-          onClose={() => {
+          onClose={(pending = false) => {
+            setPendingAttack(pending);
             setCombatModalOpen(false);
-            setSelectedWeapon(null);
+            if (!pending) setSelectedWeapon(null);
           }}
           weapon={selectedWeapon}
           attributes={attributes}
