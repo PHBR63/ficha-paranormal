@@ -736,12 +736,12 @@ export function CombatRollModal({
     }
     
     // Adicionar custo do Disparo Letal se ativo (Atirador de Elite)
-    if (isAtiradorElite && disparoLetalConfig.enabled) {
+    if (isAtiradorElite && disparoLetalResult.enabled) {
       total += disparoLetalResult.peCost;
     }
     
     return total + (activeTechniqueEffects?.peCost ?? 0);
-  }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalConfig.enabled, disparoLetalResult.peCost]);
+  }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalResult.enabled, disparoLetalResult.peCost]);
 
   // Verificar se pode pagar o PE
   const canAffordPE = currentPE + temporaryPE >= totalPECost;
@@ -1252,12 +1252,12 @@ export function CombatRollModal({
     
     // === DISPARO LETAL (Atirador de Elite NEX 40%): +2 margem de ameaça ===
     // Aplicação direta quando ativado no seletor de combate
-    if (isAtiradorElite && disparoLetalConfig.enabled) {
+    if (isAtiradorElite && disparoLetalResult.enabled) {
       critical -= disparoLetalResult.criticalMarginBonus;
     }
     
     return Math.max(1, critical); // Mínimo de 1
-  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex, trackCombatBonuses, isAtiradorElite, disparoLetalConfig.enabled, disparoLetalResult.criticalMarginBonus]);
+  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex, trackCombatBonuses, isAtiradorElite, disparoLetalResult.enabled, disparoLetalResult.criticalMarginBonus]);
 
   // Multiplicador de crítico da arma (incluindo SUE, weapon buffs, trilha e Técnicas)
   // Conversão segura para string - pode vir como número ou string
@@ -1343,7 +1343,8 @@ export function CombatRollModal({
       specialAttackIncrements: specialAttackConfig.enabled ? specialAttackConfig.attackIncrements + specialAttackConfig.damageIncrements : 0,
       sneakAttack: !!(isInfiltrador && sneakAttackConfig.enabled),
       ...(isInfiltrador && sneakAttackConfig.enabled ? { sneakAttackContext: sneakAttackConfig.declaration as SneakAttackDeclaration } : {}),
-      lethalShot: !!(isAtiradorElite && disparoLetalConfig.enabled),
+      lethalShot: !!(isAtiradorElite && disparoLetalResult.enabled),
+      mirarDeclared: !!(isAtiradorElite && disparoLetalResult.enabled && disparoLetalConfig.mirarDeclared),
       techniques: [...(activeTechniqueEffects?.selectedTechniques ?? [])],
       lethalCount: activeTechniqueEffects?.letalCount ?? 0,
       otherPaidBonuses: selectedBonuses.filter(id => (availableBonuses.find(b => b.id === id)?.peCost ?? 0) > 0),
@@ -1383,6 +1384,8 @@ export function CombatRollModal({
         }
 
         setAttackResult(result);
+        // O próximo ataque consumiu a declaração; um novo disparo exige Mirar novamente.
+        if (selection.lethalShot) resetDisparoLetal();
         setPhase('attack');
         onRollComplete?.(result);
       },

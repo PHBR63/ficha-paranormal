@@ -10,9 +10,22 @@ DO $$
 DECLARE c uuid:='00000000-0000-4000-8000-000000000952';
  receipt public.character_activity_events; repeated public.character_activity_events;
  track_id text; current_pe integer; event_count integer;
- selection jsonb:='{"weaponId":"qa-rifle","specialAttackIncrements":0,"sneakAttack":false,"lethalShot":true,"techniques":[],"lethalCount":0,"otherPaidBonuses":[]}';
+ selection jsonb:='{"weaponId":"qa-rifle","specialAttackIncrements":0,"sneakAttack":false,"lethalShot":true,"mirarDeclared":true,"techniques":[],"lethalCount":0,"otherPaidBonuses":[]}';
  payload jsonb:='{"entry":{"type":"attack","label":"Disparo QA","results":[12],"diceCount":1,"bestResult":12,"skillBonus":5,"otherBonuses":0,"bonus":5,"total":17}}';
 BEGIN
+ -- Sem Mirar declarado, o servidor deve recusar antes de gastar PE ou criar histórico.
+ FOREACH track_id IN ARRAY ARRAY['missing','false','invalid'] LOOP
+  BEGIN
+   PERFORM public.confirm_character_combat_attack(gen_random_uuid(),c,20,1,NULL,
+    CASE track_id WHEN 'missing' THEN selection-'mirarDeclared'
+      WHEN 'false' THEN jsonb_set(selection,'{mirarDeclared}','false'::jsonb)
+      ELSE jsonb_set(selection,'{mirarDeclared}','"sim"'::jsonb) END,payload);
+   RAISE EXCEPTION 'Mirar % aceito sem declaração válida',track_id;
+  EXCEPTION WHEN SQLSTATE '22023' THEN NULL; END;
+ END LOOP;
+ IF (SELECT pe_current FROM public.characters WHERE id=c)<>20
+  OR EXISTS(SELECT 1 FROM public.character_activity_events WHERE character_id=c) THEN
+  RAISE EXCEPTION 'Recusa de Mirar alterou saldo ou histórico'; END IF;
  -- ID do catálogo, legado e nomes normalizados devem cobrar uma única vez.
  FOREACH track_id IN ARRAY ARRAY['atirador-elite','atirador-de-elite','Atirador de Elite','atirador_elite'] LOOP
   UPDATE public.characters SET class_track=track_id WHERE id=c;
@@ -20,6 +33,7 @@ BEGIN
   receipt:=public.confirm_character_combat_attack(gen_random_uuid(),c,current_pe,1,NULL,selection,payload);
   repeated:=public.confirm_character_combat_attack(receipt.operation_id,c,current_pe,1,NULL,selection,payload);
   IF receipt.id<>repeated.id OR receipt.payload->>'peCost'<>'1'
+   OR receipt.payload->'selection'->'mirarDeclared' IS DISTINCT FROM 'true'::jsonb
    OR (SELECT pe_current FROM public.characters WHERE id=c)<>current_pe-1
    OR (SELECT count(*) FROM public.character_activity_events WHERE operation_id=receipt.operation_id)<>1 THEN
    RAISE EXCEPTION 'Alias % ou repetição incorreta',track_id;

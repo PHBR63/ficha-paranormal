@@ -4,20 +4,21 @@
  * Funcionalidades:
  * - Toggle para ativar/desativar Disparo Letal
  * - Mostra custo de 1 PE e efeito (+2 margem de ameaça)
- * - Verifica se requer ação Mirar (informativo)
+ * - Exige declaração da ação Mirar antes da ativação
  * - Valida PE disponível
  * 
  * Regra oficial (Livro Base v1.3):
- * "Uma vez por rodada, quando faz a ação Mirar, você pode gastar 1 PE para aumentar
+ * "Quando faz a ação Mirar, você pode gastar 1 PE para aumentar
  * em +2 a margem de ameaça do próximo ataque até o final de seu próximo turno."
  * 
  * @module DisparoLetalSelector
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crosshair, AlertCircle, Zap, Info } from '@/components/icons/ordem-icons';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,7 @@ import { cn } from '@/lib/utils';
 /** Configuração do Disparo Letal */
 export interface DisparoLetalConfig {
   enabled: boolean;
+  mirarDeclared: boolean;
 }
 
 /** Resultado do cálculo do Disparo Letal */
@@ -77,7 +79,7 @@ export function calculateDisparoLetalResult(
   }
 
   // Se não está habilitado, retorna valores zerados
-  if (!config.enabled) {
+  if (!config.enabled || !config.mirarDeclared) {
     return {
       enabled: false,
       peCost: 0,
@@ -96,7 +98,7 @@ export function calculateDisparoLetalResult(
  * Cria uma configuração vazia/desabilitada
  */
 export function createEmptyDisparoLetalConfig(): DisparoLetalConfig {
-  return { enabled: false };
+  return { enabled: false, mirarDeclared: false };
 }
 
 // =====================================================
@@ -135,20 +137,30 @@ export function DisparoLetalSelector({
   // Valida NEX mínimo
   const isUnlocked = nex >= DISPARO_LETAL_MIN_NEX;
   
-  // Calcula resultado
-  const result = useMemo(() => 
-    calculateDisparoLetalResult(nex, config),
-    [nex, config]
-  );
-  
   // Valida PE disponível
   const canAfford = currentPE >= DISPARO_LETAL_PE_COST;
   const showInsufficientPE = config.enabled && !canAfford;
 
   // Handler para toggle
   const handleToggle = (enabled: boolean) => {
-    onConfigChange({ enabled });
+    onConfigChange({ ...config, enabled: enabled && config.mirarDeclared });
   };
+
+  /** A declaração vale somente para este ataque e é retirada junto da ativação. */
+  const handleMirarDeclaration = (declared: boolean) => {
+    onConfigChange({ enabled: declared && config.enabled, mirarDeclared: declared });
+  };
+
+  const mirarControl = (
+    <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs leading-5 text-foreground">
+      <Checkbox
+        checked={config.mirarDeclared}
+        onCheckedChange={checked => handleMirarDeclaration(checked === true)}
+        aria-label="Confirmo que fiz a ação Mirar e este é o próximo ataque no prazo"
+      />
+      <span>Fiz a ação Mirar; este é meu próximo ataque até o fim do meu próximo turno.</span>
+    </label>
+  );
 
   // Se não tem NEX suficiente, não renderiza
   if (!isUnlocked) return null;
@@ -189,10 +201,11 @@ export function DisparoLetalSelector({
           <Switch
             checked={config.enabled}
             onCheckedChange={handleToggle}
-            disabled={!canAfford && !config.enabled}
+            disabled={(!canAfford || !config.mirarDeclared) && !config.enabled}
             className="data-[state=checked]:bg-amber-500"
           />
         </div>
+        {mirarControl}
         
         {/* Aviso de PE insuficiente */}
         <AnimatePresence>
@@ -253,7 +266,7 @@ export function DisparoLetalSelector({
                     <p className="text-xs">
                       <strong>Requisito:</strong> Ação Mirar<br />
                       <strong>Duração:</strong> Até final do próximo turno<br />
-                      <strong>Limite:</strong> 1x por rodada
+                      <strong>Uso:</strong> Próximo ataque no prazo
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -287,10 +300,11 @@ export function DisparoLetalSelector({
         <Switch
           checked={config.enabled}
           onCheckedChange={handleToggle}
-          disabled={!canAfford && !config.enabled}
+          disabled={(!canAfford || !config.mirarDeclared) && !config.enabled}
           className="data-[state=checked]:bg-amber-500"
         />
       </div>
+      {mirarControl}
       
       {/* Aviso de PE insuficiente */}
       <AnimatePresence>

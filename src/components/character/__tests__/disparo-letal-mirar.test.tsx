@@ -1,0 +1,32 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  calculateDisparoLetalResult,
+  createEmptyDisparoLetalConfig,
+  DisparoLetalSelector,
+} from '../DisparoLetalSelector';
+
+describe.each(['default', 'compact'] as const)('Disparo Letal no layout %s', variant => {
+  it('exige declarar Mirar antes de oferecer o gasto e o bônus', () => {
+    const onConfigChange = vi.fn();
+    const initial = createEmptyDisparoLetalConfig();
+    const { rerender } = render(<DisparoLetalSelector nex={40} currentPE={2}
+      config={initial} onConfigChange={onConfigChange} variant={variant} />);
+    const toggle = screen.getByRole('switch');
+    expect(toggle.hasAttribute('disabled')).toBe(true);
+    expect(calculateDisparoLetalResult(40, { enabled: true, mirarDeclared: false })).toEqual({
+      enabled: false, peCost: 0, criticalMarginBonus: 0,
+    });
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo que fiz a ação Mirar/ }));
+    expect(onConfigChange).toHaveBeenLastCalledWith({ enabled: false, mirarDeclared: true });
+    rerender(<DisparoLetalSelector nex={40} currentPE={2}
+      config={{ enabled: false, mirarDeclared: true }} onConfigChange={onConfigChange} variant={variant} />);
+    expect(screen.getByRole('switch').hasAttribute('disabled')).toBe(false);
+    fireEvent.click(screen.getByRole('switch'));
+    expect(onConfigChange).toHaveBeenLastCalledWith({ enabled: true, mirarDeclared: true });
+    expect(calculateDisparoLetalResult(40, { enabled: true, mirarDeclared: true })).toEqual({
+      enabled: true, peCost: 1, criticalMarginBonus: 2,
+    });
+  });
+});

@@ -677,11 +677,11 @@ export function MobileCombatRollModal({
       total += sneakAttackResult.peCost;
     }
     // Adicionar custo do Disparo Letal se ativo (Atirador de Elite)
-    if (isAtiradorElite && disparoLetalConfig.enabled) {
+    if (isAtiradorElite && disparoLetalResult.enabled) {
       total += disparoLetalResult.peCost;
     }
     return total + (activeTechniqueEffects?.peCost ?? 0);
-  }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalConfig.enabled, disparoLetalResult.peCost]);
+  }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalResult.enabled, disparoLetalResult.peCost]);
 
   const canAffordPE = currentPE + temporaryPE >= totalPECost;
 
@@ -1116,12 +1116,12 @@ export function MobileCombatRollModal({
     
     // === DISPARO LETAL (Atirador de Elite NEX 40%): +2 margem de ameaça ===
     // Aplicação direta quando ativado no seletor de combate
-    if (isAtiradorElite && disparoLetalConfig.enabled) {
+    if (isAtiradorElite && disparoLetalResult.enabled) {
       margin -= disparoLetalResult.criticalMarginBonus;
     }
     
     return Math.max(1, margin);
-  }, [weapon, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex, passiveBonuses, trackCombatBonuses, isAtiradorElite, disparoLetalConfig.enabled, disparoLetalResult.criticalMarginBonus]);
+  }, [weapon, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex, passiveBonuses, trackCombatBonuses, isAtiradorElite, disparoLetalResult.enabled, disparoLetalResult.criticalMarginBonus]);
   
   // Multiplicador de crítico efetivo (conversão segura para string)
   const criticalMultiplier = useMemo(() => {
@@ -1192,7 +1192,8 @@ export function MobileCombatRollModal({
       specialAttackIncrements: specialAttackConfig.enabled ? specialAttackConfig.attackIncrements + specialAttackConfig.damageIncrements : 0,
       sneakAttack: !!(isInfiltrador && sneakAttackConfig.enabled),
       ...(isInfiltrador && sneakAttackConfig.enabled ? { sneakAttackContext: sneakAttackConfig.declaration as SneakAttackDeclaration } : {}),
-      lethalShot: !!(isAtiradorElite && disparoLetalConfig.enabled),
+      lethalShot: !!(isAtiradorElite && disparoLetalResult.enabled),
+      mirarDeclared: !!(isAtiradorElite && disparoLetalResult.enabled && disparoLetalConfig.mirarDeclared),
       techniques: [...(activeTechniqueEffects?.selectedTechniques ?? [])],
       lethalCount: activeTechniqueEffects?.letalCount ?? 0,
       otherPaidBonuses: selectedBonuses.filter(id => (availableBonuses.find(b => b.id === id)?.peCost ?? 0) > 0),
@@ -1205,6 +1206,8 @@ export function MobileCombatRollModal({
       confirmOperation: onConfirmAttack ? () => onConfirmAttack(request) : undefined,
       onConfirmed: (result) => {
         setAttackResult(result);
+        // A declaração de Mirar não pode ser reutilizada após o ataque confirmado.
+        if (selection.lethalShot) resetDisparoLetal();
         setIsRolling(false);
         setPhase('attack');
 
@@ -1249,7 +1252,7 @@ export function MobileCombatRollModal({
       },
 
     }).finally(() => { preparingAttack.current = false; setIsRolling(false); });
-  }, [visibility, attackerBlind, visibilityUnavailable, burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, sneakAttackError, isAtiradorElite, disparoLetalConfig, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
+  }, [visibility, attackerBlind, visibilityUnavailable, burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, sneakAttackError, isAtiradorElite, disparoLetalConfig, disparoLetalResult.enabled, resetDisparoLetal, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
