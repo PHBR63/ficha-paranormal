@@ -59,6 +59,7 @@ export interface RollHistoryEntry {
   criticalThreshold?: number;
   isDisadvantage?: boolean;
   concealmentResult?: import('@/lib/attack-concealment').ConcealmentResult;
+  sneakAttackResult?: import('@/lib/sneak-attack-context').SneakAttackResult;
   total: number;
   // Contexto adicional
   targetDT?: number;

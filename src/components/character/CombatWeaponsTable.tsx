@@ -39,6 +39,7 @@ export interface WeaponEntry {
   ammoCurrenteRent?: number;
   ammoMax?: number;
   range?: string;
+  baseRange?: string;
   critical?: string; // Valor de crítico (ex: "19")
   criticalMultiplier?: string; // Multiplicador (ex: "x3")
   special?: string; // Propriedades especiais

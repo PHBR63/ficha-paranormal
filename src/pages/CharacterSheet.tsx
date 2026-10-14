@@ -2483,6 +2483,7 @@ export default function CharacterSheet() {
       damage: item.damage || '1d6',
       damageType: item.damageType,
       range: item.range,
+      baseRange: 'baseRange' in item && typeof item.baseRange === 'string' ? item.baseRange : undefined,
       critical: item.critical ? `${item.critical}` : undefined,
       criticalMultiplier: item.criticalMultiplier 
         ? (typeof item.criticalMultiplier === 'number' 

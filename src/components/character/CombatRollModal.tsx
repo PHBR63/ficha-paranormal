@@ -50,6 +50,7 @@ import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 // Integração SUE: useCombatRollWithSUE encapsula rollAttackWithContext e rollDamageWithContext
 // com integração completa ao SUE para bônus automáticos
 import { useCombatRollWithSUE, type WeaponEntryCompat } from '@/hooks/use-combat-roll-with-sue';
+import { validateSneakAttackDeclaration, type SneakAttackDeclaration } from '@/lib/sneak-attack-context';
 import { ComputedEffects } from '@/lib/unified-effects-engine';
 import { getWeaponDamageEffects, hasLongFirearmDamage } from '@/lib/effects/weapon-damage-effects';
 import { getSkillBonus } from '@/lib/character-data';
@@ -78,6 +79,7 @@ interface WeaponEntry {
   ammoCurrenteRent?: number;
   ammoMax?: number;
   range?: string;
+  baseRange?: string;
   critical?: string;
   criticalMultiplier?: string;
   special?: string;
@@ -460,6 +462,13 @@ export function CombatRollModal({
   const isInfiltrador = useMemo(() => 
     classTrack?.toLowerCase().includes('infiltrador'),
   [classTrack]);
+  const sneakAttackError = isInfiltrador && sneakAttackConfig.enabled
+    ? !onConfirmAttack ? 'Ataque Furtivo exige confirmação pelo servidor.'
+      : targetDefense === null ? 'Informe a Defesa do alvo para cobrar Ataque Furtivo somente no acerto.'
+        : !Number.isSafeInteger(targetDefense) || targetDefense < 0 || targetDefense > 1000
+          ? 'Defesa do alvo inválida. Informe um valor entre 0 e 1000.'
+        : validateSneakAttackDeclaration(weapon, sneakAttackConfig.declaration)
+    : null;
   
   // Verifica se é Atirador de Elite
   const isAtiradorElite = useMemo(() => 
@@ -490,8 +499,11 @@ export function CombatRollModal({
   const attackConfirmation = useConfirmedDiceRoll();
   const preparingAttack = useRef(false);
   const [burstEnabled, setBurstEnabled] = useState(false);
-  useEffect(() => { setBurstEnabled(false);
-    setVisibility(value => ({ ...value, confirmed: false })); }, [open, weapon?.id]);
+  useEffect(() => {
+    setBurstEnabled(false);
+    setVisibility(value => ({ ...value, confirmed: false }));
+    resetSneakAttack();
+  }, [open, weapon?.id, resetSneakAttack]);
   const burst = resolveWeaponBurst(weapon, burstEnabled);
 
   // Reset ao abrir/fechar
@@ -1302,7 +1314,7 @@ export function CombatRollModal({
   const handleRollAttack = () => {
     if (preparingAttack.current || attackConfirmation.confirming) return;
     if (attackConfirmation.pending) { void attackConfirmation.confirm(); return; }
-    if (!weapon || !canAffordPE || confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable) return;
+    if (!weapon || !canAffordPE || confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable || sneakAttackError) return;
     preparingAttack.current = true;
 
     // Feedback de rolagem
@@ -1328,6 +1340,7 @@ export function CombatRollModal({
       burst: burst.enabled,
       specialAttackIncrements: specialAttackConfig.enabled ? specialAttackConfig.attackIncrements + specialAttackConfig.damageIncrements : 0,
       sneakAttack: !!(isInfiltrador && sneakAttackConfig.enabled),
+      ...(isInfiltrador && sneakAttackConfig.enabled ? { sneakAttackContext: sneakAttackConfig.declaration as SneakAttackDeclaration } : {}),
       lethalShot: !!(isAtiradorElite && disparoLetalConfig.enabled),
       techniques: [...(activeTechniqueEffects?.selectedTechniques ?? [])],
       lethalCount: activeTechniqueEffects?.letalCount ?? 0,
@@ -2166,6 +2179,7 @@ export function CombatRollModal({
                 {/* === ATAQUE FURTIVO (Infiltrador) com seleção de PE extra === */}
                 {isInfiltrador && (
                   <SneakAttackSelector
+                    weapon={weapon}
                     nex={nex}
                     currentPE={currentPE + temporaryPE}
                     assassinarActive={advancedBonuses.assassinar || false}
@@ -2442,13 +2456,14 @@ export function CombatRollModal({
                     "p-2 rounded text-sm text-center",
                     canAffordPE ? "bg-blue-500/10 text-blue-400" : "bg-destructive/10 text-destructive"
                   )}>
-                    Custo: {totalPECost} PE (você tem {currentPE}/{maxPE})
+                    {isInfiltrador && sneakAttackConfig.enabled ? 'Custo máximo' : 'Custo'}: {totalPECost} PE (você tem {currentPE}/{maxPE})
                   </div>
                 )}
 
 </div>
                 {temporaryPE > 0 && <p className="text-sm text-muted-foreground">PE disponíveis: {currentPE} normais + {temporaryPE} temporários. Temporários são consumidos primeiro.</p>}
         {confirmationUnavailable && !attackConfirmation.pending && <p role="status" className="p-3 text-sm text-muted-foreground">{confirmationUnavailable}</p>}
+        {sneakAttackError && !attackConfirmation.pending && <p role="alert" className="p-3 text-sm text-destructive">{sneakAttackError}</p>}
         {attackConfirmation.error && (
           <p role="alert" className="p-3 text-sm text-destructive">{attackConfirmation.error}</p>
         )}
@@ -2457,7 +2472,7 @@ export function CombatRollModal({
                   className="w-full font-display"
                   size="lg"
                   onClick={handleRollAttack}
-                  disabled={attackConfirmation.confirming || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable))}
+                  disabled={attackConfirmation.confirming || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable || !!sneakAttackError))}
                 >
                   <Dices className="w-5 h-5 mr-2" />
                   {attackConfirmation.confirming ? "CONFIRMANDO PE…" : attackConfirmation.pending ? "TENTAR CONFIRMAR ATAQUE" : "ROLAR ATAQUE"}
@@ -2475,6 +2490,16 @@ export function CombatRollModal({
                 className="space-y-4"
               >
                 {/* Pool de dados */}
+                {attackResult.sneakAttackResult && (
+                  <p role="status" className="rounded border border-purple-500/30 bg-purple-950/30 p-2 text-sm">
+                    {attackResult.sneakAttackResult.applied
+                      ? 'Ataque Furtivo aplicado: 1 PE cobrado neste acerto.'
+                      : 'Ataque Furtivo não aplicado: ataque falhou; 0 PE da habilidade cobrado.'}
+                    {!attackResult.sneakAttackResult.applied
+                      ? ' Uso da rodada preservado.'
+                      : !attackResult.sneakAttackResult.roundLimitChecked && ' Limite por rodada: conferência da mesa.'}
+                  </p>
+                )}
                 <div className="flex flex-wrap justify-center gap-2">
                   {attackResult.dice.map((die, i) => (
                     <AnimatedDie
@@ -2619,6 +2644,7 @@ export function CombatRollModal({
                           className="w-full"
                           onClick={() => {
                             setPhase('setup');
+                            resetSneakAttack();
                             setBurstEnabled(false);
     setVisibility(value => ({ ...value, confirmed: false }));
                             setAttackResult(null);
@@ -2929,6 +2955,7 @@ export function CombatRollModal({
                     className="flex-1"
                     onClick={() => {
                       setPhase('setup');
+                      resetSneakAttack();
                       setBurstEnabled(false);
     setVisibility(value => ({ ...value, confirmed: false }));
                       setAttackResult(null);

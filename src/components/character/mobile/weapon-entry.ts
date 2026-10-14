@@ -7,6 +7,7 @@ type MobileWeaponInventoryData = Parameters<typeof normalizeWeaponTypeForDisplay
   Pick<InventoryItem, 'id' | 'name' | 'ammoCurrent' | 'ammoMax' | 'favoriteAbilityId'> & {
     catalogId?: string; properties?: string[]; special?: string;
     damage?: string;
+    baseRange?: string;
     appliedModifications?: string[];
     attackBonus?: number;
     specialEffects?: string[];
@@ -32,6 +33,7 @@ export function toMobileWeaponEntry(item: MobileWeaponInventoryData): WeaponEntr
       ? `x${item.criticalMultiplier}`
       : item.criticalMultiplier || 'x2',
     range: item.range,
+    baseRange: item.baseRange,
     catalogId: item.catalogId, weaponType: item.weaponType, properties: item.properties, special: item.special,
     appliedModifications: item.appliedModifications,
     modificationAttackBonus: item.attackBonus,
