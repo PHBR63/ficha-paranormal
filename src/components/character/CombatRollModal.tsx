@@ -141,7 +141,7 @@ interface BonusSourceDisplay {
 // Props do modal
 interface CombatRollModalProps {
   open: boolean;
-  onClose: () => void;
+  onClose: (pendingAttack?: boolean) => void;
   weapon: WeaponEntry | null;
   
   // Atributos do personagem
@@ -508,7 +508,9 @@ export function CombatRollModal({
 
   // Reset ao abrir/fechar
   const handleClose = () => {
-    if (attackConfirmation.confirming || attackConfirmation.pending) return;
+    if (attackConfirmation.confirming || (attackConfirmation.pending && !attackConfirmation.error)) return;
+    // Uma resposta incerta pode ter consumido PE: o pai guarda esta arma e reabre a mesma intenção.
+    if (attackConfirmation.pending) { onClose(true); return; }
     attackConfirmation.reset();
     setPhase('setup');
     setBurstEnabled(false);
@@ -2465,7 +2467,10 @@ export function CombatRollModal({
         {confirmationUnavailable && !attackConfirmation.pending && <p role="status" className="p-3 text-sm text-muted-foreground">{confirmationUnavailable}</p>}
         {sneakAttackError && !attackConfirmation.pending && <p role="alert" className="p-3 text-sm text-destructive">{sneakAttackError}</p>}
         {attackConfirmation.error && (
-          <p role="alert" className="p-3 text-sm text-destructive">{attackConfirmation.error}</p>
+          <p role="alert" className="p-3 text-sm text-destructive">
+            {attackConfirmation.error}
+            {attackConfirmation.pending && ' Você pode fechar esta janela e reabrir a arma para confirmar o mesmo ataque. Não inicie outro ataque antes disso.'}
+          </p>
         )}
                 {/* Botão de rolar */}
                 <Button

@@ -17,7 +17,7 @@
 //
 
 import { describe, it, expect } from 'vitest';
-import { calculateTrackBonuses, createEmptyTrackBonusSummary, hasTrackAbility } from '@/lib/class-powers/track-effects-engine';
+import { calculateSneakAttackDice, calculateTrackBonuses, createEmptyTrackBonusSummary, hasTrackAbility } from '@/lib/class-powers/track-effects-engine';
 import { getTrackCombatBonuses } from '@/lib/effects/track-effects-adapter';
 import type { TrackCalculationContext, TrackBonusSummary } from '@/lib/class-powers/track-types';
 import type { AttributeType } from '@/lib/unified-effects-engine';
@@ -137,16 +137,15 @@ describe('Integração: calculateTrackBonuses com getTrackCombatBonuses', () => 
   });
 
   describe('Infiltrador - Escalonamento de Ataque Furtivo', () => {
-    it('dados de ataque furtivo devem escalar corretamente', () => {
+    it('dados de ataque furtivo escalam na ativação, sem bônus passivo', () => {
       const dice10 = getTrackCombatBonuses('infiltrador', 10, defaultAttributes, 'melee');
       const dice40 = getTrackCombatBonuses('infiltrador', 40, defaultAttributes, 'melee');
       const dice65 = getTrackCombatBonuses('infiltrador', 65, defaultAttributes, 'melee');
       const dice99 = getTrackCombatBonuses('infiltrador', 99, defaultAttributes, 'melee');
       
-      expect(dice10.extraDamageDice.join('')).toContain('1d6');
-      expect(dice40.extraDamageDice.join('')).toContain('2d6');
-      expect(dice65.extraDamageDice.join('')).toContain('3d6');
-      expect(dice99.extraDamageDice.join('')).toContain('4d6');
+      expect([dice10, dice40, dice65, dice99].every(bonus => bonus.extraDamageDice.length === 0)).toBe(true);
+      expect([10, 40, 65, 99].map(nex => calculateSneakAttackDice(nex, false)))
+        .toEqual(['+1d6', '+2d6', '+3d6', '+4d6']);
     });
   });
 });

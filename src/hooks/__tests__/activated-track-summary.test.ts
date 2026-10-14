@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { useBonusSummaryFromSUE } from '../useBonusSummaryFromSUE';
 import { getTrackEffects } from '@/lib/effects/track-effects-adapter';
 import { useOperacoesEspeciaisTrack, OPERACOES_ABILITIES } from '@/components/character/tracks/combatente/useOperacoesEspeciaisTrack';
+import { TestQueryClientProvider } from '@/test/TestQueryClientProvider';
 
 const attributes = { strength: 2, agility: 2, intellect: 2, presence: 2, vigor: 3 };
 
@@ -32,7 +33,7 @@ describe('Habilidades ativadas no resumo da ficha', () => {
     const { result, rerender } = renderHook(({ activatedEffectIds }) => useBonusSummaryFromSUE({
       origin: 'lutador', abilities: [], classId: 'Combatente', classTrack: 'operacoes-especiais',
       nex: 75, ...attributes, activeConditionalBonuses: ['track-ataque-extra'], activatedEffectIds,
-    }), { initialProps: { activatedEffectIds: ['track-ataque-extra', 'track-surto-de-adrenalina'] } });
+    }), { initialProps: { activatedEffectIds: ['track-ataque-extra', 'track-surto-de-adrenalina'] }, wrapper: TestQueryClientProvider });
     const active = () => result.current.unifiedEffects.allEffects.filter(effect =>
       effect.isActive && ['Ataque Extra', 'Surto de Adrenalina'].includes(effect.name));
     expect(active().map(effect => effect.name).sort()).toEqual(['Ataque Extra', 'Surto de Adrenalina']);

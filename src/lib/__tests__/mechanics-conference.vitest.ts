@@ -13,6 +13,7 @@ import { getPowerById } from '../class-powers/power-registry';
 import { useActivatableClassPowers } from '@/hooks/useActivatableClassPowers';
 import { useBonusSummaryFromSUE } from '@/hooks/useBonusSummaryFromSUE';
 import { useClassPowerBonuses } from '@/hooks/useClassPowerBonuses';
+import { TestQueryClientProvider } from '@/test/TestQueryClientProvider';
 
 const attributes = { strength: 2, agility: 2, vigor: 2, intellect: 3, presence: 0 };
 const context: EffectCalculationContext = {
@@ -105,7 +106,7 @@ describe('Trilhas conferidas no Livro Base v1.3, pp. 26–30 e 311', () => {
     const { result } = renderHook(() => useBonusSummaryFromSUE({
       origin: 'desconhecida', abilities: [], nex: 40, classId: 'Combatente', classTrack: 'tropa-choque',
       hpCurrent: 40, hpMax: 40,
-    }));
+    }), { wrapper: TestQueryClientProvider });
     expect(result.current.hpBonus).toBe(8);
   });
 

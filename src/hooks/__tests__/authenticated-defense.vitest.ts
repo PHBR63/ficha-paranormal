@@ -2,6 +2,7 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useDefenseBonuses } from '../useDefenseBonuses';
 import { useBonusSummaryFromSUE } from '../useBonusSummaryFromSUE';
+import { TestQueryClientProvider } from '@/test/TestQueryClientProvider';
 
 describe('Defesa apresentada pela ficha', () => {
   it('Reflexos expert não aumenta a Defesa permanente', () => {
@@ -12,7 +13,7 @@ describe('Defesa apresentada pela ficha', () => {
   it('condição chega ao resumo consumido pelo cabeçalho e atualiza ao remover', () => {
     const { result, rerender } = renderHook(({ conditions }) => useBonusSummaryFromSUE({
       origin: 'lutador', abilities: [], classId: 'Combatente', nex: 5, agility: 2, skills: { reflexos: 1 }, activeConditions: conditions,
-    }), { initialProps: { conditions: ['vulneravel'] } });
+    }), { initialProps: { conditions: ['vulneravel'] }, wrapper: TestQueryClientProvider });
     expect(12 + result.current.defense.total).toBe(10);
     expect(result.current.defense.breakdown.some(entry => entry.bonus === -2)).toBe(true);
     rerender({ conditions: [] });

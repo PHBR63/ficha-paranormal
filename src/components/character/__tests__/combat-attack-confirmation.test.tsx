@@ -104,6 +104,24 @@ it('a tabela desktop repassa trilha, arma favorita e rejeição do servidor ao m
   expect(complete).not.toHaveBeenCalled();
 });
 
+it('a tabela desktop reabre a arma pendente mesmo após selecionar outra', async () => {
+  const confirm = vi.fn().mockRejectedValueOnce(new Error('Sem conexão')).mockResolvedValueOnce(true);
+  const complete = vi.fn();
+  render(<CombatWeaponsTable weapons={[props.weapon, { ...props.weapon, id: 'other', name: 'Machado' }]}
+    attributes={props.attributes} skills={props.skills} characterClass="Combatente"
+    currentPE={10} maxPE={10} nex={5} onPEChange={vi.fn()}
+    onConfirmAttack={confirm} onRollComplete={complete} />);
+  fireEvent.click(screen.getByRole('cell', { name: 'Faca' }));
+  fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Sem conexão'));
+  fireEvent.keyDown(document, { key: 'Escape' });
+  fireEvent.click(screen.getByRole('cell', { name: 'Machado' }));
+  expect(screen.getByRole('button', { name: /tentar confirmar ataque/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /tentar confirmar ataque/i }));
+  await waitFor(() => expect(complete).toHaveBeenCalledOnce());
+  expect(confirm.mock.calls[1][0]).toBe(confirm.mock.calls[0][0]);
+});
+
 describe.each([
   ['desktop', CombatRollModal], ['mobile', MobileCombatRollModal],
 ] as const)('Ataque confirmado: %s', (_name, Modal) => {
@@ -129,6 +147,26 @@ describe.each([
     expect(screen.getByRole('button', { name: /rolar ataque/i })).toBeEnabled();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(close).toHaveBeenCalled();
+  });
+  it('permite sair após falha de rede e retoma a mesma confirmação ao reabrir', async () => {
+    const close = vi.fn();
+    const confirm = vi.fn().mockRejectedValueOnce(new Error('Conexão interrompida')).mockResolvedValueOnce(true);
+    const complete = vi.fn();
+    const { rerender } = render(<Modal {...props} onClose={close} onPEChange={vi.fn()}
+      onConfirmAttack={confirm} onRollComplete={complete} />);
+    fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Conexão interrompida'));
+    expect(screen.getByRole('alert')).toHaveTextContent('reabrir a arma');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(close).toHaveBeenCalledWith(true);
+    rerender(<Modal {...props} open={false} onClose={close} onPEChange={vi.fn()}
+      onConfirmAttack={confirm} onRollComplete={complete} />);
+    rerender(<Modal {...props} onClose={close} onPEChange={vi.fn()}
+      onConfirmAttack={confirm} onRollComplete={complete} />);
+    fireEvent.click(screen.getByRole('button', { name: /tentar confirmar ataque/i }));
+    await waitFor(() => expect(complete).toHaveBeenCalledOnce());
+    expect(rollSkillTest).toHaveBeenCalledOnce();
+    expect(confirm.mock.calls[1][0]).toBe(confirm.mock.calls[0][0]);
   });
   it('aguarda o servidor e bloqueia cliques duplicados durante confirmação', async () => {
     let resolve!: (accepted: boolean) => void;
@@ -348,7 +386,7 @@ describe.each([['desktop', CombatRollModal], ['mobile', MobileCombatRollModal]] 
 
 
 describe.each([['desktop', CombatRollModal], ['mobile', MobileCombatRollModal]] as const)('Reenvio de rajada: %s', (_name, Modal) => {
-  it('conserva escolha e dados na resposta incerta e impede fechar antes de recuperar', async () => {
+  it('conserva escolha e dados na resposta incerta mesmo após pedir para fechar', async () => {
     const confirm = vi.fn().mockRejectedValueOnce(new Error('Resposta incerta')).mockResolvedValueOnce(true);
     const close = vi.fn(); const complete = vi.fn();
     render(<Modal {...props} onClose={close} weapon={{ id: 'qa-burst-retry', name: 'Fuzil QA', type: 'Disparo', damage: '2d10', catalogId: 'fuzil_assalto' }}
@@ -357,7 +395,7 @@ describe.each([['desktop', CombatRollModal], ['mobile', MobileCombatRollModal]] 
     fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Resposta incerta'));
     expect(screen.getByRole('checkbox', { name: 'Disparar em rajada' })).toBeDisabled();
-    fireEvent.keyDown(document, { key: 'Escape' }); expect(close).not.toHaveBeenCalled();
+    fireEvent.keyDown(document, { key: 'Escape' }); expect(close).toHaveBeenCalledWith(true);
     const request = confirm.mock.calls[0][0];
     fireEvent.click(screen.getByRole('button', { name: /tentar confirmar ataque/i }));
     await waitFor(() => expect(complete).toHaveBeenCalledOnce());

@@ -143,7 +143,7 @@ interface BonusSourceDisplay {
 // Props do modal - PARIDADE COMPLETA COM DESKTOP
 interface MobileCombatRollModalProps {
   open: boolean;
-  onClose: () => void;
+  onClose: (pendingAttack?: boolean) => void;
   weapon: WeaponEntry | null;
   attributes: {
     agility: number;
@@ -466,7 +466,9 @@ export function MobileCombatRollModal({
 
   // Reset ao fechar
   const handleClose = useCallback(() => {
-    if (attackConfirmation.confirming || attackConfirmation.pending) return;
+    if (attackConfirmation.confirming || (attackConfirmation.pending && !attackConfirmation.error)) return;
+    // Manter o componente montado preserva o UUID e o sorteio para um retry após reconexão.
+    if (attackConfirmation.pending) { onClose(true); return; }
     attackConfirmation.reset();
     setPhase('setup');
     setBurstEnabled(false);
@@ -2303,7 +2305,10 @@ export function MobileCombatRollModal({
         {confirmationUnavailable && !attackConfirmation.pending && <p role="status" className="p-3 text-sm text-muted-foreground">{confirmationUnavailable}</p>}
         {sneakAttackError && !attackConfirmation.pending && <p role="alert" className="p-3 text-sm text-destructive">{sneakAttackError}</p>}
         {attackConfirmation.error && (
-          <p role="alert" className="p-3 text-sm text-destructive">{attackConfirmation.error}</p>
+          <p role="alert" className="p-3 text-sm text-destructive">
+            {attackConfirmation.error}
+            {attackConfirmation.pending && ' Você pode fechar esta janela e reabrir a arma para confirmar o mesmo ataque. Não inicie outro ataque antes disso.'}
+          </p>
         )}
         <MobileDrawerFooter>
           {phase === 'setup' && (
