@@ -289,7 +289,7 @@ export function ConditionManager({
 
         <CollapsibleContent>
           <div className="p-4 pt-0 space-y-3 border-t border-border">
-            {hasStartOfTurnEffects && <p className="text-xs text-muted-foreground">Confira testes de resistência e dano com o mestre antes de processar o início de turno. A prévia permite conferir os resultados e confirmar a aplicação no servidor.</p>}
+            {hasStartOfTurnEffects && <p className="text-xs text-muted-foreground">Confira testes de resistência e dano com o mestre antes de processar o início de turno. Sangrando é sorteado pelo servidor na confirmação; os demais efeitos aparecem na prévia.</p>}
             {/* Lista de condições ativas */}
             {conditions.length > 0 ? (
               <div className="space-y-2">

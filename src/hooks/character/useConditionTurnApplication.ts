@@ -40,6 +40,9 @@ export function useConditionTurnApplication(character: TurnCharacterSnapshot | n
       p_conditions: activityJson(serializeConditions(newConditions)), p_resolution: activityJson(resolution) };
     return async () => {
       const { data, error } = await awaitActivityResponse(activityClient.rpc('confirm_character_condition_turn', args));
+      if (error?.code === '23505' && error.message === 'Sangrando já foi resolvido neste turno.') {
+        throw Object.assign(new Error('Sangrando já foi resolvido neste turno. Avance o controle de turnos antes de resolver novamente.'), { serverRejected: true });
+      }
       if (error) throw activityFailure('O início de turno não foi confirmado.', error);
       const receipt = confirmActivity(data, characterId, operationId);
       const refreshes = await Promise.allSettled([

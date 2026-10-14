@@ -37,6 +37,15 @@ describe('Confirmação de início de turno', () => {
     fireEvent.click(screen.getByRole('button',{name:'Confirmar efeitos na ficha'}));
     expect(await screen.findByText(/dados \[18\], total 18 contra DT 20/)).toHaveTextContent('temporários são gastos primeiro');
   });
+  it('não oferece repetir um pedido rejeitado definitivamente pelo turno', async () => {
+    const apply = vi.fn().mockRejectedValue(Object.assign(new Error('Sangrando já foi resolvido neste turno.'), {serverRejected:true}));
+    render(<ConditionTurnResolver conditions={conditions} vigor={1} prepareApplication={() => apply} />);
+    preview(); expect(screen.getByText(/possível perda de PV por Sangrando/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {name:'Confirmar efeitos na ficha'}));
+    expect(await screen.findByRole('alert')).toHaveTextContent('já foi resolvido neste turno');
+    expect(screen.queryByRole('button', {name:'Repetir a mesma confirmação'})).toBeNull();
+    expect(apply).toHaveBeenCalledOnce();
+  });
   it('ignora clique duplicado e impede cancelamento enquanto aguarda o servidor', async () => {
     vi.spyOn(Math,'random').mockReturnValue(.5);
     let resolve!: () => void; const apply = vi.fn(() => new Promise<void>(r => {resolve=r;}));

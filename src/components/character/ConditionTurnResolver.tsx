@@ -35,6 +35,7 @@ export function ConditionTurnResolver({ conditions, vigor, prepareApplication }:
   const [preview, setPreview] = useState<ConditionTurnResolution | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [rejected, setRejected] = useState(false);
   const [confirmedResult, setConfirmedResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const operation = useRef<(() => Promise<CharacterActivityEvent | void>) | null>(null);
@@ -45,7 +46,7 @@ export function ConditionTurnResolver({ conditions, vigor, prepareApplication }:
   const openPreview = () => {
     snapshot.current = { conditions, vigor };
     applicationAtOpen.current = prepareApplication;
-    setPreview(null); setDone(false); setConfirmedResult(null); setError(null); operation.current = null; setOpen(true);
+    setPreview(null); setDone(false); setRejected(false); setConfirmedResult(null); setError(null); operation.current = null; setOpen(true);
   };
   const generate = () => {
     try {
@@ -64,7 +65,10 @@ export function ConditionTurnResolver({ conditions, vigor, prepareApplication }:
       const receipt = await operation.current();
       setConfirmedResult(confirmedBleeding(receipt));
       setDone(true);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'O servidor não confirmou os efeitos.'); }
+    } catch (cause) {
+      setRejected(Boolean(cause && typeof cause === 'object' && 'serverRejected' in cause && cause.serverRejected === true));
+      setError(cause instanceof Error ? cause.message : 'O servidor não confirmou os efeitos.');
+    }
     finally { locked.current = false; setBusy(false); }
   };
   return <>
@@ -90,8 +94,8 @@ export function ConditionTurnResolver({ conditions, vigor, prepareApplication }:
             </>}
           </div>)}
           {preview.notices.map((notice, index) => <p key={index} className="text-sm text-warning">{notice}</p>)}
-          {!preview.effects.length && !preview.removeIndexes.length && <p>Nenhuma alteração automática de recursos para este turno. Os avisos podem ser registrados na confirmação.</p>}
-          {prepareApplication && (preview.effects.length > 0 || preview.removeIndexes.length > 0 || preview.notices.length > 0) && !done && <Button disabled={busy} onClick={() => void confirm()}>{busy ? 'Confirmando no servidor...' : operation.current ? 'Repetir a mesma confirmação' : 'Confirmar efeitos na ficha'}</Button>}
+          {!preview.effects.length && !preview.removeIndexes.length && <p>{snapshot.current.conditions.some(condition => condition.id === 'sangrando') ? 'O teste e a possível perda de PV por Sangrando serão resolvidos na confirmação do servidor.' : 'Nenhuma alteração automática de recursos para este turno. Os avisos podem ser registrados na confirmação.'}</p>}
+          {prepareApplication && (preview.effects.length > 0 || preview.removeIndexes.length > 0 || preview.notices.length > 0) && !done && !rejected && <Button disabled={busy} onClick={() => void confirm()}>{busy ? 'Confirmando no servidor...' : operation.current ? 'Repetir a mesma confirmação' : 'Confirmar efeitos na ficha'}</Button>}
           {!prepareApplication && <p role="status">Resolução manual: esta tela não tem aplicação conectada ao servidor.</p>}
         </div>}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
