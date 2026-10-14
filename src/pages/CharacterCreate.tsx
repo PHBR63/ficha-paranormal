@@ -31,6 +31,7 @@ import { useCharacterAutoSave, loadCharacterDraft, clearCharacterDraft } from '@
 import confetti from 'canvas-confetti';
 import type { CharacterTemplate, TemplateWithAuthor } from '@/types/templates';
 import { creationSteps, inspectCharacterCreation } from '@/lib/character-creation-rules';
+import { templateOptionalPowerIds } from '@/lib/templates/template-power-selection';
 import { createCharacter } from '@/services/character-creation-service';
 
 export type CharacterFormData = {
@@ -299,7 +300,7 @@ export default function CharacterCreate() {
       freeSkills: data.trainedSkills,
       
       // Habilidades de classe
-      abilities: data.classPowers.map(p => p.powerId),
+      abilities: templateOptionalPowerIds(data.classPowers),
       
       // Rituais iniciais (para Ocultistas)
       rituals: data.initialRituals || [],

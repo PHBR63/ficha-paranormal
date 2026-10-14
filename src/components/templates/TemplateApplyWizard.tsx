@@ -51,6 +51,7 @@ import type { CharacterFormData } from '@/pages/CharacterCreate';
 import { ORIGINS, CLASSES, getExtraSkillsByNex, getOcultistRituals, getExtraAttributePoints } from '@/lib/character-data';
 import { getMaxAttributeByNex, getClassSkillRules, getOriginSkills } from '@/lib/character-builder-engine';
 import { ALL_RITUALS } from '@/lib/rituals/legacy-exports';
+import { templateOptionalPowerIds } from '@/lib/templates/template-power-selection';
 
 // ========================================
 // Tipos Internos
@@ -153,7 +154,7 @@ const ALL_STEPS: DynamicStep[] = [
     icon: <Swords className="w-4 h-4" />,
     shouldShow: (_, data) => {
       // Mostra se o template tem poderes sugeridos
-      return (data?.classPowers?.length ?? 0) > 0;
+      return templateOptionalPowerIds(data?.classPowers).length > 0;
     },
   },
   {
@@ -231,7 +232,7 @@ export function TemplateApplyWizard({
         presence: data?.attributes?.presence ?? 1,
       },
       skills: data?.trainedSkills ?? [],
-      powers: data?.classPowers?.map(p => p.powerId) ?? [],
+      powers: templateOptionalPowerIds(data?.classPowers),
       rituals: data?.initialRituals ?? [],
     };
   }, [data, template, nex]);
@@ -523,7 +524,7 @@ export function TemplateApplyWizard({
         return (
           <StepPowers
             selectedPowers={wizardState.powers}
-            suggestedPowers={data?.classPowers?.map(p => p.powerId) || []}
+            suggestedPowers={templateOptionalPowerIds(data?.classPowers)}
             classId={data?.classId || ''}
             nex={wizardState.nex}
             onToggle={togglePower}
