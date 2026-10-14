@@ -3,11 +3,35 @@ import { describe, expect, it } from 'vitest';
 import { useBonusSummaryFromSUE } from '../useBonusSummaryFromSUE';
 import { getTrackEffects } from '@/lib/effects/track-effects-adapter';
 import { useOperacoesEspeciaisTrack, OPERACOES_ABILITIES } from '@/components/character/tracks/combatente/useOperacoesEspeciaisTrack';
+import { useAtiradorDeEliteTrack, ATIRADOR_ABILITIES } from '@/components/character/tracks/especialista/useAtiradorDeEliteTrack';
 import { TestQueryClientProvider } from '@/test/TestQueryClientProvider';
 
 const attributes = { strength: 2, agility: 2, intellect: 2, presence: 2, vigor: 3 };
 
 describe('Habilidades ativadas no resumo da ficha', () => {
+  it('exibe Disparo Letal uma única vez nos bônus condicionais', () => {
+    const { result } = renderHook(() => useBonusSummaryFromSUE({
+      origin: 'militar',
+      abilities: ['Eclético', 'Perito', 'Habilidade de Trilha', 'Aumento de Atributo', 'Grau de Treinamento', 'Engenhosidade', 'Mira de Elite', 'Disparo Letal'],
+      classId: 'Especialista', classTrack: 'atirador-elite', nex: 40, ...attributes,
+      peCurrent: 40, peMax: 40,
+    }), { wrapper: TestQueryClientProvider });
+    const lethalShotBonuses = result.current.conditionalBonuses.filter(bonus => bonus.name === 'Disparo Letal');
+    expect(lethalShotBonuses.map(bonus => bonus.id)).toEqual(['track-disparo-letal']);
+    expect(result.current.unifiedEffects.allEffects.filter(effect => effect.name === 'Disparo Letal').map(effect => effect.id)).toEqual(['track-disparo-letal']);
+  });
+
+  it('não aplica um limite de uso por rodada a Disparo Letal', () => {
+    const { result } = renderHook(() => useAtiradorDeEliteTrack({
+      classTrack: 'atirador-elite', nex: 40, peCurrent: 2, intellect: 2,
+      onPEChange: () => {}, isAbilityUsedThisRound: () => true,
+    }));
+    const lethalShot = ATIRADOR_ABILITIES.find(ability => ability.id === 'disparo-letal')!;
+    expect(lethalShot.perRound).toBeFalsy();
+    expect(lethalShot.description).not.toMatch(/uma vez por rodada/i);
+    expect(result.current.canUseAbility(lethalShot)).toBe(true);
+  });
+
   it('Surto confirmado ativa a habilidade reconhecida pelo catálogo', async () => {
     let activatedId = '';
     const { result } = renderHook(() => useOperacoesEspeciaisTrack({
