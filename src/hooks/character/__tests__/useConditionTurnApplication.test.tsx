@@ -67,4 +67,12 @@ describe('Pedido transacional de início de turno',() => {
     await expect(result.current(prepareConditionTurn([],2))()).resolves.toMatchObject({id:'receipt'});
     expect(mocks.rpc).toHaveBeenCalledOnce();
   });
+  it('explica quando Sangrando já foi resolvido no turno controlado', async () => {
+    mocks.rpc.mockResolvedValue({data:null,error:{code:'23505',message:'Sangrando já foi resolvido neste turno.'}});
+    const onConfirmed=vi.fn();const {result}=renderHook(() => useConditionTurnApplication(character,onConfirmed));
+    await expect(result.current(prepareConditionTurn([],2))()).rejects.toMatchObject({
+      message:expect.stringContaining('Avance o controle de turnos'),serverRejected:true,
+    });
+    expect(onConfirmed).not.toHaveBeenCalled();
+  });
 });
