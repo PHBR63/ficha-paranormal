@@ -278,26 +278,8 @@ function convertTrackAbilityToMechanics(
     }
   }
 
-  // === ATAQUE FURTIVO ESCALONADO (Infiltrador) ===
-  if (m.sneakAttack?.scaling) {
-    const scaling = m.sneakAttack.scaling;
-
-    // Encontra o tier de NEX aplicável (maior NEX <= nex atual)
-    const applicableTiers = Object.keys(scaling)
-      .map(Number)
-      .filter(n => n <= nex)
-      .sort((a, b) => b - a);
-
-    if (applicableTiers.length > 0) {
-      const tier = applicableTiers[0];
-      const diceData = scaling[tier];
-
-      if (diceData) {
-        mechanics.extraDamageDice = `${diceData.dice}${diceData.dieType || 'd6'}`;
-        mechanics.conditionalNote = 'Ataque Furtivo: alvo desprevenido, flanqueado ou corpo a corpo com arma leve';
-      }
-    }
-  }
+  // Ataque Furtivo usa somente a mecânica dedicada abaixo. Incluí-lo nos dados
+  // genéricos causava dano passivo e somava a habilidade outra vez ao ativá-la.
 
   // === BÔNUS DE CRÍTICO ===
   if (m.criticalBonus) {

@@ -190,7 +190,7 @@ describe('Cálculo de Bônus de Combate por Trilha', () => {
       expect(d99).toBeGreaterThan(d50);
     });
 
-    it('Ataque Furtivo deve retornar dados extras no combate', () => {
+    it('Ataque Furtivo não deve retornar dados passivos no combate', () => {
       const bonuses = getTrackCombatBonuses(
         'infiltrador',
         50,
@@ -199,8 +199,10 @@ describe('Cálculo de Bônus de Combate por Trilha', () => {
         ['track-ataque-furtivo-trilha']
       );
 
-      expect(bonuses.extraDamageDice.length).toBeGreaterThanOrEqual(1);
-      expect(bonuses.extraDamageDice[0]).toMatch(/\+?\d+d\d+/);
+      expect(bonuses.extraDamageDice).toEqual([]);
+      const effect = getTrackEffects('infiltrador', 50, DEFAULT_ATTRIBUTES)
+        .find(item => item.sourceId === 'ataque-furtivo-trilha');
+      expect(effect?.mechanics.sneakAttack?.scaling?.[40].dice).toBe(2);
     });
   });
 

@@ -1369,8 +1369,8 @@ export function MobileCombatRollModal({
       if (sneakAttackConfig.enabled && isInfiltrador && nex >= 10) {
         const sneakResult = calculateSneakAttackResult(nex, sneakAttackConfig, advancedBonuses.assassinar || false);
         sneakAttackDice = sneakResult.finalDice;
-      } else if (advancedBonuses.ataqueFurtivo) {
-        // Fallback para sistema legado
+      } else if (!isInfiltrador && advancedBonuses.ataqueFurtivo) {
+        // Fallback legado só para outras trilhas; Infiltrador exige a escolha deste ataque.
         if (nex >= 99) sneakAttackDice = 4;
         else if (nex >= 65) sneakAttackDice = 3;
         else if (nex >= 40) sneakAttackDice = 2;
