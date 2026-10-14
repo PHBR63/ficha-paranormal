@@ -1553,8 +1553,8 @@ export function CombatRollModal({
         advancedBonuses.assassinar || false
       );
       sneakAttackDice = sneakResult.finalDice;
-    } else if (advancedBonuses.ataqueFurtivo) {
-      // Fallback para lógica legada (não-Infiltrador ou sistema antigo)
+    } else if (!isInfiltrador && advancedBonuses.ataqueFurtivo) {
+      // Fallback legado só para outras trilhas; Infiltrador exige a escolha deste ataque.
       if (nex >= 99) sneakAttackDice = 4;
       else if (nex >= 65) sneakAttackDice = 3;
       else if (nex >= 40) sneakAttackDice = 2;

@@ -532,43 +532,16 @@ describe('Trilha Flagelador - Casos Extremos', () => {
   // INFILTRADOR
   // -------------------------------------------------
   describe('Infiltrador', () => {
-    it('NEX 10 deve ter +1d6 de dano extra (Ataque Furtivo)', () => {
-      const result = getTrackCombatBonuses('infiltrador', 10, defaultAttributes, 'melee');
-      
-      // Ataque Furtivo: +1d6 em NEX 10
-      expect(result.extraDamageDice.some(d => d.includes('1d6'))).toBe(true);
-    });
-
-    it('NEX 40 deve ter +2d6 de dano extra', () => {
-      const result = getTrackCombatBonuses('infiltrador', 40, defaultAttributes, 'melee');
-      
-      expect(result.extraDamageDice.some(d => d.includes('2d6'))).toBe(true);
-    });
-
-    it('NEX 65 deve ter +3d6 de dano extra', () => {
-      const result = getTrackCombatBonuses('infiltrador', 65, defaultAttributes, 'melee');
-      
-      expect(result.extraDamageDice.some(d => d.includes('3d6'))).toBe(true);
-    });
-
-    it('NEX 99 deve ter +4d6 de dano extra', () => {
-      const result = getTrackCombatBonuses('infiltrador', 99, defaultAttributes, 'melee');
-      
-      expect(result.extraDamageDice.some(d => d.includes('4d6'))).toBe(true);
-    });
-
-    it('escalamento correto de Ataque Furtivo por NEX', () => {
-      const nex10 = getTrackCombatBonuses('infiltrador', 10, defaultAttributes, 'melee');
-      const nex40 = getTrackCombatBonuses('infiltrador', 40, defaultAttributes, 'melee');
-      const nex65 = getTrackCombatBonuses('infiltrador', 65, defaultAttributes, 'melee');
-      const nex99 = getTrackCombatBonuses('infiltrador', 99, defaultAttributes, 'melee');
-      
-      // Verificar que os dados aumentam progressivamente
-      expect(nex10.extraDamageDice.join('')).toContain('1');
-      expect(nex40.extraDamageDice.join('')).toContain('2');
-      expect(nex65.extraDamageDice.join('')).toContain('3');
-      expect(nex99.extraDamageDice.join('')).toContain('4');
-    });
+    it.each([[10, 1], [40, 2], [65, 3], [99, 4]])(
+      'NEX %i expõe %i dado(s) apenas na mecânica dedicada de Ataque Furtivo',
+      (nex, dice) => {
+        const effect = getTrackEffects('infiltrador', nex, defaultAttributes)
+          .find(item => item.sourceId === 'ataque-furtivo-trilha');
+        expect(effect?.mechanics.sneakAttack?.scaling?.[nex].dice).toBe(dice);
+        expect(effect?.mechanics.extraDamageDice).toBeUndefined();
+        expect(getTrackCombatBonuses('infiltrador', nex, defaultAttributes, 'melee').extraDamageDice).toEqual([]);
+      },
+    );
 
     it('NEX 40 deve ter bônus de perícia (Gatuno)', () => {
       const summary = getTrackBonusSummary('infiltrador', 40, defaultAttributes);
@@ -752,15 +725,16 @@ describe('Contexto de Tipo de Ataque', () => {
 describe('Escalamento de Bônus por NEX', () => {
   it('Infiltrador deve escalar Ataque Furtivo por NEX', () => {
     const diceAtNex = (nex: number) => {
-      const result = getTrackCombatBonuses('infiltrador', nex, defaultAttributes, 'melee');
-      return result.extraDamageDice.join('');
+      const effect = getTrackEffects('infiltrador', nex, defaultAttributes)
+        .find(item => item.sourceId === 'ataque-furtivo-trilha');
+      return effect?.mechanics.sneakAttack?.scaling?.[nex]?.dice;
     };
     
-    expect(diceAtNex(5)).toBe(''); // Trilha só é recebida em NEX 10 (Base v1.3, p.28–30).
-    expect(diceAtNex(10)).toContain('1'); // 1d6
-    expect(diceAtNex(40)).toContain('2'); // 2d6
-    expect(diceAtNex(65)).toContain('3'); // 3d6
-    expect(diceAtNex(99)).toContain('4'); // 4d6
+    expect(diceAtNex(5)).toBeUndefined(); // Trilha só é recebida em NEX 10.
+    expect(diceAtNex(10)).toBe(1);
+    expect(diceAtNex(40)).toBe(2);
+    expect(diceAtNex(65)).toBe(3);
+    expect(diceAtNex(99)).toBe(4);
   });
 
   it('Tropa de Choque deve escalar PV por NEX', () => {
