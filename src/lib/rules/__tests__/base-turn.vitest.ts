@@ -17,19 +17,19 @@ describe('Livro Base — situações de início de turno', () => {
     expect(getConditionById('atordoado')?.removal).toContain('definidos pela fonte');
     expect(getConditionEffectWithParams('envenenado', {})).not.toContain('1d6');
   });
-  it('Sangrando não recebe treinamento; conserva 20 personalizado e estabiliza apenas no sucesso', () => {
-    const failed = prepareConditionTurn([condition('sangrando')], 1, -1, () => .999);
-    expect(failed.bleedingTests[0]).toMatchObject({ kept: 20, total: 19, passed: false });
-    expect(failed.effects[0]).toMatchObject({ rolled: 6, finalAmount: 6, ignoresResistance: true });
-    expect(failed.removeIndexes).toEqual([]);
-    const passed = prepareConditionTurn([condition('sangrando')], 1, 0, () => .999);
-    expect(passed.removeIndexes).toEqual([0]);
-    expect(passed.effects).toEqual([]);
+  it('Sangrando envia apenas o modificador e aguarda dados do servidor', () => {
+    const random = () => { throw new Error('Sangrando não deve sortear no cliente'); };
+    const pending = prepareConditionTurn([condition('sangrando')], 1, -1, random);
+    expect(pending.bleedingModifier).toBe(-1);
+    expect(pending.bleedingTests).toEqual([]);
+    expect(pending.effects).toEqual([]);
+    expect(pending.removeIndexes).toEqual([]);
+    expect(pending.notices[0]).toContain('resolvidos pelo servidor');
   });
-  it('Vigor zero seleciona o menor dado e penalidade de dados não vira penalidade no total', () => {
-    const values = [.999, 0, .5]; let index = 0;
-    const result = prepareConditionTurn([condition('sangrando')], 0, 0, () => values[index++]);
-    expect(result.bleedingTests[0]).toMatchObject({ dice: [20, 1], kept: 1, total: 1 });
+  it('Vigor zero fica no snapshot; o servidor decide o menor dado do teste', () => {
+    const result = prepareConditionTurn([condition('sangrando')], 0);
+    expect(result.bleedingTests).toEqual([]);
+    expect(result.bleedingModifier).toBe(0);
   });
   it('veneno 2d6+3 sorteia dois dados; desconhecidos e seus metadados permanecem', () => {
     const original = [condition('envenenado', { poisonDamage: '2d6+3' }), condition('caseira'), condition('morrendo')];
@@ -43,9 +43,8 @@ describe('Livro Base — situações de início de turno', () => {
     expect(result.effects[0].rolled).toBe(4);
     result.effects[0].finalAmount = 2;
     expect(validateTurnResolution(result)).toBe(2);
-    const bleeding = prepareConditionTurn([condition('sangrando')], 1, 0, () => 0);
-    bleeding.effects[0].finalAmount = 0;
-    expect(() => validateTurnResolution(bleeding)).toThrow('RD');
+    result.effects[0].ignoresResistance = true;
+    expect(() => validateTurnResolution(result)).toThrow('RD');
   });
   it.each(['2d6oops', '100d6', '2d1000', '-3', 'Infinity'])('rejeita fórmula %s sem inventar resultado', formula => {
     expect(() => parseRecurringDamage(formula)).toThrow();

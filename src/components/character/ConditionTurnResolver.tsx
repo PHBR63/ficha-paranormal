@@ -5,8 +5,26 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { ActiveCondition } from './ConditionManager';
 import { prepareConditionTurn, validateTurnResolution, type ConditionTurnResolution } from '@/lib/rules/condition-turn';
+import type { CharacterActivityEvent } from '@/types/character-activity';
 
-export type PrepareTurnApplication = (resolution: ConditionTurnResolution) => () => Promise<void>;
+export type PrepareTurnApplication = (resolution: ConditionTurnResolution) => () => Promise<CharacterActivityEvent | void>;
+
+/** Lê somente o resultado confirmado; prévias locais nunca são apresentadas como dados oficiais. */
+function confirmedBleeding(receipt: CharacterActivityEvent | void): string | null {
+  const payload = receipt ? receipt.payload : null;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  const resolution = payload.resolution;
+  if (!resolution || typeof resolution !== 'object' || Array.isArray(resolution)) return null;
+  const tests = resolution.bleedingTests;
+  if (!Array.isArray(tests) || !tests.length) return null;
+  const test = tests[0];
+  if (!test || typeof test !== 'object' || Array.isArray(test) || !Array.isArray(test.dice)) return null;
+  const dice = test.dice.filter((value): value is number => typeof value === 'number');
+  if (dice.length !== test.dice.length || typeof test.total !== 'number' || typeof test.passed !== 'boolean') return null;
+  const effect = Array.isArray(resolution.effects) ? resolution.effects.find(entry => entry && typeof entry === 'object' && !Array.isArray(entry) && entry.conditionId === 'sangrando') : null;
+  const loss = effect && typeof effect === 'object' && !Array.isArray(effect) && typeof effect.finalAmount === 'number' ? effect.finalAmount : 0;
+  return `Sangrando: dados [${dice.join(', ')}], total ${test.total} contra DT 20. ${test.passed ? 'Estabilizado.' : `Falha: ${loss} de perda de PV; temporários são gastos primeiro.`}`;
+}
 
 /** Compartilha a resolução desktop/mobile. A prévia conserva os dados até confirmação ou cancelamento. */
 export function ConditionTurnResolver({ conditions, vigor, prepareApplication }: {
@@ -17,8 +35,9 @@ export function ConditionTurnResolver({ conditions, vigor, prepareApplication }:
   const [preview, setPreview] = useState<ConditionTurnResolution | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [confirmedResult, setConfirmedResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const operation = useRef<(() => Promise<void>) | null>(null);
+  const operation = useRef<(() => Promise<CharacterActivityEvent | void>) | null>(null);
   const locked = useRef(false);
   // Congela condições/Vigor na abertura: uma mudança externa será rejeitada pelo snapshot no servidor.
   const snapshot = useRef({ conditions, vigor });
@@ -26,7 +45,7 @@ export function ConditionTurnResolver({ conditions, vigor, prepareApplication }:
   const openPreview = () => {
     snapshot.current = { conditions, vigor };
     applicationAtOpen.current = prepareApplication;
-    setPreview(null); setDone(false); setError(null); operation.current = null; setOpen(true);
+    setPreview(null); setDone(false); setConfirmedResult(null); setError(null); operation.current = null; setOpen(true);
   };
   const generate = () => {
     try {
@@ -42,7 +61,8 @@ export function ConditionTurnResolver({ conditions, vigor, prepareApplication }:
     try {
       validateTurnResolution(preview);
       operation.current ??= applicationAtOpen.current(preview);
-      await operation.current();
+      const receipt = await operation.current();
+      setConfirmedResult(confirmedBleeding(receipt));
       setDone(true);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'O servidor não confirmou os efeitos.'); }
     finally { locked.current = false; setBusy(false); }
@@ -52,15 +72,14 @@ export function ConditionTurnResolver({ conditions, vigor, prepareApplication }:
     <Dialog open={open} onOpenChange={value => { if (!locked.current) setOpen(value); }}>
       <DialogContent className="max-w-lg max-h-[85dvh] overflow-y-auto" onEscapeKeyDown={event => { if (busy) event.preventDefault(); }}>
         <DialogHeader><DialogTitle>Início de turno — Livro Base</DialogTitle>
-          <DialogDescription>Confira se este início de turno ainda não foi resolvido. Testes e dano só alteram a ficha após confirmação.</DialogDescription></DialogHeader>
-        <p className="text-xs text-muted-foreground">Base v1.3, pp. 310–311. O teste de Sangrando usa Vigor, sem treinamento de Fortitude. Informe apenas bônus numéricos adicionais.</p>
+          <DialogDescription>Confira se este início de turno ainda não foi resolvido. Sangrando será sorteado no servidor apenas ao confirmar.</DialogDescription></DialogHeader>
+        <p className="text-xs text-muted-foreground">Base v1.3, pp. 46, 88 e 311. Sangrando usa Vigor, sem treinamento de Fortitude. A perda ignora RD, mas gasta PV temporários gerais primeiro. Informe apenas bônus numéricos adicionais; os demais efeitos ainda usam a prévia declarada.</p>
         {!preview && <div className="space-y-2">
           <Label htmlFor="turn-vigor-modifier">Modificador adicional de Vigor</Label>
           <Input id="turn-vigor-modifier" inputMode="numeric" type="number" step="1" value={modifier} onChange={event => setModifier(event.target.value)} />
-          <Button onClick={generate}>Preparar testes e dados</Button>
+          <Button onClick={generate}>Conferir efeitos do turno</Button>
         </div>}
         {preview && <div className="space-y-3">
-          {preview.bleedingTests.map(test => <p key={test.index} className="text-sm">Sangrando: dados [{test.dice.join(', ')}], selecionado {test.kept}, modificador {test.modifier}, total {test.total} contra DT {test.dt}. {test.passed ? 'Estabiliza Sangrando na confirmação.' : 'Falhou: perde 1d6 PV.'}</p>)}
           {preview.effects.map((effect, index) => <div key={index} className="space-y-1 border rounded p-2">
             <p className="text-sm">{effect.label}: dados [{effect.dice.join(', ')}], resultado {effect.rolled}.</p>
             {effect.ignoresResistance ? <p className="text-xs">Perda de PV: {effect.rolled}. Não recebe redução por RD.</p> : <>
@@ -77,6 +96,7 @@ export function ConditionTurnResolver({ conditions, vigor, prepareApplication }:
         </div>}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         {done && <p role="status">Efeitos confirmados e registrados no histórico da ficha.</p>}
+        {confirmedResult && <p className="text-sm" role="status">{confirmedResult}</p>}
         <Button variant="outline" disabled={busy} onClick={() => setOpen(false)}>{done ? 'Fechar' : 'Cancelar'}</Button>
       </DialogContent>
     </Dialog>
