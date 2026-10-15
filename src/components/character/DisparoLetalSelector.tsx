@@ -44,6 +44,7 @@ export interface DisparoLetalResult {
 export interface DisparoLetalSelectorProps {
   nex: number;
   currentPE: number;
+  pontariaTrained: boolean;
   config: DisparoLetalConfig;
   onConfigChange: (config: DisparoLetalConfig) => void;
   variant?: 'default' | 'compact';
@@ -129,6 +130,7 @@ export function useDisparoLetalState() {
 export function DisparoLetalSelector({
   nex,
   currentPE,
+  pontariaTrained,
   config,
   onConfigChange,
   variant = 'default',
@@ -143,12 +145,12 @@ export function DisparoLetalSelector({
 
   // Handler para toggle
   const handleToggle = (enabled: boolean) => {
-    onConfigChange({ ...config, enabled: enabled && config.mirarDeclared });
+    onConfigChange({ ...config, enabled: enabled && config.mirarDeclared && pontariaTrained });
   };
 
   /** A declaração vale somente para este ataque e é retirada junto da ativação. */
   const handleMirarDeclaration = (declared: boolean) => {
-    onConfigChange({ enabled: declared && config.enabled, mirarDeclared: declared });
+    onConfigChange({ enabled: declared && config.enabled && pontariaTrained, mirarDeclared: declared && pontariaTrained });
   };
 
   const mirarControl = (
@@ -156,10 +158,15 @@ export function DisparoLetalSelector({
       <Checkbox
         checked={config.mirarDeclared}
         onCheckedChange={checked => handleMirarDeclaration(checked === true)}
+        disabled={!pontariaTrained}
         aria-label="Confirmo que fiz a ação Mirar e este é o próximo ataque no prazo"
       />
       <span>Fiz a ação Mirar; este é meu próximo ataque até o fim do meu próximo turno.</span>
     </label>
+  );
+
+  const trainingNotice = !pontariaTrained && (
+    <p role="status" className="mt-2 text-xs text-amber-300">Mirar exige Pontaria treinada na ficha.</p>
   );
 
   // Se não tem NEX suficiente, não renderiza
@@ -201,11 +208,12 @@ export function DisparoLetalSelector({
           <Switch
             checked={config.enabled}
             onCheckedChange={handleToggle}
-            disabled={(!canAfford || !config.mirarDeclared) && !config.enabled}
+            disabled={(!canAfford || !config.mirarDeclared || !pontariaTrained) && !config.enabled}
             className="data-[state=checked]:bg-amber-500"
           />
         </div>
         {mirarControl}
+        {trainingNotice}
         
         {/* Aviso de PE insuficiente */}
         <AnimatePresence>
@@ -300,11 +308,12 @@ export function DisparoLetalSelector({
         <Switch
           checked={config.enabled}
           onCheckedChange={handleToggle}
-          disabled={(!canAfford || !config.mirarDeclared) && !config.enabled}
+          disabled={(!canAfford || !config.mirarDeclared || !pontariaTrained) && !config.enabled}
           className="data-[state=checked]:bg-amber-500"
         />
       </div>
       {mirarControl}
+      {trainingNotice}
       
       {/* Aviso de PE insuficiente */}
       <AnimatePresence>

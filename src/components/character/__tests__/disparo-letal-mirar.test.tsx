@@ -10,7 +10,7 @@ describe.each(['default', 'compact'] as const)('Disparo Letal no layout %s', var
   it('exige declarar Mirar antes de oferecer o gasto e o bônus', () => {
     const onConfigChange = vi.fn();
     const initial = createEmptyDisparoLetalConfig();
-    const { rerender } = render(<DisparoLetalSelector nex={40} currentPE={2}
+    const { rerender } = render(<DisparoLetalSelector nex={40} currentPE={2} pontariaTrained
       config={initial} onConfigChange={onConfigChange} variant={variant} />);
     const toggle = screen.getByRole('switch');
     expect(toggle.hasAttribute('disabled')).toBe(true);
@@ -20,7 +20,7 @@ describe.each(['default', 'compact'] as const)('Disparo Letal no layout %s', var
 
     fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo que fiz a ação Mirar/ }));
     expect(onConfigChange).toHaveBeenLastCalledWith({ enabled: false, mirarDeclared: true });
-    rerender(<DisparoLetalSelector nex={40} currentPE={2}
+    rerender(<DisparoLetalSelector nex={40} currentPE={2} pontariaTrained
       config={{ enabled: false, mirarDeclared: true }} onConfigChange={onConfigChange} variant={variant} />);
     expect(screen.getByRole('switch').hasAttribute('disabled')).toBe(false);
     fireEvent.click(screen.getByRole('switch'));
@@ -28,5 +28,15 @@ describe.each(['default', 'compact'] as const)('Disparo Letal no layout %s', var
     expect(calculateDisparoLetalResult(40, { enabled: true, mirarDeclared: true })).toEqual({
       enabled: true, peCost: 1, criticalMarginBonus: 2,
     });
+  });
+
+  it('bloqueia Mirar para Pontaria destreinada e informa o requisito', () => {
+    const onConfigChange = vi.fn();
+    render(<DisparoLetalSelector nex={40} currentPE={2} pontariaTrained={false}
+      config={createEmptyDisparoLetalConfig()} onConfigChange={onConfigChange} variant={variant} />);
+    expect(screen.getByText('Mirar exige Pontaria treinada na ficha.')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /Confirmo que fiz a ação Mirar/ })).toBeDisabled();
+    expect(screen.getByRole('switch')).toBeDisabled();
+    expect(onConfigChange).not.toHaveBeenCalled();
   });
 });
