@@ -20,6 +20,12 @@ describe('ataque confirmado pelo servidor', () => {
     fake.rpc.mockResolvedValueOnce({ data: null, error: { code: '22023', message: 'detalhe interno desconhecido' } });
     await expect(confirmCombatAttack(character, request(), 'manual:1')).rejects.toThrow('Os dados da operação são inválidos');
   });
+  it('explica a recusa de Mirar sem treino e conserva outras recusas genéricas', async () => {
+    fake.rpc.mockResolvedValueOnce({ data: null, error: { code: '22023', message: 'Mirar exige Pontaria treinada.' } });
+    await expect(confirmCombatAttack(character, request(), null)).rejects.toMatchObject({
+      serverRejected: true, message: expect.stringContaining('Mirar exige Pontaria treinada na ficha'),
+    });
+  });
   it('recupera d10 do recibo sem incorporá-lo ao pedido e sem mudar seu hash', async () => {
     const attack=request();
     attack.selection={...attack.selection,concealment:'total',concealmentConfirmed:true,totalCover:false,attackerBlind:false,targetDefense:null};

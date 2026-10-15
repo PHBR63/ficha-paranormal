@@ -2199,6 +2199,7 @@ export function CombatRollModal({
                   <DisparoLetalSelector
                     nex={nex}
                     currentPE={currentPE + temporaryPE}
+                    pontariaTrained={Number(skills.pontaria ?? skills.Pontaria ?? 0) > 0}
                     config={disparoLetalConfig}
                     onConfigChange={setDisparoLetalConfig}
                     variant="default"
