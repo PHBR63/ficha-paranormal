@@ -220,6 +220,7 @@ function MobileAbilityCard({
 
 import React from 'react';
 import { EstrategistaAction } from './EstrategistaAction';
+import { InspirarConfiancaAction } from './InspirarConfiancaAction';
 
 /**
  * Comparação customizada para evitar re-renders desnecessários.
@@ -268,6 +269,9 @@ function ComandanteCampoPanelComponent(props: ComandanteCampoPanelProps) {
       >
         <div className="space-y-2">
           {unlockedAbilities.map((ability) => (
+            ability.id === 'inspirar-confianca' && props.characterId ? <InspirarConfiancaAction
+              key={ability.id} characterId={props.characterId} nex={props.nex}
+              peCurrent={props.peCurrent} onRefetch={props.onRefetch} /> :
             ability.id === 'estrategista' && props.characterId ? <EstrategistaAction
               key={ability.id} characterId={props.characterId} nex={props.nex} intellect={props.intellect}
               peCurrent={props.peCurrent} onRefetch={props.onRefetch} /> : <MobileAbilityCard
@@ -313,6 +317,9 @@ function ComandanteCampoPanelComponent(props: ComandanteCampoPanelProps) {
         <CollapsibleContent>
           <CardContent className="pt-0 pb-3 space-y-2">
             {unlockedAbilities.map((ability) => (
+              ability.id === 'inspirar-confianca' && props.characterId ? <InspirarConfiancaAction
+                key={ability.id} characterId={props.characterId} nex={props.nex}
+                peCurrent={props.peCurrent} onRefetch={props.onRefetch} /> :
               ability.id === 'estrategista' && props.characterId ? <EstrategistaAction
                 key={ability.id} characterId={props.characterId} nex={props.nex} intellect={props.intellect}
                 peCurrent={props.peCurrent} onRefetch={props.onRefetch} /> : <AbilityCard

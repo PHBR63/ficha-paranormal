@@ -8,6 +8,18 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('explica a cobrança na fonte e a nova rolagem no aliado', () => {
+    const source = describeCharacterActivity(event({ kind: 'inspirar_confianca', targetName: 'Aliado',
+      testLabel: 'Vontade', originalTotal: 12, rerollTotal: 19, range: 'curto',
+      peCost: 2, peBefore: 8, peAfter: 6 }));
+    expect(source).toContain('Vontade 12 → 19');
+    expect(source).toContain('2 PE (8 → 6)');
+    const target = describeCharacterActivity({ ...event({ kind: 'inspirar_confianca_reroll',
+      sourceName: 'Comandante', originalTotal: 12, requiresReview: true,
+      entry: { label: 'Repetição: Ataque', results: [14], bestResult: 14, total: 19, bonus: 5 } }), category: 'roll' });
+    expect(target).toContain('resultado anterior 12 → 19');
+    expect(target).toContain('efeitos dependem de revisão da mesa');
+  });
   it('explica o custo por aliado e a ação adicional do Estrategista', () => {
     const text = describeCharacterActivity(event({ kind: 'estrategista', targetCount: 2, targetNames: ['Aliado A', 'Aliado B'],
       range: 'curto', peCost: 2, peBefore: 10, peAfter: 8,

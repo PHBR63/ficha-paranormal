@@ -108,7 +108,9 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
         sneakDetails = ' · Ataque Furtivo: contexto não verificado em registro anterior';
       }
     }
-    return `${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}${burstDetails}${concealmentDetails}${sneakDetails}`;
+    const inspiration = payload.kind === 'inspirar_confianca_reroll'
+      ? `Nova rolagem por Inspirar Confiança de ${payload.sourceName} · resultado anterior ${payload.originalTotal} → ${result.total}${payload.requiresReview === true ? ' · Acerto, camuflagem e efeitos dependem de revisão da mesa; dano e custos não repetidos' : ''} · ` : '';
+    return `${inspiration}${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}${burstDetails}${concealmentDetails}${sneakDetails}`;
   }
   if (event.category === 'ritual') {
     const preparation = payload.grimoirePreparation;
@@ -131,6 +133,7 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
   if (payload.kind === 'manual_turn') return `Turno manual confirmado: ${payload.turnBefore} → ${payload.turnAfter} · Sem gasto de PE`;
   if (payload.kind === 'manual_turn_pause') return `Controle manual pausado no turno ${payload.turnNumber} · Saldo e efeitos preservados`;
   if (payload.kind === 'estrategista') return `Estrategista · ${payload.targetCount} aliado(s): ${Array.isArray(payload.targetNames) ? payload.targetNames.join(', ') : 'nomes indisponíveis'} · Ação padrão e alcance ${payload.range} declarados · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails} · +1 ação de movimento no próximo turno de cada alvo`;
+  if (payload.kind === 'inspirar_confianca') return `Inspirar Confiança · ${payload.targetName}: ${payload.testLabel} ${payload.originalTotal} → ${payload.rerollTotal} · Reação e alcance ${payload.range} declarados · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails}${payload.requiresReview === true ? ' · Efeitos do ataque exigem revisão da mesa' : ''}`;
   if (payload.kind === 'estrategista_movement') return 'Estrategista · ação de movimento adicional usada no próximo turno declarado · Sem gasto de PE';
   if (payload.kind === 'temporary_resource' || payload.kind === 'temporary_end') {
     const before = payload.before as { current?: number } | undefined;
