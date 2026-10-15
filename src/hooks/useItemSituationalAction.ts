@@ -10,7 +10,8 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
     'confirm_character_fragmentation_targets' | 'confirm_character_fragmentation_damage' |
     'confirm_character_explosive_action' | 'confirm_character_explosive_targets' |
     'confirm_character_explosive_effect' | 'confirm_character_explosive_control' |
-    'confirm_character_post_attack_stealth' | 'confirm_character_estrategista' = 'confirm_character_item_action') {
+    'confirm_character_post_attack_stealth' | 'confirm_character_estrategista' |
+    'confirm_character_inspirar_confianca' = 'confirm_character_item_action') {
   const queries = useQueryClient();
   const running = useRef(false);
   const intent = useRef<{ id: string; characterId: string; request: Json } | undefined>(undefined);

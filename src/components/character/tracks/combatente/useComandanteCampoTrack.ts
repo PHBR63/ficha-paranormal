@@ -183,8 +183,8 @@ export function useComandanteCampoTrack({
 
   // Handler para usar habilidade
   const handleUseAbility = useCallback(async (ability: LeadershipAbility) => {
-    // Estrategista exige alvos, cobrança unitária e recibo; nunca usa o débito local.
-    if (ability.id === 'estrategista') return;
+    // Habilidades com alvo e recibo usam componentes próprios; jamais debitam PE localmente.
+    if (ability.id === 'estrategista' || ability.id === 'inspirar-confianca') return;
     // Verifica limite por rodada
     if (ability.perRound && isAbilityUsedThisRound(ability.id)) {
       toast({
