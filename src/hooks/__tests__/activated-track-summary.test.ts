@@ -9,16 +9,18 @@ import { TestQueryClientProvider } from '@/test/TestQueryClientProvider';
 const attributes = { strength: 2, agility: 2, intellect: 2, presence: 2, vigor: 3 };
 
 describe('Habilidades ativadas no resumo da ficha', () => {
-  it('exibe Disparo Letal uma única vez nos bônus condicionais', () => {
+  it('mantém Disparo Letal no catálogo sem ativação geral ou bônus de legado', () => {
     const { result } = renderHook(() => useBonusSummaryFromSUE({
       origin: 'militar',
       abilities: ['Eclético', 'Perito', 'Habilidade de Trilha', 'Aumento de Atributo', 'Grau de Treinamento', 'Engenhosidade', 'Mira de Elite', 'Disparo Letal'],
       classId: 'Especialista', classTrack: 'atirador-elite', nex: 40, ...attributes,
       peCurrent: 40, peMax: 40,
+      activeConditionalBonuses: ['track-disparo-letal'], activatedEffectIds: ['disparo-letal'],
     }), { wrapper: TestQueryClientProvider });
     const lethalShotBonuses = result.current.conditionalBonuses.filter(bonus => bonus.name === 'Disparo Letal');
-    expect(lethalShotBonuses.map(bonus => bonus.id)).toEqual(['track-disparo-letal']);
+    expect(lethalShotBonuses).toEqual([]);
     expect(result.current.unifiedEffects.allEffects.filter(effect => effect.name === 'Disparo Letal').map(effect => effect.id)).toEqual(['track-disparo-letal']);
+    expect(result.current.unifiedEffects.computed.critical.marginBonus).toBe(0);
   });
 
   it('não aplica um limite de uso por rodada a Disparo Letal', () => {

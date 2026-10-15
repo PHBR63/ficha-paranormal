@@ -207,8 +207,11 @@ export function useBonusSummaryFromSUE({
     abilities,
     classPowers:characterPowerInput(abilities,classId || '',nex,classPowerChoices),
     paranormalPowers:paranormalPowers as SavedParanormalPower[],
-    activeConditionalBonuses,
-    activatedEffectIds: [...new Set([...activeConditionalBonuses, ...activatedEffectIds])],
+    // Disparo Letal só pode ser ativado pelo ataque confirmado; estados legados de toggle
+    // não concedem margem nem aparecem como uma segunda entrada de cobrança.
+    activeConditionalBonuses: activeConditionalBonuses.filter(id => id !== 'disparo-letal' && id !== 'track-disparo-letal'),
+    activatedEffectIds: [...new Set([...activeConditionalBonuses, ...activatedEffectIds]
+      .filter(id => id !== 'disparo-letal' && id !== 'track-disparo-letal'))],
     // Trilha de Versatilidade (NEX 50%)
     versatilityTrack: versatilityTrack || undefined,
   }), [
@@ -372,6 +375,9 @@ export function useBonusSummaryFromSUE({
     for (const toggle of computed.toggleableEffects) {
       // Normaliza o ID para evitar duplicatas (ex: track-disparo-letal vs disparo-letal)
       const normalizedId = toggle.id.replace(/^track-/, '');
+
+      // O seletor de ataque apresenta custo e margem; esta chave antiga criava sucesso local falso.
+      if (normalizedId === 'disparo-letal') continue;
       
       // Pula se já foi adicionado (evita duplicatas)
       if (addedBonusIds.has(normalizedId) || addedBonusIds.has(toggle.id)) {
