@@ -190,6 +190,14 @@ export function useAtiradorDeEliteTrack({
   // Handler para usar habilidade ativa
   const handleUseAbility = useCallback(async (ability: AtiradorAbility) => {
     if (ability.isPassive) return;
+
+    // O ataque confirmado é a única entrada para custo, margem e histórico de Disparo Letal.
+    if (ability.id === 'disparo-letal') {
+      toast.info('Use Disparo Letal no ataque', {
+        description: 'Selecione a arma em Combate, confirme Mirar e ative o benefício no ataque.',
+      });
+      return;
+    }
     
     // Verificação de uso por rodada (para habilidades com perRound: true)
     if (ability.perRound && isUsedThisRound(ability.id)) {
