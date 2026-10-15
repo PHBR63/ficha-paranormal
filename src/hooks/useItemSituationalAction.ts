@@ -10,7 +10,7 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
     'confirm_character_fragmentation_targets' | 'confirm_character_fragmentation_damage' |
     'confirm_character_explosive_action' | 'confirm_character_explosive_targets' |
     'confirm_character_explosive_effect' | 'confirm_character_explosive_control' |
-    'confirm_character_post_attack_stealth' = 'confirm_character_item_action') {
+    'confirm_character_post_attack_stealth' | 'confirm_character_estrategista' = 'confirm_character_item_action') {
   const queries = useQueryClient();
   const running = useRef(false);
   const intent = useRef<{ id: string; characterId: string; request: Json } | undefined>(undefined);
@@ -30,10 +30,10 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
       }));
       if (response.error) {
         // Erros determinísticos do banco não executaram a transação. Rede/timeout exigem recuperação.
-        if (['22023', '22P02', '40001', '42501', '23505', '55004'].includes(response.error.code)) { intent.current = undefined; setUncertain(false); }
+        if (['22023', '22P02', '40001', '42501', '23505', '55002', '55004'].includes(response.error.code)) { intent.current = undefined; setUncertain(false); }
         throw new Error(response.error.code === '42501' ? 'Você não tem permissão para esta ficha.'
-          : response.error.code === '40001' ? 'A ficha ou o item mudou. Atualize a página antes de tentar novamente.'
-          : response.error.code === '55004' || response.error.code === '22023' ? response.error.message
+          : response.error.code === '40001' ? 'O estado da ficha ou do turno mudou. Atualize a página antes de tentar novamente.'
+          : ['55002', '55004', '22023'].includes(response.error.code) ? response.error.message
           : 'O servidor não confirmou. Recupere a mesma tentativa antes de iniciar outra.');
       }
       const event = confirmActivity(response.data, command.characterId, command.id);

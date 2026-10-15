@@ -36,6 +36,7 @@ import { activityRollEntries, diceHistoryEntry, entryDiceResult } from '@/lib/ro
 import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { EstrategistaGrantedActions } from '@/components/character/tracks/combatente/EstrategistaAction';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast, useIsMobile, useThemeColors } from '@/hooks';
@@ -2925,6 +2926,8 @@ export default function CharacterSheet() {
               
               {/* Comandante de Campo */}
               <LeadershipAbilitiesPanel
+                characterId={character.id}
+                onRefetch={refetchCharacter}
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}
@@ -2936,6 +2939,7 @@ export default function CharacterSheet() {
                 isEffectActive={activatedEffects.isEffectActive}
                 onTrackPESpent={roundTracking.trackPESpent}
               />
+              <EstrategistaGrantedActions characterId={character.id} onRefetch={refetchCharacter} />
 
               {/* Aniquilador */}
               <AniquiladorPanel

@@ -68,13 +68,13 @@ export const COMANDANTE_ABILITIES_BASE: LeadershipAbility[] = [
     id: 'estrategista',
     name: 'Estrategista',
     minNex: 40,
-    peCost: 1, // 1 PE TOTAL, não por aliado
+    peCost: 1, // Cobrado por aliado pela confirmação específica no servidor.
     actionType: 'standard',
     range: 'short', // Atualizado para 'medium' a partir de NEX 65%
-    description: 'Você pode direcionar aliados em alcance curto. Gaste uma ação padrão e 1 PE para direcionar aliados (máximo igual ao seu Intelecto). No próximo turno dos aliados afetados, eles ganham uma ação de movimento adicional.',
+    description: 'Você pode direcionar aliados em alcance curto. Gaste uma ação padrão e 1 PE por aliado (máximo igual ao seu Intelecto). No próximo turno dos aliados afetados, eles ganham uma ação de movimento adicional.',
     shortEffect: '+1 ação de movimento',
     maxAllies: 'intellect',
-    costPerTarget: false, // 1 PE total
+    costPerTarget: true,
   },
   {
     id: 'brecha-na-guarda',
@@ -106,6 +106,8 @@ export const COMANDANTE_ABILITIES_BASE: LeadershipAbility[] = [
 // =====================================================
 
 export interface UseComandanteCampoTrackProps {
+  characterId?: string;
+  onRefetch?: () => unknown | Promise<unknown>;
   classTrack: string | null | undefined;
   nex: number;
   peCurrent: number;
@@ -171,7 +173,7 @@ export function useComandanteCampoTrack({
   }, [isComandanteCampo, nex, hasRangeUpgrade]);
 
   // Máximo de aliados para Estrategista
-  const maxAlliesForEstrategista = Math.max(1, intellect);
+  const maxAlliesForEstrategista = Math.max(0, intellect);
 
   // Verifica se uma habilidade já foi usada nesta rodada
   const isAbilityUsedThisRound = useCallback(
@@ -181,6 +183,8 @@ export function useComandanteCampoTrack({
 
   // Handler para usar habilidade
   const handleUseAbility = useCallback(async (ability: LeadershipAbility) => {
+    // Estrategista exige alvos, cobrança unitária e recibo; nunca usa o débito local.
+    if (ability.id === 'estrategista') return;
     // Verifica limite por rodada
     if (ability.perRound && isAbilityUsedThisRound(ability.id)) {
       toast({

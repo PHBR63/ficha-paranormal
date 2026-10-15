@@ -219,6 +219,7 @@ function MobileAbilityCard({
 // =====================================================
 
 import React from 'react';
+import { EstrategistaAction } from './EstrategistaAction';
 
 /**
  * Comparação customizada para evitar re-renders desnecessários.
@@ -226,8 +227,12 @@ import React from 'react';
  */
 function arePropsEqual(prev: ComandanteCampoPanelProps, next: ComandanteCampoPanelProps): boolean {
   return (
+    prev.characterId === next.characterId &&
     prev.classTrack === next.classTrack &&
     prev.nex === next.nex &&
+    prev.intellect === next.intellect &&
+    prev.peCurrent === next.peCurrent &&
+    prev.onRefetch === next.onRefetch &&
     prev.className === next.className &&
     prev.onPEChange === next.onPEChange
   );
@@ -263,7 +268,9 @@ function ComandanteCampoPanelComponent(props: ComandanteCampoPanelProps) {
       >
         <div className="space-y-2">
           {unlockedAbilities.map((ability) => (
-            <MobileAbilityCard
+            ability.id === 'estrategista' && props.characterId ? <EstrategistaAction
+              key={ability.id} characterId={props.characterId} nex={props.nex} intellect={props.intellect}
+              peCurrent={props.peCurrent} onRefetch={props.onRefetch} /> : <MobileAbilityCard
               key={ability.id}
               ability={ability}
               isUsed={ability.perRound ? isAbilityUsedThisRound(ability.id) : false}
@@ -306,7 +313,9 @@ function ComandanteCampoPanelComponent(props: ComandanteCampoPanelProps) {
         <CollapsibleContent>
           <CardContent className="pt-0 pb-3 space-y-2">
             {unlockedAbilities.map((ability) => (
-              <AbilityCard
+              ability.id === 'estrategista' && props.characterId ? <EstrategistaAction
+                key={ability.id} characterId={props.characterId} nex={props.nex} intellect={props.intellect}
+                peCurrent={props.peCurrent} onRefetch={props.onRefetch} /> : <AbilityCard
                 key={ability.id}
                 ability={ability}
                 isUsed={ability.perRound ? isAbilityUsedThisRound(ability.id) : false}

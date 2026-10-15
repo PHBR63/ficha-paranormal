@@ -8,6 +8,15 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('explica o custo por aliado e a ação adicional do Estrategista', () => {
+    const text = describeCharacterActivity(event({ kind: 'estrategista', targetCount: 2, targetNames: ['Aliado A', 'Aliado B'],
+      range: 'curto', peCost: 2, peBefore: 10, peAfter: 8,
+      peBudget: { tracked: true, mode: 'manual', number: 2, spentAfter: 2 } }));
+    expect(text).toContain('2 aliado(s): Aliado A, Aliado B');
+    expect(text).toContain('2 PE (10 → 8)');
+    expect(text).toContain('próximo turno de cada alvo');
+    expect(describeCharacterActivity(event({ kind: 'estrategista_movement' }))).toContain('Sem gasto de PE');
+  });
   it('explica chance, d10 e benefício a partir do recibo confirmado', () => {
     const text=describeCharacterActivity({...event({kind:'combat_attack',entry:{label:'Ataque',total:20,results:[20]},concealmentResult:{level:'total',attackerBlind:false,heatVisionApplied:false,chance:50,die:4,failed:true,targetDefense:10}}),category:'roll'});
     expect(text).toContain('chance 50%'); expect(text).toContain('d10 4'); expect(text).toContain('falha por camuflagem; dano bloqueado');

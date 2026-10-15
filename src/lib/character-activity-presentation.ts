@@ -130,6 +130,8 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
   if (payload.kind === 'scene_expiry') return `Cena ${payload.sceneNumber} encerrada · ${payload.expiredEffectsCount} efeito(s) expirado(s)${describeConditionChanges((payload.before as { conditions?: Json })?.conditions, (payload.after as { conditions?: Json })?.conditions)}`;
   if (payload.kind === 'manual_turn') return `Turno manual confirmado: ${payload.turnBefore} → ${payload.turnAfter} · Sem gasto de PE`;
   if (payload.kind === 'manual_turn_pause') return `Controle manual pausado no turno ${payload.turnNumber} · Saldo e efeitos preservados`;
+  if (payload.kind === 'estrategista') return `Estrategista · ${payload.targetCount} aliado(s): ${Array.isArray(payload.targetNames) ? payload.targetNames.join(', ') : 'nomes indisponíveis'} · Ação padrão e alcance ${payload.range} declarados · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails} · +1 ação de movimento no próximo turno de cada alvo`;
+  if (payload.kind === 'estrategista_movement') return 'Estrategista · ação de movimento adicional usada no próximo turno declarado · Sem gasto de PE';
   if (payload.kind === 'temporary_resource' || payload.kind === 'temporary_end') {
     const before = payload.before as { current?: number } | undefined;
     const after = payload.after as { current?: number } | undefined;
