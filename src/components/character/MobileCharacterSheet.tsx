@@ -12,6 +12,7 @@ import { getConcentrationFailureMessage } from '@/lib/rituals/casting-concentrat
 import { SustainedRitualControl } from './SustainedRitualControl';
 import { TemporaryResourcesPanel } from './TemporaryResourcesPanel';
 import { useTemporaryResources } from '@/hooks/character/useTemporaryResources';
+import { EstrategistaGrantedActions } from './tracks/combatente/EstrategistaAction';
 import { BaseRulesNotice } from '@/components/character/BaseRulesNotice';
 import { useConditionTurnApplication } from '@/hooks/character/useConditionTurnApplication';
 import { useCharacterResourceUpdate } from '@/hooks/character/useCharacterResourceUpdate';
@@ -1987,6 +1988,8 @@ export function MobileCharacterSheet({
 
             {/* Comandante de Campo */}
             <MobileLeadershipPanel
+              characterId={character.id}
+              onRefetch={onRefetch}
               classTrack={character.class_track}
               nex={character.nex}
               peCurrent={character.pe_current}
@@ -1997,6 +2000,7 @@ export function MobileCharacterSheet({
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
             />
+            <EstrategistaGrantedActions characterId={character.id} onRefetch={onRefetch} />
             
             {/* Aniquilador */}
             <MobileAniquiladorPanel
