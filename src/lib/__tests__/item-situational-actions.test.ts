@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { concealmentOtherBonuses, itemActionCost, itemConcealmentBonus } from '../item-situational-actions';
+import { concealmentOtherBonuses, hasQuickDrawPower, itemActionCost, itemConcealmentBonus } from '../item-situational-actions';
 import { getSkillTrainingRequirement } from '../skill-test-requirements';
 
 describe('ocultação e saque por item', () => {
@@ -28,6 +28,15 @@ describe('ocultação e saque por item', () => {
     expect(itemActionCost(item, 'conceal')).toBe('padrão');
   });
   it('saque normal usa movimento', () => expect(itemActionCost(base, 'draw')).toBe('movimento'));
+  it('Saque Rápido altera saque e guarda, preservando ocultação e Tática', () => {
+    expect(hasQuickDrawPower([{ name: 'Saque Rápido' }], [])).toBe(true);
+    expect(hasQuickDrawPower([], ['saque-rapido'])).toBe(true);
+    expect(hasQuickDrawPower([{ name: 'Saque Rápido Aprimorado' }], [])).toBe(false);
+    expect(itemActionCost(base, 'draw', true)).toBe('livre');
+    expect(itemActionCost(base, 'stow', true)).toBe('livre');
+    expect(itemActionCost(base, 'conceal', true)).toBe('padrão');
+    expect(itemActionCost(base, 'stow', false)).toBe('movimento');
+  });
   it('não duplica equipamento e preserva os demais bônus', () => {
     expect(concealmentOtherBonuses({ skills: { crime: { total: 7, breakdown: [
       { source: 'Acessório aprovado', value: 5, type: 'equipment', active: true },

@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useItemSituationalAction } from '@/hooks/useItemSituationalAction';
-import { concealmentOtherBonuses, itemActionCost, itemConcealmentBonus, type ItemAction, type SituationalItem } from '@/lib/item-situational-actions';
+import { concealmentOtherBonuses, hasQuickDrawPower, itemActionCost, itemConcealmentBonus, type ItemAction, type SituationalItem } from '@/lib/item-situational-actions';
 import { getSkillTrainingBonus, getSkillTrainingLevel } from '@/lib/skill-training';
 import { describeCharacterActivity } from '@/lib/character-activity-presentation';
 import { getConditionTestDicePenalty } from '@/lib/conditions/condition-test-penalty';
@@ -15,13 +15,14 @@ import { PostAttackStealthPanel } from './PostAttackStealthPanel';
 
 interface Props {
   characterId: string; inventory: SituationalItem[]; agility: number;
+  powers: Array<{ id?: string; name?: string }>; abilities: string[];
   skills: Record<string, number>; conditions: Json; conditionIds: string[];
   summary: BonusSummary & { unifiedEffects?: { computed: { testDice?: TestDiceModifiers } } };
   onRefetch: () => unknown | Promise<unknown>;
 }
 
 /** Escolhe um item e declara requisitos da cena; somente o recibo altera o estado apresentado. */
-export function ItemSituationalActionsPanel({ characterId, inventory, agility, skills, conditions, conditionIds, summary, onRefetch }: Props) {
+export function ItemSituationalActionsPanel({ characterId, inventory, agility, powers, abilities, skills, conditions, conditionIds, summary, onRefetch }: Props) {
   const [itemId, setItemId] = useState('');
   const [action, setAction] = useState<ItemAction>('conceal');
   const [slot, setSlot] = useState('primary_weapon');
@@ -31,6 +32,7 @@ export function ItemSituationalActionsPanel({ characterId, inventory, agility, s
   if (!candidates.length && !state.uncertain && !state.receipt) return null;
   const item = candidates.find(entry => entry.id === itemId);
   const modifier = item ? itemConcealmentBonus(item) : 0;
+  const quickDraw = hasQuickDrawPower(powers, abilities) && getSkillTrainingLevel(skills, 'iniciativa') > 0;
   const untrained = getSkillTrainingLevel(skills, 'crime') === 0;
   const blocked = !item || !confirmed || (action === 'conceal' && untrained && !modifier)
     || (action !== 'conceal' && item.itemType !== 'weapon') || (action === 'draw' && !!item.isEquipped)
@@ -57,14 +59,14 @@ export function ItemSituationalActionsPanel({ characterId, inventory, agility, s
       <SelectTrigger aria-label="Ação do item"><SelectValue /></SelectTrigger>
       <SelectContent><SelectItem value="conceal">Ocultar o item — Crime</SelectItem><SelectItem value="draw">Sacar arma</SelectItem><SelectItem value="stow">Guardar arma</SelectItem></SelectContent>
     </Select>
-    {item && <p className="text-sm text-foreground">Ação {itemActionCost(item, action)}{action !== 'conceal' ? ` · ${item.isEquipped ? 'Arma equipada' : 'Arma guardada'}` : ''}.</p>}
+    {item && <p className="text-sm text-foreground">Ação {itemActionCost(item, action, quickDraw)}{action !== 'conceal' ? ` · ${item.isEquipped ? 'Arma equipada' : 'Arma guardada'}` : ''}.</p>}
     {action === 'conceal' ? <div className="space-y-1 text-sm text-muted-foreground">
       <p>Crime: treino +{getSkillTrainingBonus(skills, 'crime')} · melhoria do item +{modifier} · outros bônus da ficha {concealmentOtherBonuses(summary)}.</p>
       <p>O maior bônus de equipamento aprovado/em uso é conferido no servidor; não se soma duas vezes.</p>
       {untrained && <p className="text-foreground">{modifier ? 'Esta melhoria permite ocultar somente este item sem treino.' : 'Crime exige treino: este item não tem a exceção de ocultação.'}</p>}
       <p>Teste oposto de Percepção. Quem revistar recebe +10. O resultado fica pendente da comparação dos observadores; rolar não garante que o item foi ocultado.</p>
     </div> : <div className="space-y-2 text-sm text-muted-foreground">
-      <p>Tática permite somente sacar como ação livre. Guardar usa movimento. Slots e mãos ocupados bloqueiam o saque; confira outras limitações com a mesa.</p>
+      <p>{quickDraw ? 'Saque Rápido permite sacar ou guardar como ação livre. O servidor confere o poder e Iniciativa treinada.' : 'Tática permite somente sacar como ação livre. Guardar usa movimento.'} Slots e mãos ocupados bloqueiam o saque; confira outras limitações com a mesa.</p>
       {action === 'draw' && <Select value={slot} disabled={frozen} onValueChange={setSlot}>
         <SelectTrigger aria-label="Slot do saque"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="primary_weapon">Arma principal</SelectItem><SelectItem value="secondary_weapon">Arma secundária</SelectItem></SelectContent>
       </Select>}
@@ -78,6 +80,6 @@ export function ItemSituationalActionsPanel({ characterId, inventory, agility, s
     {state.receipt && <p role="status" className="break-words text-sm text-foreground">Confirmado no servidor: {describeCharacterActivity(state.receipt)}</p>}
     <PostAttackStealthPanel characterId={characterId} inventory={inventory} agility={agility} skills={skills}
       conditions={conditions} conditionIds={conditionIds} summary={summary} onRefetch={onRefetch} />
-    <p className="text-xs text-muted-foreground">Livro Base: pp. 44, 60–62, 64 e 87. Este painel não aplica Saque Rápido nem gerencia o orçamento geral de ações.</p>
+    <p className="text-xs text-muted-foreground">Livro Base: pp. 25, 44, 60–62, 64 e 87. Este painel gerencia somente armas e não controla o orçamento geral de ações.</p>
   </section>;
 }

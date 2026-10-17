@@ -17,10 +17,18 @@ export function itemConcealmentBonus(item: SituationalItem): number {
   return 0;
 }
 
-/** Tática altera somente o saque. Guardar conserva movimento (Livro Base, p. 87). */
-export function itemActionCost(item: SituationalItem, action: ItemAction): 'padrão' | 'movimento' | 'livre' {
+/** Tática libera apenas o saque; Saque Rápido libera saque e guarda (Livro Base, pp. 25 e 87). */
+export function itemActionCost(item: SituationalItem, action: ItemAction, hasQuickDraw = false): 'padrão' | 'movimento' | 'livre' {
   if (action === 'conceal') return 'padrão';
+  if (hasQuickDraw) return 'livre';
   return action === 'draw' && item.itemType === 'weapon' && getInstalledItemModifications(item).some(id => ['tatica_melee', 'tatica_firearm'].includes(id)) ? 'livre' : 'movimento';
+}
+
+/** Reconhece somente o poder da ficha; o servidor revalida posse e treino. */
+export function hasQuickDrawPower(powers: Array<{ id?: string; name?: string }>, abilities: string[]): boolean {
+  const matches = (value: string) => ['saque-rapido', 'saque rapido'].includes(
+    value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/_/g, '-'));
+  return powers.some(power => matches(power.id ?? '') || matches(power.name ?? '')) || abilities.some(matches);
 }
 
 /** Separa equipamento dos demais bônus para o servidor aplicar o maior bônus de item. */
