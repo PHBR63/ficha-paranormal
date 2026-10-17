@@ -26,6 +26,8 @@ export function PostAttackStealthPanel(props: Props) {
   const weapons = props.inventory.filter(item => item.id && item.itemType === 'weapon');
   if (!weapons.length && !state.uncertain && !state.receipt) return null;
   const item = weapons.find(entry => entry.id === itemId);
+  const silencerInstalled = item ? hasApplicableSilencer(item) : false;
+  const silencerApplies = silencerInstalled && !otherLoudAction;
   const frozen = state.busy || state.uncertain;
   const skill = props.summary.skills.furtividade;
   const equipment = (skill?.breakdown ?? []).filter(entry => entry.active && entry.type === 'equipment')
@@ -54,8 +56,9 @@ export function PostAttackStealthPanel(props: Props) {
       onChange={event => { setFullMovement(event.target.checked); resetConfirmation(); }} />Movi mais da metade do deslocamento neste turno.</label>
     <label className="flex gap-2 text-sm"><input type="checkbox" checked={otherLoudAction} disabled={frozen}
       onChange={event => { setOtherLoudAction(event.target.checked); resetConfirmation(); }} />Também fiz outra ação chamativa ou ataque com outra arma.</label>
-    {item && <p className="text-sm">{hasApplicableSilencer(item) ? 'Silenciador válido: reduz dois dados da penalidade deste ataque.' : 'Sem redução por Silenciador.'}
-      {' '}Penalidade situacional: −{postAttackStealthPenalty(hasApplicableSilencer(item), fullMovement, otherLoudAction)}d20 antes de Gatuno.
+    {item && <p className="text-sm">{silencerApplies ? 'Silenciador: reduz dois dados da penalidade deste ataque.'
+      : silencerInstalled ? 'Outra ação chamativa impede aplicar a redução do Silenciador.' : 'Sem redução por Silenciador.'}
+      {' '}Penalidade situacional: −{postAttackStealthPenalty(silencerInstalled, fullMovement, otherLoudAction)}d20 antes da conferência de Gatuno.
       {' '}Treino +{getSkillTrainingBonus(props.skills, 'furtividade')} · outros bônus {otherBonuses}. Gatuno e maior bônus de equipamento são conferidos no servidor.</p>}
     <label className="flex gap-2 text-sm"><input type="checkbox" checked={confirmed} disabled={frozen}
       onChange={event => setConfirmed(event.target.checked)} />Conferi fim do turno, ação livre, esconderijo possível e os ataques e movimentos declarados com a mesa.</label>
@@ -64,6 +67,6 @@ export function PostAttackStealthPanel(props: Props) {
     </Button>
     {state.error && <p role="alert" className="text-red-300 text-sm">{state.error}</p>}
     {state.receipt && <p role="status" className="break-words text-sm">{describeCharacterActivity(state.receipt)}</p>}
-    <p className="text-xs text-muted-foreground">Livro Base pp.45 e60. Percepção oposta de cada observador fica pendente; rolar não garante ocultação nem concede camuflagem automaticamente. Contexto do turno é declarado, sem medição pelo mapa.</p>
+    <p className="text-xs text-muted-foreground">Livro Base pp.45 e60. Em combate v2, o servidor exige um ataque registrado neste turno com a arma escolhida. Fora do controle de turnos, a mesa confirma esse vínculo. Percepção oposta de cada observador fica pendente; rolar não garante ocultação nem concede camuflagem automaticamente.</p>
   </section>;
 }

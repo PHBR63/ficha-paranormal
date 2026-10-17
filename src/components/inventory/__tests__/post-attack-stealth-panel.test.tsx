@@ -23,6 +23,8 @@ describe('Furtividade após ataque', () => {
     fireEvent.click(screen.getByLabelText('Também fiz outra ação chamativa ou ataque com outra arma.'));
     expect(screen.getByRole('button', { name: 'Rolar Furtividade após atacar' })).toBeDisabled();
     expect(screen.getByText(/Penalidade situacional: −3d20/)).toBeInTheDocument();
+    expect(screen.getByText(/Outra ação chamativa impede aplicar a redução do Silenciador/)).toBeInTheDocument();
+    expect(screen.getByText(/Em combate v2, o servidor exige um ataque registrado neste turno/)).toBeInTheDocument();
     expect(screen.getByText(/Percepção oposta de cada observador fica pendente/)).toBeInTheDocument();
   });
   it('resposta incerta congela contexto e recupera a mesma tentativa', () => {
