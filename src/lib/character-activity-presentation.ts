@@ -135,6 +135,7 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
   if (payload.kind === 'estrategista') return `Estrategista · ${payload.targetCount} aliado(s): ${Array.isArray(payload.targetNames) ? payload.targetNames.join(', ') : 'nomes indisponíveis'} · Ação padrão e alcance ${payload.range} declarados · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails} · +1 ação de movimento no próximo turno de cada alvo`;
   if (payload.kind === 'inspirar_confianca') return `Inspirar Confiança · ${payload.targetName}: ${payload.testLabel} ${payload.originalTotal} → ${payload.rerollTotal} · Reação e alcance ${payload.range} declarados · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails}${payload.requiresReview === true ? ' · Efeitos do ataque exigem revisão da mesa' : ''}`;
   if (payload.kind === 'estrategista_movement') return 'Estrategista · ação de movimento adicional usada no próximo turno declarado · Sem gasto de PE';
+  if (payload.kind === 'estrategista_turn_review') return 'Estrategista · mestre confirmou o próximo turno após mudança da iniciativa · Concessão preservada · Sem novo gasto de PE';
   if (payload.kind === 'temporary_resource' || payload.kind === 'temporary_end') {
     const before = payload.before as { current?: number } | undefined;
     const after = payload.after as { current?: number } | undefined;

@@ -90,6 +90,7 @@ export function EstrategistaGrantedActions({ characterId, onRefetch }: { charact
   const queries = useQueryClient();
   const [nextTurn, setNextTurn] = useState<Record<string, boolean>>({});
   const [pending, setPending] = useState<{ grantId: string; operationId: string } | null>(null);
+  const [reviewPending, setReviewPending] = useState<{ grantId: string; operationId: string } | null>(null);
   const [error, setError] = useState('');
   const grants = useQuery({
     queryKey: ['estrategista-grants', characterId], enabled: !!characterId,
@@ -99,7 +100,24 @@ export function EstrategistaGrantedActions({ characterId, onRefetch }: { charact
       return data ?? [];
     }, refetchOnReconnect: true, refetchOnWindowFocus: true, refetchInterval: 15000,
   });
-  if (!grants.data?.length && !grants.error && !pending) return null;
+  if (!grants.data?.length && !grants.error && !pending && !reviewPending) return null;
+  /** Recupera a mesma aprovação se a resposta se perder; somente o servidor decide a permissão. */
+  const confirmReview = async (grantId: string) => {
+    const operation = reviewPending?.grantId === grantId ? reviewPending : { grantId, operationId: crypto.randomUUID() };
+    setReviewPending(operation); setError('');
+    try {
+      const { data, error: failure } = await activityClient.rpc('review_character_estrategista_grant', {
+        p_operation_id: operation.operationId, p_character_id: characterId, p_grant_operation_id: grantId,
+      });
+      if (failure) {
+        if (['22023','42501','55004','23505'].includes(failure.code ?? '')) setReviewPending(null);
+        throw activityFailure('A revisão do mestre não foi confirmada.', failure);
+      }
+      if (!data || data.operation_id !== operation.operationId || data.character_id !== characterId) throw new Error('Recibo de revisão incorreto. Recupere a mesma tentativa.');
+      setReviewPending(null);
+      await Promise.all([grants.refetch(), queries.invalidateQueries({ predicate: query => query.queryKey[0] === 'character-activity' && query.queryKey[2] === characterId })]);
+    } catch (failure) { setError(failure instanceof Error ? failure.message : 'Recupere a mesma revisão antes de tentar outra.'); }
+  };
   const confirmGrantUse = async (grantId: string) => {
     const operation = pending?.grantId === grantId ? pending : { grantId, operationId: crypto.randomUUID() };
     setPending(operation); setError('');
@@ -125,13 +143,22 @@ export function EstrategistaGrantedActions({ characterId, onRefetch }: { charact
     {grants.error && <p role="alert" className="text-xs text-destructive">Não foi possível carregar as concessões. Atualize a ficha.</p>}
     {grants.data?.map(grant => <div key={grant.operation_id} className="space-y-2 border-t border-border/60 pt-2">
       <p className="text-xs">Estrategista de {grant.source_name}: +1 ação de movimento no seu próximo turno.</p>
+      {grant.review_required && <p className="text-xs text-warning">A iniciativa mudou após a concessão. {grant.reviewed ? 'O mestre confirmou o próximo turno no servidor.' : 'Aguarde a confirmação do mestre no servidor antes de usar.'}</p>}
+      {grant.turn_controlled && !grant.review_required && <p className="text-xs text-muted-foreground">O servidor confere o próximo turno pelo controle da campanha.</p>}
+      {grant.review_required && !grant.reviewed && grant.can_review && <Button size="sm" variant="outline"
+        disabled={!!reviewPending && reviewPending.grantId !== grant.operation_id}
+        onClick={() => void confirmReview(grant.operation_id)}>
+        {reviewPending?.grantId === grant.operation_id ? 'Recuperar revisão do mestre' : 'Confirmar próximo turno como mestre'}
+      </Button>}
       <label className="flex items-center gap-2 text-xs"><Checkbox checked={!!nextTurn[grant.operation_id]}
         onCheckedChange={value => setNextTurn(previous => ({ ...previous, [grant.operation_id]: value === true }))} />Este é meu próximo turno após a concessão.</label>
-      <Button size="sm" variant="outline" disabled={!nextTurn[grant.operation_id] || !!pending && pending.grantId !== grant.operation_id}
+      <Button size="sm" variant="outline" disabled={!nextTurn[grant.operation_id] || (grant.review_required && !grant.reviewed) || !!pending && pending.grantId !== grant.operation_id}
         onClick={() => void confirmGrantUse(grant.operation_id)}>{pending?.grantId === grant.operation_id ? 'Recuperar uso' : 'Registrar uso'}</Button>
     </div>)}
     {pending && !grants.data?.some(grant => grant.operation_id === pending.grantId) &&
       <Button size="sm" variant="outline" onClick={() => void confirmGrantUse(pending.grantId)}>Recuperar uso pendente</Button>}
+    {reviewPending && !grants.data?.some(grant => grant.operation_id === reviewPending.grantId) &&
+      <Button size="sm" variant="outline" onClick={() => void confirmReview(reviewPending.grantId)}>Recuperar revisão pendente</Button>}
     {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
   </section>;
 }

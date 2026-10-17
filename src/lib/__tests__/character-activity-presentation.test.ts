@@ -28,6 +28,7 @@ describe('Histórico de alterações de condições', () => {
     expect(text).toContain('2 PE (10 → 8)');
     expect(text).toContain('próximo turno de cada alvo');
     expect(describeCharacterActivity(event({ kind: 'estrategista_movement' }))).toContain('Sem gasto de PE');
+    expect(describeCharacterActivity(event({ kind: 'estrategista_turn_review' }))).toContain('mestre confirmou');
   });
   it('explica chance, d10 e benefício a partir do recibo confirmado', () => {
     const text=describeCharacterActivity({...event({kind:'combat_attack',entry:{label:'Ataque',total:20,results:[20]},concealmentResult:{level:'total',attackerBlind:false,heatVisionApplied:false,chance:50,die:4,failed:true,targetDefense:10}}),category:'roll'});
