@@ -3317,7 +3317,7 @@ export default function CharacterSheet() {
                   <AccessoryApprovalPanel state={bonusSummary.accessories} />
                   <ExplosivesPanel key={`explosives-${character.id}`} characterId={character.id} inventory={character.inventory} conditions={activityJson(character.conditions || [])} onRefetch={refetchCharacter} />
                   <ItemSituationalActionsPanel key={character.id} characterId={character.id} inventory={character.inventory}
-                    agility={character.agility} skills={character.skills} conditions={activityJson(character.conditions || [])}
+                    agility={character.agility} powers={character.powers} abilities={character.abilities} skills={character.skills} conditions={activityJson(character.conditions || [])}
                     conditionIds={activeConditionsForSUE} summary={bonusSummary} onRefetch={refetchCharacter} />
                   <InventoryPanel
                     inventory={character.inventory.map((item) => ({

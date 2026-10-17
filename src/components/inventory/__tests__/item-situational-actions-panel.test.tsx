@@ -6,7 +6,7 @@ vi.mock('@/hooks/useItemSituationalAction', () => ({ useItemSituationalAction: (
 vi.mock('../PostAttackStealthPanel', () => ({ PostAttackStealthPanel: () => null }));
 import { ItemSituationalActionsPanel } from '../ItemSituationalActionsPanel';
 
-const props = { characterId: 'ficha', agility: 0, skills: {}, conditions: [], conditionIds: [],
+const props = { characterId: 'ficha', agility: 0, skills: {}, powers: [], abilities: [], conditions: [], conditionIds: [],
   summary: { skills: {} } as BonusSummary, onRefetch: vi.fn(),
   inventory: [{ id: 'arma', name: 'Arma QA', itemType: 'weapon', isEquipped: false, appliedModifications: ['discreta_firearm', 'tatica_firearm'] }],
 };
@@ -38,6 +38,15 @@ describe('painel de ocultação e saque', () => {
     expect(screen.getByText(/Ação livre/)).toBeVisible();
     select('Ação do item', 'Guardar arma'); expect(screen.getByText(/Ação movimento/)).toBeVisible();
     expect(screen.getByRole('button', { name: 'Confirmar guardar no servidor' })).toBeDisabled();
+  });
+  it('mostra Saque Rápido somente com poder e Iniciativa treinada', () => {
+    const equipped = [{ ...props.inventory[0], isEquipped: true, appliedModifications: [] }];
+    const view = render(<ItemSituationalActionsPanel {...props} inventory={equipped} powers={[{ name: 'Saque Rápido' }]} skills={{ iniciativa: 1 }} />);
+    select('Item para ocultação ou saque', 'Arma QA'); select('Ação do item', 'Guardar arma');
+    expect(screen.getByText(/Ação livre/)).toBeVisible();
+    expect(screen.getByText(/servidor confere o poder/)).toBeVisible();
+    view.rerender(<ItemSituationalActionsPanel {...props} inventory={equipped} powers={[{ name: 'Saque Rápido' }]} />);
+    expect(screen.getByText(/Ação movimento/)).toBeVisible();
   });
   it('resposta incerta congela escolhas e oferece recuperar a tentativa', () => {
     state.uncertain = true; state.error = 'Sem confirmação.';

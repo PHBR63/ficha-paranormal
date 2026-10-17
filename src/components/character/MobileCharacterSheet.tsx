@@ -1925,7 +1925,7 @@ export function MobileCharacterSheet({
               <AccessoryApprovalPanel state={bonusSummary.accessories} />
               <ExplosivesPanel key={`explosives-${character.id}`} characterId={character.id} inventory={character.inventory} conditions={activityJson(character.conditions || [])} onRefetch={onRefetch} />
               <ItemSituationalActionsPanel key={character.id} characterId={character.id} inventory={character.inventory}
-                agility={character.agility} skills={character.skills} conditions={activityJson(character.conditions || [])}
+                agility={character.agility} powers={character.powers} abilities={character.abilities} skills={character.skills} conditions={activityJson(character.conditions || [])}
                 conditionIds={parseConditions(character.conditions || []).map(condition => condition.id)} summary={bonusSummary} onRefetch={onRefetch} />
               <TemporaryResourcesPanel characterId={character.id} />
 
