@@ -26,7 +26,7 @@ export function itemActionCost(item: SituationalItem, action: ItemAction, hasQui
 
 /** Reconhece somente o poder da ficha; o servidor revalida posse e treino. */
 export function hasQuickDrawPower(powers: Array<{ id?: string; name?: string }>, abilities: string[]): boolean {
-  const matches = (value: string) => ['saque-rapido', 'saque rapido'].includes(
+  const matches = (value: string) => ['saque-rapido', 'saque-rapido-esp', 'saque rapido'].includes(
     value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/_/g, '-'));
   return powers.some(power => matches(power.id ?? '') || matches(power.name ?? '')) || abilities.some(matches);
 }
