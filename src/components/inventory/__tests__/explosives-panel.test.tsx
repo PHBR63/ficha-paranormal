@@ -24,10 +24,15 @@ describe('Explosivos: requisitos antes da confirmação', () => {
   });
   it('dono da ficha pode detonar a mina instalada somente após conferir alcance e ação', () => {
     state.mode = 'mine'; state.master = false; render(<ExplosivesPanel {...props} />); select();
+    expect(screen.getByText(/a detonação exige o turno ativo do personagem/)).toBeInTheDocument();
     const button = screen.getByRole('button', { name: 'Confirmar detonação remota' });
     expect(button).toBeDisabled();
     fireEvent.click(screen.getByLabelText('Conferi a ação padrão e estar em alcance longo da mina.')); fireEvent.click(button);
     expect(state.confirm).toHaveBeenCalledWith(expect.objectContaining({ action: 'detonate', requirementsConfirmed: true }));
     expect(screen.queryByRole('button', { name: 'Confirmar alvos no servidor' })).not.toBeInTheDocument();
+  });
+  it('avisa que arremesso e instalação exigem o turno ativo no combate v2', () => {
+    render(<ExplosivesPanel {...props} inventory={[{ id: 'grenade', name: 'Granada QA', catalogId: 'granada_fumaca', catalogType: 'explosivo', quantity: 1 }]} />);
+    expect(screen.getByText(/o servidor exige o turno ativo deste personagem para arremessar ou instalar/)).toBeInTheDocument();
   });
 });
