@@ -16,7 +16,8 @@ type ActivityDatabase = { public: {
     confirm_character_inspirar_confianca: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     get_character_estrategista_targets: { Args: { p_character_id: string }; Returns: { id: string; name: string }[] };
     confirm_character_estrategista: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
-    list_character_estrategista_grants: { Args: { p_character_id: string }; Returns: { operation_id: string; source_name: string; status: string; granted_at: string }[] };
+    list_character_estrategista_grants: { Args: { p_character_id: string }; Returns: { operation_id: string; source_name: string; status: string; granted_at: string; turn_controlled: boolean; review_required: boolean; reviewed: boolean; can_review: boolean }[] };
+    review_character_estrategista_grant: { Args: { p_operation_id: string; p_character_id: string; p_grant_operation_id: string }; Returns: CharacterActivityEvent };
     use_character_estrategista_grant: { Args: { p_operation_id: string; p_character_id: string; p_grant_operation_id: string; p_next_turn_confirmed: boolean }; Returns: CharacterActivityEvent };
     confirm_character_post_attack_stealth: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     confirm_character_explosive_action: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };

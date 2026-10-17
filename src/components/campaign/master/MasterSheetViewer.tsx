@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useMasterActions } from '@/hooks/campaign/useMasterActions';
+import { EstrategistaGrantedActions } from '@/components/character/tracks/combatente/EstrategistaAction';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -505,6 +506,7 @@ export function MasterSheetViewer({
             <RefreshCw className={cn('w-4 h-4', loadingCharacter && 'animate-spin')} />
           </Button>
         </div>
+        <EstrategistaGrantedActions key={char.id} characterId={char.id} onRefetch={() => loadFullCharacter(char.id)} />
         
         {/* Status */}
         <div className="grid grid-cols-3 gap-4">
