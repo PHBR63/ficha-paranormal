@@ -44,9 +44,10 @@ describe('Histórico de alterações de condições', () => {
     expect(text).toContain('1 PE da habilidade cobrado');
   });
   it('preserva penalidade em dados e oposição pendente da furtividade', () => {
-    const text = describeCharacterActivity(event({ kind: 'post_attack_stealth', itemName: 'Pistola', situationalDicePenalty: 1,
+    const text = describeCharacterActivity(event({ kind: 'post_attack_stealth', itemName: 'Pistola', situationalDicePenalty: 1, turnContext: 'attack_receipt',
       silencerApplied: true, result: { dice: [13], keptDice: 13, skillBonus: 5, equipmentBonus: 0, declaredOtherBonuses: 2, total: 20 } }));
     expect(text).toContain('−1d20'); expect(text).toContain('Silenciador reduz dois dados');
+    expect(text).toContain('Ataque com esta arma confirmado no turno pelo servidor');
     expect(text).toContain('Percepção oposta pendente'); expect(text).toContain('→ 20');
   });
   it('mostra fonte, consulta separada, ação e adicional incluído no custo', () => {
