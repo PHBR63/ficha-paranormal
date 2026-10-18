@@ -76,21 +76,6 @@ export interface MedicoDeCampoPanelProps extends UseMedicoDeCampoTrackProps {
 
 import React from 'react';
 
-/**
- * Comparação customizada para evitar re-renders desnecessários.
- * Ignora peCurrent pois mudanças de PE não afetam a estrutura do painel.
- */
-function arePropsEqual(prev: MedicoDeCampoPanelProps, next: MedicoDeCampoPanelProps): boolean {
-  return (
-    prev.classTrack === next.classTrack &&
-    prev.nex === next.nex &&
-    prev.reanimacaoUsedThisScene === next.reanimacaoUsedThisScene &&
-    prev.onPEChange === next.onPEChange &&
-    prev.versatilityTrack?.trackId === next.versatilityTrack?.trackId &&
-    prev.versatilityTrack?.abilityId === next.versatilityTrack?.abilityId
-  );
-}
-
 function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
   const isMobile = useIsMobile();
   const track = useMedicoDeCampoTrack(props);
@@ -436,5 +421,5 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
   );
 }
 
-/** Componente exportado com memoização para otimização de performance */
-export const MedicoDeCampoPanel = React.memo(MedicoDeCampoPanelComponent, arePropsEqual);
+/** A comparação superficial considera o PE e os alvos atuais antes de oferecer uma habilidade. */
+export const MedicoDeCampoPanel = React.memo(MedicoDeCampoPanelComponent);
