@@ -167,7 +167,7 @@ import {
 
 // Conversão do inventário para o contrato compartilhado pelo painel e modal de combate.
 import { toMobileWeaponEntry } from './mobile/weapon-entry';
-import { characterPowerInput } from '@/lib/effects/character-power-input';
+import { characterPowerInput, savedClassPowerNames } from '@/lib/effects/character-power-input';
 import { VersatilityAbilityCard } from './VersatilityAbilityCard';
 
 import { useWeaponBuffs, useUnifiedEffects, useRoundTracking, useActivatedEffects } from '@/hooks';
@@ -663,7 +663,7 @@ export function MobileCharacterSheet({
   // Hook para rastrear "Primeira Impressão" do Especialista (paridade desktop)
   // Concede +1d20 no primeiro teste de Diplomacia, Enganação, Intimidação ou Intuição da cena
   const primeiraImpressao = usePrimeiraImpressao({
-    classPowers: character.powers?.map(p => p.name) || [],
+    classPowers: savedClassPowerNames(character.powers),
     abilities: character.abilities || [],
     characterClass: character.class,
   });
@@ -725,7 +725,7 @@ export function MobileCharacterSheet({
     presence: character?.presence || 1,
     classId: character?.class,
     classTrack: character?.class_track,
-    classPowers: character?.powers?.map(p => p.name) || [],
+    classPowers: savedClassPowerNames(character?.powers),
     activeConditions: parseConditions(character?.conditions || []).map(condition => condition.id),
     // Novos campos para bônus condicionais do SUE
     hpCurrent: localHpCurrent,

@@ -7,6 +7,14 @@ type SavedChoice = {
   chosenValues: string[];
 };
 
+/** Lê o nome salvo de poderes legados; o ID mantém a ficha utilizável quando o nome falta. */
+export function savedClassPowerNames(powers: Array<{ id?: string; name?: string } | string | null | undefined> = []): string[] {
+  return powers.flatMap(power => {
+    const label = typeof power === 'string' ? power : power?.name || power?.id;
+    return typeof label === 'string' && label.trim() ? [label.trim()] : [];
+  });
+}
+
 /** Converte poderes de classe e escolhas para o motor; habilidades de trilha entram pelo adaptador de trilha. */
 export function characterPowerInput(
   abilities: string[],

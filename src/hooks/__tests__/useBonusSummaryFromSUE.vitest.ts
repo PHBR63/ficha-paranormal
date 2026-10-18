@@ -76,6 +76,12 @@ function createMinimalProps(overrides = {}) {
 // =============================================================================
 
 describe('useBonusSummaryFromSUE - Estrutura', () => {
+  it('não derruba a ficha quando um poder legado não tem nome', async () => {
+    const { useBonusSummaryFromSUE } = await import('@/hooks/useBonusSummaryFromSUE');
+    const props = createMinimalProps({ classPowers: [undefined, { id: 'saque-rapido-esp' }] });
+    const { result } = renderHook(() => useBonusSummaryFromSUE(props));
+    expect(result.current.unifiedEffects).toBeDefined();
+  });
   it('deve exportar o hook useBonusSummaryFromSUE', async () => {
     const module = await import('@/hooks/useBonusSummaryFromSUE');
     expect(module.useBonusSummaryFromSUE).toBeDefined();

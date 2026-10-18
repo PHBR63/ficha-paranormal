@@ -228,10 +228,17 @@ export function useBonusSummaryFromSUE({
   const unifiedEffects = useUnifiedEffects(characterState);
   
   // Monta lista de poderes de classe para useDefenseBonuses (Aparas Precisas)
-  const classPowersForDefense = useMemo(() => 
-    classPowers.map(p => typeof p === 'string' ? { name: p } : { id: (p as any).id, name: (p as any).name || '' }),
-    [classPowers]
-  );
+  const safeClassPowers = useMemo(() => classPowers.filter(power => {
+    if (typeof power === 'string') return !!power.trim();
+    const saved = power as ActiveClassPower & { id?: string; name?: string } | null;
+    return !!saved && !!(saved.powerId || saved.id || saved.name);
+  }), [classPowers]);
+  const classPowersForDefense = useMemo(() => safeClassPowers.map(power => {
+    if (typeof power === 'string') return { name: power };
+    const saved = power as ActiveClassPower & { id?: string; name?: string };
+    const id = saved.id || saved.powerId;
+    return { id, name: saved.name || id || '' };
+  }), [safeClassPowers]);
   
   // Mantém hooks legados para dados ainda não migrados para o SUE
   const defenseBonuses = useDefenseBonuses({ 
@@ -261,7 +268,7 @@ export function useBonusSummaryFromSUE({
     classId: classId || '',
     classTrack,
     attributes: { strength, agility, vigor, intellect, presence },
-    classPowers,
+    classPowers: safeClassPowers,
     abilities,
     equippedWeaponType,
     equippedProtectionType,
