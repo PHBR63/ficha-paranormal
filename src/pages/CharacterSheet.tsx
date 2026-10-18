@@ -3524,6 +3524,9 @@ export default function CharacterSheet() {
 
               {/* Tabela de Combate */}
               <CombatWeaponsTable
+                characterId={character.id}
+                combatControlled={peBudget.data?.mode === 'combat'}
+                expectedTurnKey={peBudget.data?.key ?? null}
                 ammunition={character.inventory.filter(item => item.itemType === 'consumable') as any}
                 activeConditions={activeConditionsForSUE}
                 weapons={equippedWeapons}

@@ -20,6 +20,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sword, Target, Zap, Sparkles, Flame, X, Dices, Shield, Skull, Info, Plus, Minus, RotateCcw, Clock, RefreshCw, Timer, Infinity as InfinityIcon, Droplets, Crosshair, AlertCircle } from '@/components/icons/ordem-icons';
 import { SpecialAttackSelector, useSpecialAttackState } from './SpecialAttackSelector';
+import { useMirarAction } from '@/hooks/useMirarAction';
 import {
   getSpecialAttackOptions,
   calculateSpecialAttackFinal,
@@ -141,6 +142,9 @@ interface BonusSourceDisplay {
 // Props do modal
 interface CombatRollModalProps {
   open: boolean;
+  characterId?: string;
+  combatControlled?: boolean;
+  expectedTurnKey?: string | null;
   onClose: (pendingAttack?: boolean) => void;
   weapon: WeaponEntry | null;
   
@@ -247,6 +251,9 @@ function AnimatedDie({ value, delay = 0, isKept = false, isCritical = false }: {
 
 export function CombatRollModal({
   open,
+  characterId,
+  combatControlled = false,
+  expectedTurnKey,
   onClose,
   weapon,
   attributes,
@@ -279,6 +286,7 @@ export function CombatRollModal({
   onRollComplete,
   ammunition = [],
 }: CombatRollModalProps) {
+  const mirar = useMirarAction(characterId, combatControlled, open);
   const unifiedEffects = useMemo(() => getWeaponDamageEffects(sheetEffects, weapon), [sheetEffects, weapon]);
   // === HOOK DE COMBATE INTEGRADO COM SUE ===
   // Provê funções executeAttackRoll e executeDamageRoll que automaticamente
@@ -1385,7 +1393,8 @@ export function CombatRollModal({
 
         setAttackResult(result);
         // O próximo ataque consumiu a declaração; um novo disparo exige Mirar novamente.
-        if (selection.lethalShot) resetDisparoLetal();
+        if (selection.lethalShot || (combatControlled && disparoLetalConfig.mirarDeclared)) resetDisparoLetal();
+        if (combatControlled) mirar.consumed();
         setPhase('attack');
         onRollComplete?.(result);
       },
@@ -2202,6 +2211,11 @@ export function CombatRollModal({
                     pontariaTrained={Number(skills.pontaria ?? skills.Pontaria ?? 0) > 0}
                     config={disparoLetalConfig}
                     onConfigChange={setDisparoLetalConfig}
+                    combatControlled={combatControlled}
+                    mirarRegistered={mirar.registered}
+                    mirarRegistering={mirar.busy}
+                    mirarError={mirar.error}
+                    onRegisterMirar={() => { void mirar.register(expectedTurnKey, weapon?.id); }}
                     variant="default"
                   />
                 )}

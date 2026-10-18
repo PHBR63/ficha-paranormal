@@ -41,6 +41,7 @@ function describeConditionChanges(before: Json | undefined, after: Json | undefi
 export function describeCharacterActivity(event: CharacterActivityEvent): string {
   const payload = event.payload;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return 'Registro sem detalhes';
+  if (payload.kind === 'mirar') return `Mirar com ${payload.weaponName ?? 'arma equipada'} · ação de movimento registrada na rodada ${payload.round} · 0 PE · próximo ataque até o fim do próximo turno; alvo visível e alcance conferidos pela mesa`;
   if (payload.kind === 'post_attack_stealth') {
     const result = payload.result;
     if (!result || typeof result !== 'object' || Array.isArray(result)) return 'Furtividade após ataque: registro incompleto; confira o histórico.';
@@ -95,7 +96,12 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     const itemDetails = payload.kind === 'item_action' ? ` · Ação ${payload.actionCost} · Maior bônus de equipamento +${result.equipmentBonus ?? 0} · Percepção oposta pendente; revista +10 ao observador · Requisitos declarados` : '';
     let concealmentDetails = '';
     let sneakDetails = '';
+    let mirarDetails = '';
     if (payload.kind === 'combat_attack') {
+      if (typeof payload.mirarOperationId === 'string') mirarDetails = ' · Disparo Letal: Mirar e próximo ataque conferidos no servidor';
+      else if (payload.selection && typeof payload.selection === 'object' && !Array.isArray(payload.selection) && payload.selection.lethalShot === true) {
+        mirarDetails = ' · Disparo Letal: Mirar declarado; confira o contexto da mesa';
+      }
       try { concealmentDetails = payload.concealmentResult ? ` · ${describeConcealment(parseConcealmentResult(payload.concealmentResult))}` : ' · Camuflagem: resolução manual em registro anterior'; }
       catch { concealmentDetails = ' · Camuflagem: registro exige conferência'; }
       if (payload.sneakAttackResult) {
@@ -110,7 +116,7 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     }
     const inspiration = payload.kind === 'inspirar_confianca_reroll'
       ? `Nova rolagem por Inspirar Confiança de ${payload.sourceName} · resultado anterior ${payload.originalTotal} → ${result.total}${payload.requiresReview === true ? ' · Acerto, camuflagem e efeitos dependem de revisão da mesa; dano e custos não repetidos' : ''} · ` : '';
-    return `${inspiration}${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}${burstDetails}${concealmentDetails}${sneakDetails}`;
+    return `${inspiration}${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}${burstDetails}${concealmentDetails}${sneakDetails}${mirarDetails}`;
   }
   if (event.category === 'ritual') {
     const preparation = payload.grimoirePreparation;

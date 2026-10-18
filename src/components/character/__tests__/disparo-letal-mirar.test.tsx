@@ -39,4 +39,19 @@ describe.each(['default', 'compact'] as const)('Disparo Letal no layout %s', var
     expect(screen.getByRole('switch')).toBeDisabled();
     expect(onConfigChange).not.toHaveBeenCalled();
   });
+  it('em combate controlado exige registro do servidor antes da declaração', () => {
+    const onConfigChange = vi.fn(); const onRegisterMirar = vi.fn();
+    const config = createEmptyDisparoLetalConfig();
+    const view = render(<DisparoLetalSelector nex={40} currentPE={2} pontariaTrained
+      config={config} onConfigChange={onConfigChange} variant={variant}
+      combatControlled mirarRegistered={false} onRegisterMirar={onRegisterMirar} />);
+    expect(screen.getByRole('checkbox', { name: /Confirmo que fiz a ação Mirar/ })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar ação Mirar' }));
+    expect(onRegisterMirar).toHaveBeenCalledOnce();
+    view.rerender(<DisparoLetalSelector nex={40} currentPE={2} pontariaTrained
+      config={config} onConfigChange={onConfigChange} variant={variant}
+      combatControlled mirarRegistered onRegisterMirar={onRegisterMirar} />);
+    expect(screen.getByRole('checkbox', { name: /Confirmo que fiz a ação Mirar/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Mirar registrado' })).toBeDisabled();
+  });
 });

@@ -2574,6 +2574,9 @@ export function MobileCharacterSheet({
       {/* Modal de combate completo (ataque + dano) - PARIDADE COMPLETA DESKTOP */}
       {selectedWeapon && (
         <MobileCombatRollModal
+          characterId={character.id}
+          combatControlled={peBudget.data?.mode === 'combat'}
+          expectedTurnKey={peBudget.data?.key ?? null}
           ammunition={character.inventory.filter(item => item.itemType === 'consumable') as any}
           open={combatModalOpen}
           onClose={(pending = false) => {
