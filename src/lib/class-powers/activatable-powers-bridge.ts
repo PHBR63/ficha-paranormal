@@ -96,7 +96,7 @@ function normalizeString(str: string): string {
  * Verifica se o personagem possui um poder/habilidade
  */
 export function hasPowerOrAbility(
-  powers: Array<{ id?: string; name: string }> | string[],
+  powers: Array<{ id?: string; name?: string } | string | null>,
   abilities: string[],
   targetId: string,
   targetName?: string
@@ -112,13 +112,14 @@ export function hasPowerOrAbility(
   
   // Verifica nos poderes
   return powers.some(power => {
+    if (!power) return false;
     if (typeof power === 'string') {
       const normalizedPower = normalizeString(power);
       const mappedId = LEGACY_ABILITY_TO_POWER_ID[normalizedPower];
       return mappedId === targetId || normalizedPower === normalizeString(targetName || targetId);
     }
-    return power.id === targetId || 
-           normalizeString(power.name) === normalizeString(targetName || targetId);
+    return power.id === targetId ||
+           (typeof power.name === 'string' && normalizeString(power.name) === normalizeString(targetName || targetId));
   });
 }
 
