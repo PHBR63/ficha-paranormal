@@ -2504,7 +2504,7 @@ export function MobileCharacterSheet({
           classTrack: character.class_track || undefined,
           nex: character.nex,
           abilities: character.abilities,
-          powers: character.powers?.map(p => p.name) || [],
+          powers: savedClassPowerNames(character.powers),
           generalPowers: character.general_powers,
           intellect: character.intellect,
         }}
