@@ -657,11 +657,11 @@ export default function CharacterSheet() {
     activatedEffectIds: activatedEffects.activatedEffectIds,
     activeRituals: activeRitualsForDefense,
     skills: character?.skills || {},
-    intellect: character?.intellect || 1,
-    vigor: character?.vigor || 1,
-    strength: character?.strength || 1,
-    agility: character?.agility || 1,
-    presence: character?.presence || 1,
+    intellect: character?.intellect ?? 1,
+    vigor: character?.vigor ?? 1,
+    strength: character?.strength ?? 1,
+    agility: character?.agility ?? 1,
+    presence: character?.presence ?? 1,
     classId: character?.class,
     classTrack: character?.class_track,
     classPowers: savedClassPowerNames(character?.powers),
@@ -702,7 +702,7 @@ export default function CharacterSheet() {
       abilities: character.abilities || [],
       nex: character.nex || 5,
       peCurrent,
-      intellect: character.intellect || 1,
+      intellect: character.intellect ?? 1,
       trainedSkills: Object.keys(character.skills || {}).filter(s => (character.skills?.[s] || 0) >= 1),
       peritoSkills: peritoSkillsForActivation, // Perícias escolhidas para Perito
       characterClass: character.class,
@@ -730,11 +730,11 @@ export default function CharacterSheet() {
   
   // Hook de bônus de rituais derivado do SUE (DT, dano, redução de PE)
   const ritualBonuses = useRitualBonusesFromSUE(unifiedEffects, {
-    intellect: character?.intellect || 1,
-    vigor: character?.vigor || 1,
-    strength: character?.strength || 1,
-    agility: character?.agility || 1,
-    presence: character?.presence || 1,
+    intellect: character?.intellect ?? 1,
+    vigor: character?.vigor ?? 1,
+    strength: character?.strength ?? 1,
+    agility: character?.agility ?? 1,
+    presence: character?.presence ?? 1,
   });
 
   // Hook de aplicação automática de condições (HP=0 → Inconsciente, SAN=0 → Enlouquecendo)
