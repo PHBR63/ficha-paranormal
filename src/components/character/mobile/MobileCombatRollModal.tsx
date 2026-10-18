@@ -89,6 +89,7 @@ import { StackingExclusionIndicator, type ExcludedEffectInfo } from '../Stacking
 import { getTrackCombatBonuses } from '@/lib/effects/track-effects-adapter';
 import { formatDamageFormula as formatBuffDamage } from '@/lib/rituals/legacy-exports';
 import { SpecialAttackSelector, useSpecialAttackState } from '@/components/character/SpecialAttackSelector';
+import { useMirarAction } from '@/hooks/useMirarAction';
 import {
   getSpecialAttackOptions,
   calculateSpecialAttackFinal,
@@ -143,6 +144,9 @@ interface BonusSourceDisplay {
 // Props do modal - PARIDADE COMPLETA COM DESKTOP
 interface MobileCombatRollModalProps {
   open: boolean;
+  characterId?: string;
+  combatControlled?: boolean;
+  expectedTurnKey?: string | null;
   onClose: (pendingAttack?: boolean) => void;
   weapon: WeaponEntry | null;
   attributes: {
@@ -230,6 +234,9 @@ const bonusTypeColors: Record<BonusSourceDisplay['type'], string> = {
 
 export function MobileCombatRollModal({
   open,
+  characterId,
+  combatControlled = false,
+  expectedTurnKey,
   onClose,
   weapon,
   attributes,
@@ -260,6 +267,7 @@ export function MobileCombatRollModal({
   activeConditionalBonuses = [], // NOVO: Bônus condicionais ativos
   excludedEffects = [], // SUE Hardening: Efeitos excluídos por stacking
 }: MobileCombatRollModalProps) {
+  const mirar = useMirarAction(characterId, combatControlled, open);
   const unifiedEffects = useMemo(() => getWeaponDamageEffects(sheetEffects, weapon), [sheetEffects, weapon]);
   // === HOOK DE COMBATE INTEGRADO COM SUE ===
   // Preparação para migração: hook já configurado para uso futuro
@@ -1207,7 +1215,8 @@ export function MobileCombatRollModal({
       onConfirmed: (result) => {
         setAttackResult(result);
         // A declaração de Mirar não pode ser reutilizada após o ataque confirmado.
-        if (selection.lethalShot) resetDisparoLetal();
+        if (selection.lethalShot || (combatControlled && disparoLetalConfig.mirarDeclared)) resetDisparoLetal();
+        if (combatControlled) mirar.consumed();
         setIsRolling(false);
         setPhase('attack');
 
@@ -1252,7 +1261,7 @@ export function MobileCombatRollModal({
       },
 
     }).finally(() => { preparingAttack.current = false; setIsRolling(false); });
-  }, [visibility, attackerBlind, visibilityUnavailable, burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, sneakAttackError, isAtiradorElite, disparoLetalConfig, disparoLetalResult.enabled, resetDisparoLetal, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback]);
+  }, [visibility, attackerBlind, visibilityUnavailable, burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, sneakAttackError, isAtiradorElite, disparoLetalConfig, disparoLetalResult.enabled, resetDisparoLetal, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback, combatControlled, mirar]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
@@ -1766,6 +1775,11 @@ export function MobileCombatRollModal({
                     pontariaTrained={Number(skills.pontaria ?? skills.Pontaria ?? 0) > 0}
                     config={disparoLetalConfig}
                     onConfigChange={setDisparoLetalConfig}
+                    combatControlled={combatControlled}
+                    mirarRegistered={mirar.registered}
+                    mirarRegistering={mirar.busy}
+                    mirarError={mirar.error}
+                    onRegisterMirar={() => { void mirar.register(expectedTurnKey, weapon?.id); }}
                     variant="compact"
                   />
                 )}

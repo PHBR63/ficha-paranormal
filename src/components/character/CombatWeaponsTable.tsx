@@ -85,6 +85,9 @@ interface CombatWeaponsTableProps {
   maxPE?: number;
   onPEChange?: ConfirmDicePE;
   onConfirmAttack?: ConfirmCombatAttack;
+  characterId?: string;
+  combatControlled?: boolean;
+  expectedTurnKey?: string | null;
   temporaryPE?: number;
   confirmationUnavailable?: string;
   
@@ -160,6 +163,9 @@ export function CombatWeaponsTable({
   maxPE,
   onPEChange,
   onConfirmAttack,
+  characterId,
+  combatControlled,
+  expectedTurnKey,
   temporaryPE,
   confirmationUnavailable,  characterClass,
   classTrack,
@@ -402,6 +408,9 @@ export function CombatWeaponsTable({
           maxPE={maxPE}
           onPEChange={onPEChange}
           onConfirmAttack={onConfirmAttack}
+          characterId={characterId}
+          combatControlled={combatControlled}
+          expectedTurnKey={expectedTurnKey}
           temporaryPE={temporaryPE}
           confirmationUnavailable={confirmationUnavailable}
           characterClass={characterClass || ''}

@@ -33,6 +33,8 @@ type ActivityDatabase = { public: {
     get_character_ritual_situational: { Args: { p_character_id: string; p_ritual_id: string }; Returns: Json };
     confirm_character_ritual_knowledge: { Args: { p_character_id: string; p_ritual_id: string; p_operation_id: string; p_review: Json }; Returns: CharacterActivityEvent };
     get_character_pe_budget: { Args: { p_character_id: string }; Returns: Json };
+    get_character_mirar_status: { Args: { p_character_id: string }; Returns: Json };
+    confirm_character_mirar: { Args: { p_operation_id: string; p_character_id: string; p_expected_turn_key: string; p_weapon_id: string }; Returns: CharacterActivityEvent };
     pause_character_manual_turn: { Args: { p_operation_id: string; p_character_id: string; p_expected_turn: number }; Returns: CharacterActivityEvent };
     list_character_temporary_resources: { Args: { p_character_id: string }; Returns: Json[] };
     confirm_temporary_resource: { Args: { p_operation_id: string; p_character_id: string; p_resource: string; p_source_key: string; p_source_name: string; p_amount: number; p_cumulative: boolean }; Returns: CharacterActivityEvent };

@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Crosshair, AlertCircle, Zap, Info } from '@/components/icons/ordem-icons';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -47,6 +48,11 @@ export interface DisparoLetalSelectorProps {
   pontariaTrained: boolean;
   config: DisparoLetalConfig;
   onConfigChange: (config: DisparoLetalConfig) => void;
+  combatControlled?: boolean;
+  mirarRegistered?: boolean;
+  mirarRegistering?: boolean;
+  mirarError?: string;
+  onRegisterMirar?: () => void;
   variant?: 'default' | 'compact';
   className?: string;
 }
@@ -133,6 +139,11 @@ export function DisparoLetalSelector({
   pontariaTrained,
   config,
   onConfigChange,
+  combatControlled = false,
+  mirarRegistered = false,
+  mirarRegistering = false,
+  mirarError,
+  onRegisterMirar,
   variant = 'default',
   className,
 }: DisparoLetalSelectorProps) {
@@ -158,11 +169,22 @@ export function DisparoLetalSelector({
       <Checkbox
         checked={config.mirarDeclared}
         onCheckedChange={checked => handleMirarDeclaration(checked === true)}
-        disabled={!pontariaTrained}
+        disabled={!pontariaTrained || (combatControlled && !mirarRegistered)}
         aria-label="Confirmo que fiz a ação Mirar e este é o próximo ataque no prazo"
       />
-      <span>Fiz a ação Mirar; este é meu próximo ataque até o fim do meu próximo turno.</span>
+      <span>{combatControlled ? 'Mirar registrado no servidor; este é meu próximo ataque até o fim do próximo turno.'
+        : 'Fiz a ação Mirar; este é meu próximo ataque até o fim do meu próximo turno.'}</span>
     </label>
+  );
+
+  const registerControl = combatControlled && (
+    <div className="mt-2 space-y-2 text-xs">
+      <p>Mirar usa uma ação de movimento. Confirme com a mesa o alvo visível e dentro do alcance da arma.</p>
+      <Button type="button" variant="outline" className="h-auto min-h-10 w-full whitespace-normal"
+        disabled={!pontariaTrained || mirarRegistering || mirarRegistered || !onRegisterMirar}
+        onClick={onRegisterMirar}>{mirarRegistering ? 'Aguardando servidor…' : mirarRegistered ? 'Mirar registrado' : 'Registrar ação Mirar'}</Button>
+      {mirarError && <p role="alert" className="text-red-300">{mirarError}</p>}
+    </div>
   );
 
   const trainingNotice = !pontariaTrained && (
@@ -212,6 +234,7 @@ export function DisparoLetalSelector({
             className="data-[state=checked]:bg-amber-500"
           />
         </div>
+        {registerControl}
         {mirarControl}
         {trainingNotice}
         
@@ -312,6 +335,7 @@ export function DisparoLetalSelector({
           className="data-[state=checked]:bg-amber-500"
         />
       </div>
+      {registerControl}
       {mirarControl}
       {trainingNotice}
       
