@@ -1,4 +1,5 @@
 import { preserveInventoryModifications } from '@/lib/inventory-modifications';
+import { savedClassPowerNames } from '@/lib/effects/character-power-input';
 import { CreationReviewNotice } from '@/components/character/CreationReviewNotice';
 import { useRitualSituationalContext } from '@/hooks/character/useRitualSituationalContext';
 import { confirmCombatAttack } from '@/services/combat-attack-service';
@@ -663,7 +664,7 @@ export default function CharacterSheet() {
     presence: character?.presence || 1,
     classId: character?.class,
     classTrack: character?.class_track,
-    classPowers: character?.powers?.map(p => p.name) || [],
+    classPowers: savedClassPowerNames(character?.powers),
     equippedWeaponType,
     equippedProtectionType,
     equippedWeaponId: equippedWeaponInfo.id,
