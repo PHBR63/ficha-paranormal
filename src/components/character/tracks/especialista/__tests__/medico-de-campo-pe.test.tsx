@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ComputedEffects } from '@/hooks';
 
 const mock = vi.hoisted(() => ({
   confirm: vi.fn(), recover: vi.fn(),
@@ -76,5 +77,15 @@ describe('Paramédico confirmado no servidor', () => {
     expect(await screen.findByLabelText('Alvo do Paramédico')).toBeVisible();
     view.rerender(<QueryClientProvider client={query}><MedicoDeCampoPanel {...props} peCurrent={3} /></QueryClientProvider>);
     expect(screen.getByLabelText('Alvo do Paramédico')).toBeVisible();
+  });
+
+  it('só anuncia a Defesa de Resgate quando o NEX libera Resgate', () => {
+    const query = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const props = { characterId: 'source', classTrack: 'medico-campo', nex: 40, peCurrent: 4,
+      onPEChange: vi.fn(), computedEffects: { support: { onHealEffects: [] } } as unknown as ComputedEffects };
+    const view = render(<QueryClientProvider client={query}><MedicoDeCampoPanel {...props} /></QueryClientProvider>);
+    expect(screen.queryByText('Bônus de Suporte (SUE)')).not.toBeInTheDocument();
+    view.rerender(<QueryClientProvider client={query}><MedicoDeCampoPanel {...props} nex={65} /></QueryClientProvider>);
+    expect(screen.getByText('Bônus de Suporte (SUE)')).toBeVisible();
   });
 });

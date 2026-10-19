@@ -68,7 +68,7 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
   const TrackContent = () => (
     <div className="space-y-3">
       {/* Indicador de bônus de suporte do SUE (desktop only) */}
-      {!isMobile && track.sueSupport && (
+      {!isMobile && track.hasResgate && track.sueSupport && (
         <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-1">
           <p className="text-xs font-medium text-emerald-300">Bônus de Suporte (SUE)</p>
           <div className="flex gap-2 flex-wrap">
