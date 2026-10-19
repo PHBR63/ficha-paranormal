@@ -1228,9 +1228,11 @@ function convertTrackAbilityToMechanics(
       : m.resurrect.hpRestored === 'roll' ? 'rolagem de cura'
         : m.resurrect.hpRestored === 'half' ? 'metade dos PV'
           : m.resurrect.hpRestored === 'full' ? 'PV total' : 'PV a definir pela mesa';
-    const excluded = m.resurrect.excludedDeathTypes?.join(', ') || 'nenhuma';
+    const excluded = m.resurrect.excludedDeathTypes
+      ?.map(type => type === 'massive-damage' ? 'morte por dano massivo' : type)
+      .join(', ') || 'nenhuma';
     mechanics.specialEffects.push(
-      `Reanimar aliado (${m.resurrect.peCost} PE, ${hpDesc}, exceto: ${excluded})`
+      `Reanimar aliado (${mechanics.resurrect.peCost} PE, ${hpDesc}, exceto: ${excluded})`
     );
   }
 
