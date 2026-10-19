@@ -269,7 +269,7 @@ export function MobileCombatRollModal({
   activeConditionalBonuses = [], // NOVO: Bônus condicionais ativos
   excludedEffects = [], // SUE Hardening: Efeitos excluídos por stacking
 }: MobileCombatRollModalProps) {
-  const mirar = useMirarAction(characterId, combatControlled, open);
+  const mirar = useMirarAction(characterId, weapon?.id, open);
   const unifiedEffects = useMemo(() => getWeaponDamageEffects(sheetEffects, weapon), [sheetEffects, weapon]);
   // === HOOK DE COMBATE INTEGRADO COM SUE ===
   // Preparação para migração: hook já configurado para uso futuro
@@ -687,11 +687,8 @@ export function MobileCombatRollModal({
       total += sneakAttackResult.peCost;
     }
     // Adicionar custo do Disparo Letal se ativo (Atirador de Elite)
-    if (isAtiradorElite && disparoLetalResult.enabled && !combatControlled) {
-      total += disparoLetalResult.peCost;
-    }
     return total + (activeTechniqueEffects?.peCost ?? 0);
-  }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalResult.enabled, disparoLetalResult.peCost, combatControlled]);
+  }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost]);
 
   const canAffordPE = currentPE + temporaryPE >= totalPECost;
 
@@ -1217,8 +1214,8 @@ export function MobileCombatRollModal({
       onConfirmed: (result) => {
         setAttackResult(result);
         // A declaração de Mirar não pode ser reutilizada após o ataque confirmado.
-        if (selection.lethalShot || (combatControlled && disparoLetalConfig.mirarDeclared)) resetDisparoLetal();
-        if (combatControlled) mirar.consumed();
+        if (selection.lethalShot || mirar.pending) resetDisparoLetal();
+        mirar.consumed();
         setIsRolling(false);
         setPhase('attack');
 
@@ -1778,10 +1775,13 @@ export function MobileCombatRollModal({
                     config={disparoLetalConfig}
                     onConfigChange={setDisparoLetalConfig}
                     combatControlled={combatControlled}
+                    turnControlled={!!expectedTurnKey}
                     mirarRegistered={mirar.registered}
+                    mirarPending={mirar.pending}
                     mirarRegistering={mirar.busy}
                     mirarError={mirar.error}
                     onRegisterMirar={() => { void mirar.register(expectedTurnKey, weapon?.id, onMirarRegistered); }}
+                    onDismissMirar={() => { void mirar.dismiss(); }}
                     variant="compact"
                   />
                 )}

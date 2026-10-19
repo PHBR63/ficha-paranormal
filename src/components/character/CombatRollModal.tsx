@@ -288,7 +288,7 @@ export function CombatRollModal({
   onRollComplete,
   ammunition = [],
 }: CombatRollModalProps) {
-  const mirar = useMirarAction(characterId, combatControlled, open);
+  const mirar = useMirarAction(characterId, weapon?.id, open);
   const unifiedEffects = useMemo(() => getWeaponDamageEffects(sheetEffects, weapon), [sheetEffects, weapon]);
   // === HOOK DE COMBATE INTEGRADO COM SUE ===
   // Provê funções executeAttackRoll e executeDamageRoll que automaticamente
@@ -745,13 +745,8 @@ export function CombatRollModal({
       total += sneakAttackResult.peCost;
     }
     
-    // Adicionar custo do Disparo Letal se ativo (Atirador de Elite)
-    if (isAtiradorElite && disparoLetalResult.enabled && !combatControlled) {
-      total += disparoLetalResult.peCost;
-    }
-    
     return total + (activeTechniqueEffects?.peCost ?? 0);
-  }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalResult.enabled, disparoLetalResult.peCost, combatControlled]);
+  }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost]);
 
   // Verificar se pode pagar o PE
   const canAffordPE = currentPE + temporaryPE >= totalPECost;
@@ -1395,8 +1390,8 @@ export function CombatRollModal({
 
         setAttackResult(result);
         // O próximo ataque consumiu a declaração; um novo disparo exige Mirar novamente.
-        if (selection.lethalShot || (combatControlled && disparoLetalConfig.mirarDeclared)) resetDisparoLetal();
-        if (combatControlled) mirar.consumed();
+        if (selection.lethalShot || mirar.pending) resetDisparoLetal();
+        mirar.consumed();
         setPhase('attack');
         onRollComplete?.(result);
       },
@@ -2214,10 +2209,13 @@ export function CombatRollModal({
                     config={disparoLetalConfig}
                     onConfigChange={setDisparoLetalConfig}
                     combatControlled={combatControlled}
+                    turnControlled={!!expectedTurnKey}
                     mirarRegistered={mirar.registered}
+                    mirarPending={mirar.pending}
                     mirarRegistering={mirar.busy}
                     mirarError={mirar.error}
                     onRegisterMirar={() => { void mirar.register(expectedTurnKey, weapon?.id, onMirarRegistered); }}
+                    onDismissMirar={() => { void mirar.dismiss(); }}
                     variant="default"
                   />
                 )}
