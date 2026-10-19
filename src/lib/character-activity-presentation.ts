@@ -157,6 +157,8 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
   if (payload.kind === 'reanimacao') return `Reanimação em ${payload.targetName} · Cena ${payload.sceneNumber} · PV ${payload.hpBefore} → 1 (regra desta mesa) · Ação completa declarada · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails}`;
   if (payload.kind === 'reanimacao_received') return `Reanimação de ${payload.sourceName} · PV ${payload.hpBefore} → 1 (regra desta mesa) · Condições derivadas de zero PV encerradas · Confirmado no servidor`;
   if (payload.kind === 'resgate_movement') return `Resgate até ${payload.targetName} · Ação livre, alcance curto e deslocamento declarados · ${payload.mode === 'combat' ? 'Uso registrado na rodada' : payload.mode === 'manual' ? 'Turno manual registrado; rodada conferida pela mesa' : 'Rodada conferida pela mesa'}`;
+  if (payload.kind === 'resgate_defense_review') return 'Resgate · mestre atribuiu uma cura ou remoção já confirmada ao médico · +5 Defesa para médico e aliado até o próximo turno do médico · Sem novo gasto de PE';
+  if (payload.kind === 'resgate_defense_received') return 'Resgate · +5 Defesa recebido após cura ou remoção confirmada pelo mestre · Até o próximo turno do médico · Sem nova alteração de PV ou condição';
   if (payload.kind === 'estrategista_movement') return 'Estrategista · ação de movimento adicional usada no próximo turno declarado · Sem gasto de PE';
   if (payload.kind === 'estrategista_turn_review') return 'Estrategista · mestre confirmou o próximo turno após mudança da iniciativa · Concessão preservada · Sem novo gasto de PE';
   if (payload.kind === 'temporary_resource' || payload.kind === 'temporary_end') {

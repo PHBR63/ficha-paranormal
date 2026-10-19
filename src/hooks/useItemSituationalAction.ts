@@ -13,6 +13,7 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
     'confirm_character_post_attack_stealth' | 'confirm_character_estrategista' |
     'confirm_character_inspirar_confianca' | 'confirm_character_paramedico' |
     'confirm_character_equipe_trauma' | 'confirm_character_resgate_movement' |
+    'confirm_character_resgate_review' |
     'confirm_character_reanimacao_death' | 'confirm_character_reanimacao' = 'confirm_character_item_action') {
   const queries = useQueryClient();
   const running = useRef(false);
@@ -42,7 +43,8 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
       const event = confirmActivity(response.data, command.characterId, command.id);
       intent.current = undefined; setUncertain(false); setReceipt(event);
       if (['confirm_character_paramedico', 'confirm_character_equipe_trauma',
-        'confirm_character_reanimacao_death', 'confirm_character_reanimacao'].includes(procedure)) {
+        'confirm_character_reanimacao_death', 'confirm_character_reanimacao',
+        'confirm_character_resgate_review'].includes(procedure)) {
         window.dispatchEvent(new Event('character-medico-support-updated'));
       }
       const targetId = command.request && typeof command.request === 'object' && !Array.isArray(command.request)
@@ -52,6 +54,7 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
         // O histórico usa [família, usuário, ficha, filtros]; a ficha está na terceira posição.
         queries.invalidateQueries({ predicate: query => query.queryKey[0] === 'character-activity' && query.queryKey[2] === id }),
         queries.invalidateQueries({ queryKey: ['temporary-resources', id] }),
+        queries.invalidateQueries({ queryKey: ['resgate-defense-status', id] }),
       ]).concat([
         // A cobrança pode esgotar o limite do turno mesmo sem evento realtime.
         queries.invalidateQueries({ predicate: query => query.queryKey[0] === 'pe-turn-budget'

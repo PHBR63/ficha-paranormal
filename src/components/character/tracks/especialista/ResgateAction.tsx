@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
 import { useItemSituationalAction } from '@/hooks/useItemSituationalAction';
 import { activityClient, activityFailure } from '@/services/character-activity-service';
+import { ResgateOtherSourceReview } from './ResgateOtherSourceReview';
 
 interface Target { id: string; name: string; currentHp: number; maxHp: number }
 interface Options { eligible: boolean; trained: boolean; medicalKit: boolean; usedInCurrentControl: boolean; targets: Target[] }
@@ -98,8 +99,9 @@ export function ResgateAction({ characterId, nex, onRefetch }: Props) {
       Sem controle de turnos, a mesa aplica e encerra manualmente o +5 de Defesa após curar PV ou remover condição do aliado.
     </p>}
     <p className="text-xs text-muted-foreground">
-      O +5 de Defesa é automático para curas de Paramédico e remoções de Equipe de Trauma. Para outras fontes, confirme o efeito com a mesa.
+      O +5 de Defesa é automático para curas de Paramédico e remoções de Equipe de Trauma. Outras fontes registradas neste turno podem ser confirmadas pelo mestre abaixo.
     </p>
+    <ResgateOtherSourceReview characterId={characterId} onRefetch={onRefetch} />
     {open && <div className="space-y-3 text-sm">
       {options.isLoading && <p>Conferindo aliados no servidor…</p>}
       {options.error && <p role="alert" className="text-destructive">Não foi possível conferir Resgate. Atualize e tente novamente.</p>}
