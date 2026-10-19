@@ -62,6 +62,12 @@ describe('Conversão de trilhas de Ocultista sem bônus incondicionais inventado
 });
 
 describe('Trilhas conferidas no Livro Base v1.3, pp. 26–30 e 311', () => {
+  it('mostra o custo efetivo e a restrição de Reanimação em português', () => {
+    const effects = getTrackEffects('medico-campo', 99, attributes);
+    expect(effects.find(effect => effect.id === 'track-reanimacao')?.mechanics.specialEffects)
+      .toContain('Reanimar aliado (10 PE, 1 PV (regra desta mesa), exceto: morte por dano massivo)');
+  });
+
   it.each([[10, 2], [40, 8], [65, 13], [99, 19]])('Casca Grossa em NEX %s concede %s PV', (nex, hp) => {
     const computed = consolidateEffects(getTrackEffects('tropa-choque', nex, attributes), { ...context, nex, hpCurrent: 20 });
     expect(computed.resources.hpBonus).toBe(hp);
