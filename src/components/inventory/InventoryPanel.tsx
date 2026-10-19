@@ -12,7 +12,8 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { getExplosive } from '@/lib/explosives';
 import { mergeItemModifications, canModifyAmmunition, getInstalledItemModifications, getModificationCategoryError } from '@/lib/inventory-modifications';
-import { calculateAccessorySkillBonuses, validateAccessoryModifications, type AccessoryConfiguration } from '@/lib/accessory-modifications';
+import { calculateAccessorySkillBonuses, validateAccessoryModifications, KIT_SKILL_IDS, type AccessoryConfiguration } from '@/lib/accessory-modifications';
+import { SKILLS } from '@/lib/character-data';
 import { canApplyModification } from '@/lib/catalogs/weapons-catalog';
 import { getArmorModificationConflict } from '@/lib/catalogs/armor-catalog';
 import { useIsMobile } from '@/hooks';
@@ -240,6 +241,7 @@ export function InventoryPanel({
   const [weaponCatalogOpen, setWeaponCatalogOpen] = useState(false);
   const [armorCatalogOpen, setArmorCatalogOpen] = useState(false);
   const [itemCatalogOpen, setItemCatalogOpen] = useState(false);
+  const [identifyingKit, setIdentifyingKit] = useState<string | null>(null);
   const [useItemConfirmOpen, setUseItemConfirmOpen] = useState(false);
   const [itemToUse, setItemToUse] = useState<ExtendedInventoryItem | null>(null);
   // Estado para modal de modificação de armas
@@ -799,21 +801,23 @@ export function InventoryPanel({
   };
 
   // Handler para adicionar item do catálogo de itens gerais
-  const handleAddItemFromCatalog = (catalogItem: CatalogItem) => {
+  const handleAddItemFromCatalog = (catalogItem: CatalogItem, kitSkill?: string) => {
     if (!onInventoryChange) return;
+    if (catalogItem.id === 'kit_pericia' && !KIT_SKILL_IDS.some(id => id === kitSkill)) return;
 
     // Mapear tipo do catálogo para tipo válido do inventário
     const mappedItemType = normalizeInventoryItemType(catalogItem.type);
 
     const baseItem = {
       id: crypto.randomUUID(),
-      name: catalogItem.name,
+      name: catalogItem.id === 'kit_pericia' ? `Kit de ${SKILLS.find(skill => skill.id === kitSkill)?.name ?? kitSkill}` : catalogItem.name,
       category: catalogItem.category,
       slots: catalogItem.spaces,
       quantity: 1,
       itemType: mappedItemType, // Usa tipo mapeado corretamente
       catalogId: catalogItem.id,
       catalogType: catalogItem.type, // Preserva tipo original do catálogo (ex: 'acessorio')
+      ...(catalogItem.id === 'kit_pericia' ? { accessoryConfiguration: { kitSkill } } : {}),
       description: catalogItem.description,
       // Soqueira recebe melhorias de arma corpo a corpo e afeta ataques desarmados (Base, p. 66).
       ...(catalogItem.id === 'soqueira' ? { itemType: 'weapon' as const, weaponType: 'melee', damage: '1d3+1', damageType: 'Impacto', critical: 20, criticalMultiplier: 2, proficiency: 'simples', properties: ['Desarmado'], appliedModifications: [] } : {}),
@@ -854,6 +858,23 @@ export function InventoryPanel({
         variant: 'destructive',
       });
     }
+  };
+
+  /** Identifica uma única vez a perícia de kits antigos sem especialização. */
+  const handleIdentifyKit = async (itemId: string, kitSkill: string) => {
+    if (!onInventoryChange || identifyingKit || !KIT_SKILL_IDS.some(id => id === kitSkill)) return;
+    const kit = inventory.find(item => item.id === itemId && item.catalogId === 'kit_pericia');
+    if (!kit || kit.accessoryConfiguration?.kitSkill) return;
+    setIdentifyingKit(itemId);
+    try {
+      await onInventoryChange(inventory.map(item => item.id !== itemId ? item : {
+        ...item,
+        name: `Kit de ${SKILLS.find(skill => skill.id === kitSkill)?.name ?? kitSkill}`,
+        accessoryConfiguration: { ...item.accessoryConfiguration, kitSkill },
+      }));
+    } catch {
+      toast({ title: 'Kit não atualizado', description: 'Confira a conexão e tente novamente.', variant: 'destructive' });
+    } finally { setIdentifyingKit(null); }
   };
 
   const canEquipItem = (item: ExtendedInventoryItem): boolean => {
@@ -1416,6 +1437,17 @@ export function InventoryPanel({
           </div>
         )}
       </div>
+
+      {!readOnly && inventory.filter(item => item.catalogId === 'kit_pericia' && !item.accessoryConfiguration?.kitSkill
+        && !/^kit de medicina$/i.test(item.name)).map(item => <label key={item.id} className="block rounded border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-foreground">
+        Identifique a perícia de {item.name} antes de usar habilidades que exigem um kit específico.
+        <select aria-label={`Perícia do kit ${item.name}`} className="mt-2 block w-full rounded border border-border bg-background p-2 text-foreground"
+          value="" disabled={identifyingKit === item.id}
+          onChange={event => void handleIdentifyKit(item.id, event.target.value)}>
+          <option value="">Escolha a perícia deste kit</option>
+          {KIT_SKILL_IDS.map(id => <option key={id} value={id}>{SKILLS.find(skill => skill.id === id)?.name ?? id}</option>)}
+        </select>
+      </label>)}
 
       {/* Weapon Catalog Modal */}
       <WeaponCatalogModal

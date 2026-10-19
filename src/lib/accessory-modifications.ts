@@ -54,7 +54,9 @@ export interface AccessoryConfiguration {
 }
 
 const bonusSkills = new Set(SKILLS.filter(s => !['luta', 'pontaria'].includes(s.id)).map(s => s.id));
-const kitSkills = new Set(['crime', 'enganacao', 'medicina', 'tecnologia']);
+/** Perícias com kit próprio no catálogo atual; compartilhadas com a seleção do item. */
+export const KIT_SKILL_IDS = ['crime', 'enganacao', 'medicina', 'tecnologia'] as const;
+const kitSkills = new Set<string>(KIT_SKILL_IDS);
 
 /** Valida escolhas e a exceção de Aprimorado antes de gravar; retorna um aviso claro. */
 export function validateAccessoryModifications(

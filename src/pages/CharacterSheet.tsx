@@ -3030,17 +3030,13 @@ export default function CharacterSheet() {
                 classTrack={character.class_track}
                 nex={character.nex}
                 peCurrent={peCurrent}
+                onRefetch={refetchCharacter}
                 onPEChange={handlePEChange}
                 onActivateEffect={activatedEffects.activateEffect}
                 isEffectActive={activatedEffects.isEffectActive}
                 onTrackPESpent={roundTracking.trackPESpent}
                 pvCurrent={hpCurrent}
                 pvMax={character.hp_max}
-                onHPChange={(newHP) => handleCombatStatsChange({ 
-                  hp: newHP, 
-                  pe: peCurrent, 
-                  san: sanCurrent 
-                })}
                 computedEffects={unifiedEffects?.computed}
                 versatilityTrack={character.versatility_track}
                 // Props para Equipe de Trauma

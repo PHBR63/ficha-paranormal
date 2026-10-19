@@ -4,7 +4,7 @@
  * Requisito Especial: Treinado em Medicina + kit de medicina
  * 
  * Encapsula toda a lógica de habilidades da trilha:
- * - NEX 10%: Paramédico - Cura 2d10 PV (escala com NEX), +1 PE por dado extra
+ * - NEX 10%: Paramédico - disponibilidade na trilha; resolução no servidor
  * - NEX 40%: Equipe de Trauma - Remove condição negativa (exceto morrendo)
  * - NEX 65%: Resgate - Movimento livre em alcance curto para aliado machucado/morrendo, 
  *            +5 Defesa para AMBOS (curador e alvo) ao curar, metade dos espaços ao carregar
@@ -13,49 +13,9 @@
  * @module tracks/especialista/useMedicoDeCampoTrack
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { TRACK_EFFECT_IDS, type EffectDuration, type ComputedEffects } from '@/hooks';
-
-// =====================================================
-// Funções Auxiliares
-// =====================================================
-
-/**
- * Calcula os dados de cura do Paramédico baseado no NEX
- * 
- * REGRA OFICIAL (Livro Base v1.3):
- * - Base: 2d10 (fixo em todos os NEX)
- * - Dados extras permitidos escalam com NEX:
- *   - NEX 10-35%: 0 extras (máx 2d10, custo 2 PE)
- *   - NEX 40-60%: 1 extra (máx 3d10, custo 3 PE)
- *   - NEX 65-95%: 2 extras (máx 4d10, custo 4 PE)
- *   - NEX 99%: 3 extras (máx 5d10, custo 5 PE)
- */
-export function getParamedicoDice(nex: number): { 
-  base: number; 
-  dieType: string; 
-  formula: string;
-  maxExtraDice: number; // Limite de dados extras permitidos pelo NEX
-} {
-  // Base é SEMPRE 2d10 conforme regras oficiais
-  const base = 2;
-  const dieType = 'd10';
-  
-  // Dados extras permitidos escalam com NEX
-  let maxExtraDice = 0;
-  if (nex >= 99) maxExtraDice = 3;      // máx 5d10, 5 PE
-  else if (nex >= 65) maxExtraDice = 2; // máx 4d10, 4 PE
-  else if (nex >= 40) maxExtraDice = 1; // máx 3d10, 3 PE
-  // NEX 10-35%: 0 extras               // máx 2d10, 2 PE
-  
-  return { 
-    base, 
-    dieType, 
-    formula: `${base}${dieType}`,
-    maxExtraDice,
-  };
-}
 
 // =====================================================
 // Props do Hook
@@ -85,8 +45,6 @@ export interface UseMedicoDeCampoTrackProps {
   pvCurrent?: number;
   /** HP máximo do personagem */
   pvMax?: number;
-  /** Callback para atualizar HP */
-  onHPChange?: (newHP: number) => void;
   /** Trilha de Versatilidade do personagem (NEX 50%) */
   versatilityTrack?: VersatilityTrackInfo | null;
 }
@@ -108,56 +66,29 @@ export function useMedicoDeCampoTrack({
   onTrackPESpent,
   pvCurrent = 0,
   pvMax = 0,
-  onHPChange,
   versatilityTrack,
 }: UseMedicoDeCampoTrackProps) {
-  const [extraDice, setExtraDice] = useState(0);
-  const [showParamedicoDrawer, setShowParamedicoDrawer] = useState(false);
-  const [showHealingRollModal, setShowHealingRollModal] = useState(false);
-  const [pendingHealConfig, setPendingHealConfig] = useState<{ totalDice: number; cost: number } | null>(null);
-  
   // Estado para o modal de Equipe de Trauma
   const [showEquipeTraumaModal, setShowEquipeTraumaModal] = useState(false);
   // Verifica se é Médico de Campo (trilha principal)
-  const isMedicoCampo = classTrack === 'Médico de Campo' || classTrack === 'medico-campo';
+  const isMedicoCampo = ['Médico de Campo', 'medico-campo', 'medico-de-campo'].includes(classTrack ?? '');
   
   // Verifica se obteve Paramédico via Versatilidade (NEX 50%)
   const hasParamedicoFromVersatility = 
-    versatilityTrack?.trackId === 'medico-campo' && 
+    nex >= 50 && ['medico-campo', 'medico-de-campo'].includes(versatilityTrack?.trackId ?? '') &&
     versatilityTrack?.abilityId === 'paramedico';
 
   // Dados de cura do SUE
   const sueHealing = computedEffects?.healing;
   const sueSupport = computedEffects?.support;
 
-  // Dados de cura base - usa SUE se disponível, mas SEMPRE respeita maxExtraDice
-  const healingDice = useMemo(() => {
-    const baseDice = getParamedicoDice(nex);
-    
-    // SUE pode sobrescrever valores base, mas maxExtraDice vem do NEX
-    if (sueHealing?.baseDice && sueHealing?.dieType) {
-      return {
-        base: sueHealing.baseDice,
-        dieType: sueHealing.dieType,
-        formula: `${sueHealing.baseDice}${sueHealing.dieType}`,
-        maxExtraDice: baseDice.maxExtraDice, // Sempre usa o limite do NEX
-      };
-    }
-    return baseDice;
-  }, [sueHealing, nex]);
-
-  // Limite máximo de dados extras baseado no NEX
-  const maxExtraDice = healingDice.maxExtraDice ?? 0;
-
-  // Custo total do Paramédico (2 PE base + 1 PE por dado extra)
-  const paramedicoCost = 2 + extraDice;
-
   // Habilidades desbloqueadas por NEX (ou via Versatilidade)
   // Paramédico: desbloqueado no NEX 10% da trilha OU via Versatilidade
   const hasParamedico = (isMedicoCampo && nex >= 10) || hasParamedicoFromVersatility;
-  const hasEquipeTrauma = nex >= 40;
-  const hasResgate = nex >= 65;
-  const hasReanimacao = nex >= 99;
+  // Versatilidade concede somente o primeiro poder da trilha (Livro Base, p. 30).
+  const hasEquipeTrauma = isMedicoCampo && nex >= 40;
+  const hasResgate = isMedicoCampo && nex >= 65;
+  const hasReanimacao = isMedicoCampo && nex >= 99;
 
   // Dados de suporte do SUE
   const freeMovementAbility = sueSupport?.freeMovement ?? null;
@@ -168,80 +99,6 @@ export function useMedicoDeCampoTrack({
   // Bônus de defesa ao curar (Resgate) - aplica-se a ambos: curador e alvo
   const selfDefenseBonus = onHealEffects.length > 0 ? (onHealEffects[0] as unknown as { selfDefenseBonus?: number }).selfDefenseBonus ?? 5 : 5;
   const targetDefenseBonus = onHealEffects.length > 0 ? onHealEffects[0].targetDefenseBonus : 5;
-
-  // Bônus de cura da origem (ex: Agente de Saúde - Técnica Medicinal adiciona INT)
-  const healingBonusFromOrigin = useMemo(() => {
-    return {
-      value: sueHealing?.bonusFromOrigin ?? 0,
-      source: sueHealing?.bonusFromOriginSource ?? null,
-    };
-  }, [sueHealing]);
-
-  /**
-   * Abre drawer para configurar Paramédico
-   */
-  const handleOpenParamedico = useCallback(() => {
-    setExtraDice(0);
-    setShowParamedicoDrawer(true);
-  }, []);
-
-  /**
-   * Executa a cura do Paramédico - abre o modal de rolagem
-   */
-  const handleUseParamedico = useCallback(() => {
-    if (peCurrent < paramedicoCost) {
-      toast.error('PE insuficiente', { 
-        description: `Paramédico requer ${paramedicoCost} PE (2 base + ${extraDice} extras).` 
-      });
-      return;
-    }
-
-    // Deduz PE
-    onPEChange(peCurrent - paramedicoCost);
-    onTrackPESpent?.('Paramédico', paramedicoCost);
-    
-    const totalDice = healingDice.base + extraDice;
-    
-    // Ativar efeito do Paramédico
-    onActivateEffect?.(TRACK_EFFECT_IDS.PARAMEDICO ?? 'track-paramedico', 'Paramédico', 'instant', { dice: totalDice });
-    
-    // Ativar efeito de defesa do Resgate se desbloqueado
-    if (hasResgate) {
-      onActivateEffect?.(
-        TRACK_EFFECT_IDS.RESGATE_DEFENSE ?? 'track-resgate-defense', 
-        'Resgate (Defesa)', 
-        'next-turn',
-        { selfBonus: selfDefenseBonus, targetBonus: targetDefenseBonus }
-      );
-    }
-    
-    // Armazenar configuração e abrir modal de rolagem
-    setPendingHealConfig({ totalDice, cost: paramedicoCost });
-    setShowParamedicoDrawer(false);
-    setShowHealingRollModal(true);
-  }, [peCurrent, paramedicoCost, extraDice, healingDice.base, onPEChange, selfDefenseBonus, targetDefenseBonus, hasResgate, onActivateEffect, onTrackPESpent]);
-
-  /**
-   * Aplica a cura no personagem após rolagem
-   */
-  const handleApplyHealing = useCallback((amount: number, target: 'self' | string) => {
-    if (target === 'self' && onHPChange) {
-      const newHp = Math.min(pvCurrent + amount, pvMax);
-      onHPChange(newHp);
-      
-      const defenseBonusText = hasResgate 
-        ? ` Você e o aliado recebem +${targetDefenseBonus} Defesa.` 
-        : '';
-      
-      toast.success(`Curou ${amount} PV!`, {
-        description: `HP: ${pvCurrent} → ${newHp}/${pvMax}.${defenseBonusText}`,
-      });
-    }
-    // target === string -> modo campanha futuro (curar aliado por ID)
-    
-    setShowHealingRollModal(false);
-    setPendingHealConfig(null);
-  }, [pvCurrent, pvMax, onHPChange, hasResgate, targetDefenseBonus]);
 
   /**
    * Abre o modal de seleção de alvo para Equipe de Trauma
@@ -343,13 +200,6 @@ export function useMedicoDeCampoTrack({
     // Estado
     // Retorna true se tem acesso ao Médico de Campo (trilha principal OU Paramédico via Versatilidade)
     isMedicoCampo: isMedicoCampo || hasParamedicoFromVersatility,
-    extraDice,
-    setExtraDice,
-    showParamedicoDrawer,
-    setShowParamedicoDrawer,
-    showHealingRollModal,
-    setShowHealingRollModal,
-    pendingHealConfig,
     
     // Estado do modal Equipe de Trauma
     showEquipeTraumaModal,
@@ -362,12 +212,8 @@ export function useMedicoDeCampoTrack({
     hasReanimacao,
     
     // Dados derivados
-    healingDice,
-    paramedicoCost,
     selfDefenseBonus,
     targetDefenseBonus,
-    maxExtraDice, // Limite de dados extras pelo NEX
-    healingBonusFromOrigin, // Bônus de origem (INT de Agente de Saúde)
     
     // Dados do SUE
     sueHealing,
@@ -375,21 +221,16 @@ export function useMedicoDeCampoTrack({
     hasSueData: !!(sueHealing || sueSupport),
     
     // Handlers
-    handleOpenParamedico,
-    handleUseParamedico,
     handleOpenEquipeTrauma, // Abre o modal de seleção de alvo
     handleEquipeTrauma,     // Executa a ação após seleção
     handleReanimacao,
-    handleApplyHealing,
     
     // Props de HP para o modal
     pvCurrent,
     pvMax,
     
     // Helpers
-    canAffordParamedico: peCurrent >= paramedicoCost,
     canAffordEquipeTrauma: peCurrent >= 2,
     canAffordReanimacao: peCurrent >= 10 && !reanimacaoUsedThisScene,
-    canAddExtraDice: extraDice < maxExtraDice && peCurrent >= paramedicoCost + 1,
   };
 }
