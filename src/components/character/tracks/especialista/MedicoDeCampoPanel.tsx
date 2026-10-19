@@ -8,12 +8,10 @@
  */
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Stethoscope, 
   ShieldPlus, 
-  Sparkles, 
   Info,
   CheckCircle2
 } from '@/components/icons/ordem-icons';
@@ -27,6 +25,7 @@ import {
 import { ParamedicoAction } from './ParamedicoAction';
 import { EquipeTraumaAction } from './EquipeTraumaAction';
 import { ResgateAction } from './ResgateAction';
+import { ReanimacaoAction } from './ReanimacaoAction';
 import type { CampaignAlly } from './EquipeTraumaModal';
 import type { ActiveCondition } from '@/hooks/character/useConditions';
 
@@ -122,28 +121,10 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
       )}
 
       {/* NEX 99% - Reanimação */}
-      {track.hasReanimacao && (
-        <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-yellow-900/30 border border-yellow-500/20">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Sparkles className="h-4 w-4 text-yellow-400 shrink-0" />
-            <div className="min-w-0">
-              <span className={`font-medium ${isMobile ? 'text-sm' : 'text-sm'}`}>Reanimação</span>
-              <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground`}>
-                10 PE • 1x/cena
-              </p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            variant={props.reanimacaoUsedThisScene ? "outline" : track.canAffordReanimacao ? "default" : "outline"}
-            disabled={!track.canAffordReanimacao}
-            onClick={track.handleReanimacao}
-            className="shrink-0"
-          >
-            {props.reanimacaoUsedThisScene ? 'Usado' : 'Usar'}
-          </Button>
-        </div>
-      )}
+      {track.hasReanimacao && (props.characterId ? <ReanimacaoAction
+        characterId={props.characterId} nex={props.nex} peCurrent={props.peCurrent}
+        onRefetch={props.onRefetch}
+      /> : <p role="alert" className="text-sm text-destructive">Ficha indisponível para confirmar Reanimação.</p>)}
     </div>
   );
 

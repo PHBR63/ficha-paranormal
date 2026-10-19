@@ -18,6 +18,7 @@ vi.mock('@/services/character-activity-service', () => ({
 
 import { EquipeTraumaAction } from '../EquipeTraumaAction';
 import { ResgateAction } from '../ResgateAction';
+import { ReanimacaoAction } from '../ReanimacaoAction';
 
 function mount(node: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -27,6 +28,7 @@ function mount(node: React.ReactNode) {
 beforeEach(() => {
   fake.confirm.mockReset(); fake.rpc.mockReset();
   fake.budget.mode = 'manual'; fake.budget.key = 'manual:medico:1'; fake.budget.actorId = undefined;
+  fake.budget.remaining = 5;
 });
 
 describe('Equipe de Trauma e Resgate', () => {
@@ -85,12 +87,62 @@ describe('Equipe de Trauma e Resgate', () => {
       targets: [{ id: 'ally', name: 'Aliado', conditions: snapshot, conditionsSnapshot: snapshot }] }, error: null });
     mount(<EquipeTraumaAction characterId="medico" nex={65} peCurrent={5} />);
     fireEvent.click(screen.getByRole('button', { name: 'Escolher condição' }));
-    expect(await screen.findByText(/Ação preparada fora do turno exige registro e gatilho no servidor/)).toBeVisible();
+    expect(await screen.findByText(/Equipe de Trauma é usada e cobrada quando declarada/)).toBeVisible();
     fireEvent.change(screen.getByLabelText('Alvo de Equipe de Trauma'), { target: { value: 'ally' } });
     fireEvent.change(screen.getByLabelText('Condição a remover'), { target: { value: 'abalado' } });
     fireEvent.click(screen.getByText('Confirmei uma ação padrão disponível.'));
     fireEvent.click(screen.getByText('Confirmei com a mesa que o aliado está adjacente.'));
     expect(screen.getByRole('button', { name: 'Remover condição · 2 PE' })).toBeDisabled();
+    expect(fake.confirm).not.toHaveBeenCalled();
+  });
+});
+
+describe('Reanimação com morte confirmada pelo mestre', () => {
+  const options = (deathId: string | null, deathCause: string | null, canConfirmDeath = false) => ({
+    eligible: true, trained: true, medicalKit: true,
+    campaigns: [{ id: 'camp', name: 'Campanha', sceneNumber: 3,
+      canConfirmDeath, usedInScene: false,
+      targets: [{ id: 'ally', name: 'Aliado', currentHp: 0, maxHp: 20, deathId, deathCause }] }],
+  });
+
+  it('mestre registra morte e causa sem cobrar PE na interface', async () => {
+    fake.rpc.mockResolvedValue({ data: options(null, null, true), error: null });
+    mount(<ReanimacaoAction characterId="medico" nex={99} peCurrent={12} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Conferir alvo' }));
+    await screen.findByRole('option', { name: /Aliado/ });
+    fireEvent.change(screen.getByLabelText('Alvo de Reanimação'), { target: { value: 'ally' } });
+    expect(screen.getByRole('button', { name: 'Registrar morte' })).toBeDisabled();
+    fireEvent.click(screen.getByText('Confirmei como mestre a morte e a causa nesta cena.'));
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar morte' }));
+    expect(fake.confirm).toHaveBeenCalledWith(expect.objectContaining({ campaignId: 'camp', targetId: 'ally',
+      cause: 'ordinary', deathConfirmed: true, expectedScene: 3, expectedTargetHp: 0 }));
+    expect(screen.queryByRole('button', { name: /Reanimar · 10 PE/ })).not.toBeInTheDocument();
+  });
+
+  it('só confirma a ação completa com morte elegível, PE e orçamento do turno', async () => {
+    fake.budget.remaining = 10;
+    fake.rpc.mockResolvedValue({ data: options('death-op', 'ordinary'), error: null });
+    mount(<ReanimacaoAction characterId="medico" nex={99} peCurrent={12} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Conferir alvo' }));
+    await screen.findByRole('option', { name: /Aliado/ });
+    fireEvent.change(screen.getByLabelText('Alvo de Reanimação'), { target: { value: 'ally' } });
+    expect(screen.getByRole('button', { name: 'Reanimar · 10 PE · 1 PV' })).toBeDisabled();
+    fireEvent.click(screen.getByText('Confirmei uma ação completa disponível.'));
+    fireEvent.click(screen.getByRole('button', { name: 'Reanimar · 10 PE · 1 PV' }));
+    expect(fake.confirm).toHaveBeenCalledWith(expect.objectContaining({ campaignId: 'camp', targetId: 'ally',
+      deathId: 'death-op', expectedTargetHp: 0, expectedScene: 3, expectedPE: 12,
+      expectedTurnKey: 'manual:medico:1', completeActionConfirmed: true }));
+  });
+
+  it('bloqueia dano massivo antes de enviar qualquer cobrança', async () => {
+    fake.budget.remaining = 10;
+    fake.rpc.mockResolvedValue({ data: options('death-op', 'massive_damage'), error: null });
+    mount(<ReanimacaoAction characterId="medico" nex={99} peCurrent={12} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Conferir alvo' }));
+    await screen.findByRole('option', { name: /Aliado/ });
+    fireEvent.change(screen.getByLabelText('Alvo de Reanimação'), { target: { value: 'ally' } });
+    expect(screen.getByText('Morte por dano massivo não pode receber Reanimação.')).toBeVisible();
+    expect(screen.queryByRole('button', { name: /Reanimar · 10 PE/ })).not.toBeInTheDocument();
     expect(fake.confirm).not.toHaveBeenCalled();
   });
 });

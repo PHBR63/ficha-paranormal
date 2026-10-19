@@ -354,7 +354,8 @@ export const ESPECIALISTA_TRACKS: UnifiedTrack[] = [
             },
             resurrect: {
               excludedDeathTypes: ['massive-damage'],
-              sameSceneOnly: true
+              sameSceneOnly: true,
+              hpRestored: 'one' // Decisão desta mesa; o Livro Base não fixa os PV do retorno.
             }
           }
         },

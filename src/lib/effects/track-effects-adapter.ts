@@ -1220,15 +1220,14 @@ function convertTrackAbilityToMechanics(
       usesPerScene: m.resurrect.usesPerScene ?? 1,
       peCost: m.resurrect.peCost ?? 10,
       actionType: m.resurrect.actionType as 'complete' | 'full-round',
-      hpRestored: m.resurrect.hpRestored as 'roll' | 'half' | 'full',
+      hpRestored: m.resurrect.hpRestored as 'roll' | 'half' | 'full' | 'one',
     };
 
     if (!mechanics.specialEffects) mechanics.specialEffects = [];
-    const hpDesc = m.resurrect.hpRestored === 'roll'
-      ? 'rolagem de cura'
-      : m.resurrect.hpRestored === 'half'
-        ? 'metade dos PV'
-        : 'PV total';
+    const hpDesc = m.resurrect.hpRestored === 'one' ? '1 PV (regra desta mesa)'
+      : m.resurrect.hpRestored === 'roll' ? 'rolagem de cura'
+        : m.resurrect.hpRestored === 'half' ? 'metade dos PV'
+          : m.resurrect.hpRestored === 'full' ? 'PV total' : 'PV a definir pela mesa';
     const excluded = m.resurrect.excludedDeathTypes?.join(', ') || 'nenhuma';
     mechanics.specialEffects.push(
       `Reanimar aliado (${m.resurrect.peCost} PE, ${hpDesc}, exceto: ${excluded})`

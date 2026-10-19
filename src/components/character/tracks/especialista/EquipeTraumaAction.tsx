@@ -133,12 +133,12 @@ export function EquipeTraumaAction({ characterId, nex, peCurrent, onRefetch }: P
           onCheckedChange={value => setStandardAction(value === true)} />Confirmei uma ação padrão disponível.</label>
         <label className="flex items-start gap-2"><Checkbox checked={adjacent} disabled={action.busy || action.uncertain}
           onCheckedChange={value => setAdjacent(value === true)} />Confirmei com a mesa que o aliado está adjacente.</label>
-        <p className="text-xs text-muted-foreground">A condição e os 2 PE são confirmados juntos. Morrendo e estados derivados de PV/SAN exigem outro procedimento; Inconsciente por zero PV exige cura.</p>
+        <p className="text-xs text-muted-foreground">Ao declarar e confirmar o uso, o servidor remove a condição e cobra 2 PE na mesma operação. Morrendo e estados derivados de PV/SAN exigem outro procedimento; Inconsciente por zero PV exige cura.</p>
         {!enoughPE && <p role="alert" className="text-destructive">PE insuficiente.</p>}
         {budget.error && <p role="alert" className="text-destructive">Orçamento do turno indisponível.</p>}
         {budget.data?.tracked && !withinBudget && <p role="alert" className="text-destructive">Limite de PE deste turno insuficiente.</p>}
         {budget.data?.mode === 'combat' && budget.data.actorId !== characterId &&
-          <p role="status">Ação preparada fora do turno exige registro e gatilho no servidor. Este painel ainda não confirma essa execução; aguarde seu turno ou resolva com a mesa.</p>}
+          <p role="status">Equipe de Trauma é usada e cobrada quando declarada. Aguarde o próprio turno ou resolva com a mesa; nenhum PE foi cobrado.</p>}
         {action.error && <p role="alert" className="text-destructive">{action.error}</p>}
         {action.uncertain && <Button type="button" variant="outline" disabled={action.busy}
           onClick={() => void action.recover()}>Recuperar confirmação</Button>}

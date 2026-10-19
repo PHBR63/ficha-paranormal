@@ -13,9 +13,7 @@
  * @module tracks/especialista/useMedicoDeCampoTrack
  */
 
-import { useCallback } from 'react';
-import { toast } from 'sonner';
-import { TRACK_EFFECT_IDS, type EffectDuration, type ComputedEffects } from '@/hooks';
+import type { EffectDuration, ComputedEffects } from '@/hooks';
 
 // =====================================================
 // Props do Hook
@@ -34,8 +32,6 @@ export interface UseMedicoDeCampoTrackProps {
   nex: number;
   peCurrent: number;
   onPEChange: (newPE: number) => void;
-  reanimacaoUsedThisScene?: boolean;
-  onReanimacaoUsed?: () => void;
   onActivateEffect?: (id: string, name: string, duration: EffectDuration, metadata?: Record<string, unknown>) => void;
   isEffectActive?: (id: string) => boolean;
   computedEffects?: ComputedEffects;
@@ -56,14 +52,7 @@ export interface UseMedicoDeCampoTrackProps {
 export function useMedicoDeCampoTrack({
   classTrack,
   nex,
-  peCurrent,
-  onPEChange,
-  reanimacaoUsedThisScene = false,
-  onReanimacaoUsed,
-  onActivateEffect,
-  isEffectActive,
   computedEffects,
-  onTrackPESpent,
   pvCurrent = 0,
   pvMax = 0,
   versatilityTrack,
@@ -91,42 +80,10 @@ export function useMedicoDeCampoTrack({
   // Dados de suporte do SUE
   const freeMovementAbility = sueSupport?.freeMovement ?? null;
   const onHealEffects = sueSupport?.onHealEffects ?? [];
-  const resurrectAbilities = sueSupport?.resurrectAbilities ?? [];
 
   // Bônus de defesa ao curar (Resgate) - aplica-se a ambos: curador e alvo
   const selfDefenseBonus = onHealEffects.length > 0 ? (onHealEffects[0] as unknown as { selfDefenseBonus?: number }).selfDefenseBonus ?? 5 : 5;
   const targetDefenseBonus = onHealEffects.length > 0 ? onHealEffects[0].targetDefenseBonus : 5;
-
-  /**
-   * Usa Reanimação (10 PE, 1x/cena)
-   */
-  const handleReanimacao = useCallback(() => {
-    if (reanimacaoUsedThisScene) {
-      toast.warning('Já usado nesta cena', { 
-        description: 'Reanimação só pode ser usada 1x por cena.' 
-      });
-      return;
-    }
-    
-    if (peCurrent < 10) {
-      toast.error('PE insuficiente', { description: 'Reanimação requer 10 PE.' });
-      return;
-    }
-
-    onPEChange(peCurrent - 10);
-    onTrackPESpent?.('Reanimação', 10);
-    onReanimacaoUsed?.();
-    
-    const excludedDeathTypes = resurrectAbilities.length > 0 
-      ? resurrectAbilities[0].excludedDeathTypes 
-      : ['dano massivo'];
-    
-    onActivateEffect?.(TRACK_EFFECT_IDS.REANIMACAO ?? 'track-reanimacao', 'Reanimação', 'scene');
-    
-    toast.success('Reanimação ativada!', {
-      description: `Traz de volta à vida um personagem que morreu nesta cena (exceto morte por ${excludedDeathTypes.join(', ')}).`
-    });
-  }, [peCurrent, reanimacaoUsedThisScene, onPEChange, onReanimacaoUsed, resurrectAbilities, onActivateEffect, onTrackPESpent]);
 
   return {
     // Estado
@@ -150,13 +107,11 @@ export function useMedicoDeCampoTrack({
     hasSueData: !!(sueHealing || sueSupport),
     
     // Handlers
-    handleReanimacao,
     
     // Props de HP para o modal
     pvCurrent,
     pvMax,
     
     // Helpers
-    canAffordReanimacao: peCurrent >= 10 && !reanimacaoUsedThisScene,
   };
 }
