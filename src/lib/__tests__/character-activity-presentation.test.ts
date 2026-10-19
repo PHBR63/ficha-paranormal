@@ -8,6 +8,16 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('explica Mirar pago conforme o modo, sem atribuir prazo manual ao combate', () => {
+    const untracked = describeCharacterActivity(event({ kind: 'mirar', mode: 'untracked',
+      weaponName: 'Fuzil', peCost: 1, lethalShotPrepaid: true, consumedByAttackId: 'attack' }));
+    expect(untracked).toContain('registrada sem controle de turnos');
+    expect(untracked).toContain('alvo, alcance e prazo conferidos pela mesa');
+    const combat = describeCharacterActivity(event({ kind: 'mirar', mode: 'combat', round: 2,
+      weaponName: 'Fuzil', peCost: 1, lethalShotPrepaid: true }));
+    expect(combat).toContain('registrada na rodada 2');
+    expect(combat).not.toContain('prazo conferidos pela mesa');
+  });
   it('explica a cobrança na fonte e a nova rolagem no aliado', () => {
     const source = describeCharacterActivity(event({ kind: 'inspirar_confianca', targetName: 'Aliado',
       testLabel: 'Vontade', originalTotal: 12, rerollTotal: 19, range: 'curto',

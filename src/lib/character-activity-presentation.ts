@@ -42,11 +42,13 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
   const payload = event.payload;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return 'Registro sem detalhes';
   if (payload.kind === 'mirar') {
-    const turn = payload.mode === 'manual' ? `turno manual ${payload.turnNumber}`
-      : payload.mode === 'untracked' ? 'sem controle de turnos' : `rodada ${payload.round}`;
+    const turn = payload.mode === 'manual' ? `no turno manual ${payload.turnNumber}`
+      : payload.mode === 'untracked' ? 'sem controle de turnos' : `na rodada ${payload.round}`;
     const outcome = payload.dismissedAt ? 'preparo encerrado sem estorno'
       : payload.consumedByAttackId ? 'preparo consumido pelo próximo ataque' : 'próximo ataque no prazo';
-    return `Mirar com ${payload.weaponName ?? 'arma equipada'} · ação de movimento registrada em ${turn} · ${payload.peCost ?? 0} PE ${payload.lethalShotPrepaid === true ? 'gasto para Disparo Letal' : '(registro antigo, sem Disparo Letal pré-pago)'} · ${outcome}; alvo, alcance e prazo sem turnos conferidos pela mesa`;
+    const review = payload.mode === 'untracked' ? 'alvo, alcance e prazo conferidos pela mesa'
+      : 'alvo e alcance conferidos pela mesa';
+    return `Mirar com ${payload.weaponName ?? 'arma equipada'} · ação de movimento registrada ${turn} · ${payload.peCost ?? 0} PE ${payload.lethalShotPrepaid === true ? 'gasto para Disparo Letal' : '(registro antigo, sem Disparo Letal pré-pago)'} · ${outcome}; ${review}`;
   }
   if (payload.kind === 'post_attack_stealth') {
     const result = payload.result;
