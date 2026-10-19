@@ -18,6 +18,7 @@ vi.mock('@/hooks/character/useTemporaryResources', () => ({ useTemporaryResource
 vi.mock('@/services/character-activity-service', () => ({ activityClient: { rpc: mock.rpc }, activityFailure: () => new Error('Falha') }));
 
 import { ParamedicoAction } from '../ParamedicoAction';
+import { MedicoDeCampoPanel } from '../MedicoDeCampoPanel';
 
 function renderAction(peCurrent = 4) {
   const query = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -64,5 +65,16 @@ describe('Paramédico confirmado no servidor', () => {
     expect(await screen.findByText(/PE insuficiente para esta cura/)).toBeVisible();
     expect(screen.getByRole('button', { name: 'Confirmar cura · 2 PE' })).toBeDisabled();
     expect(mock.confirm).not.toHaveBeenCalled();
+  });
+
+  it('preserva a preparação aberta quando o painel da ficha atualiza', async () => {
+    const query = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const props = { characterId: 'source', characterName: 'Médica', classTrack: 'medico-campo',
+      nex: 10, peCurrent: 4, pvCurrent: 8, pvMax: 20, onPEChange: vi.fn() };
+    const view = render(<QueryClientProvider client={query}><MedicoDeCampoPanel {...props} /></QueryClientProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Preparar cura' }));
+    expect(await screen.findByLabelText('Alvo do Paramédico')).toBeVisible();
+    view.rerender(<QueryClientProvider client={query}><MedicoDeCampoPanel {...props} peCurrent={3} /></QueryClientProvider>);
+    expect(screen.getByLabelText('Alvo do Paramédico')).toBeVisible();
   });
 });
