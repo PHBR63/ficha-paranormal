@@ -179,7 +179,7 @@ BEGIN
  IF p_request->>'expectedTurnKey' IS DISTINCT FROM budget->>'key' THEN
   RAISE EXCEPTION 'Turno mudou. Atualize antes de confirmar.' USING ERRCODE='40001'; END IF;
  IF budget->>'mode'='combat' AND budget->>'actorId' IS DISTINCT FROM p_character_id::text THEN
-  RAISE EXCEPTION 'Aguarde o turno do Médico de Campo.' USING ERRCODE='55004'; END IF;
+  RAISE EXCEPTION 'Ação preparada ainda não é confirmada por este fluxo. Aguarde o próprio turno.' USING ERRCODE='55004'; END IF;
  SELECT coalesce(sum(remaining),0)::integer INTO temporary_before FROM public.character_temporary_resources
   WHERE character_id=p_character_id AND resource='pe';
  IF source.pe_current+temporary_before<2 THEN RAISE EXCEPTION 'PE insuficiente.' USING ERRCODE='22023'; END IF;
@@ -253,13 +253,26 @@ CREATE UNIQUE INDEX character_resgate_movement_once ON public.character_resgate_
 ALTER TABLE public.character_resgate_movements ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.character_resgate_movements FROM PUBLIC,anon,authenticated;
 
+-- O turno do combatente ativo muda, mas a franquia de Resgate é por rodada.
+-- A chave manual continua por turno porque esse controle não possui rodada.
+CREATE FUNCTION public.character_resgate_control_key(p_budget jsonb)
+RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,pg_temp AS $$
+ SELECT CASE WHEN p_budget->>'mode'='combat' THEN
+  CASE WHEN p_budget->>'campaignId' IS NOT NULL AND p_budget->>'scene' IS NOT NULL
+   AND p_budget->>'round' IS NOT NULL THEN 'round:' || (p_budget->>'campaignId') || ':' ||
+    (p_budget->>'scene') || ':' || (p_budget->>'round') END
+ ELSE p_budget->>'key' END;
+$$;
+REVOKE ALL ON FUNCTION public.character_resgate_control_key(jsonb) FROM PUBLIC,anon,authenticated;
+
 CREATE FUNCTION public.get_character_resgate_movement_options(p_character_id uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
-DECLARE source public.characters; base jsonb; budget jsonb; targets jsonb;
+DECLARE source public.characters; base jsonb; budget jsonb; targets jsonb; control_key text;
 BEGIN
  base:=public.get_character_paramedico_options(p_character_id);
  SELECT * INTO source FROM public.characters WHERE id=p_character_id;
  budget:=public.get_character_pe_budget(p_character_id);
+ control_key:=public.character_resgate_control_key(budget);
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',target.id,'name',target.name,
   'currentHp',target.hp_current,'maxHp',target.hp_max) ORDER BY target.name,target.id),'[]'::jsonb)
  INTO targets FROM public.get_character_estrategista_targets(p_character_id) linked
@@ -270,8 +283,8 @@ BEGIN
  RETURN jsonb_build_object('eligible',source.nex>=65 AND lower(source.class)='especialista'
   AND public.creation_identifier(source.class_track) IN ('medico-de-campo','medico-campo'),
   'trained',base->'trained','medicalKit',base->'medicalKit','targets',targets,
-  'usedInCurrentControl',budget->>'key' IS NOT NULL AND EXISTS(
-   SELECT 1 FROM public.character_resgate_movements WHERE character_id=p_character_id AND turn_key=budget->>'key'));
+  'usedInCurrentControl',control_key IS NOT NULL AND EXISTS(
+   SELECT 1 FROM public.character_resgate_movements WHERE character_id=p_character_id AND turn_key=control_key));
 END $$;
 REVOKE ALL ON FUNCTION public.get_character_resgate_movement_options(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_character_resgate_movement_options(uuid) TO authenticated;
@@ -279,7 +292,7 @@ GRANT EXECUTE ON FUNCTION public.get_character_resgate_movement_options(uuid) TO
 CREATE FUNCTION public.confirm_character_resgate_movement(p_operation_id uuid,p_character_id uuid,p_request jsonb)
 RETURNS public.character_activity_events LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
 DECLARE source public.characters; target public.characters; receipt public.character_activity_events;
- budget jsonb; options jsonb; fingerprint text; target_id uuid; wounded boolean;
+ budget jsonb; options jsonb; fingerprint text; target_id uuid; wounded boolean; control_key text;
 BEGIN
  IF NOT public.can_manage_character_activity(p_character_id) THEN
   RAISE EXCEPTION 'Ficha não autorizada.' USING ERRCODE='42501'; END IF;
@@ -320,21 +333,24 @@ BEGIN
   WHERE public.creation_identifier(coalesce(item->>'id',item#>>'{}'))='morrendo');
  IF NOT wounded THEN RAISE EXCEPTION 'Resgate exige aliado machucado ou morrendo.' USING ERRCODE='55004'; END IF;
  budget:=public.get_character_pe_budget(p_character_id);
+ control_key:=public.character_resgate_control_key(budget);
  IF p_request->>'expectedTurnKey' IS DISTINCT FROM budget->>'key' THEN
   RAISE EXCEPTION 'Turno mudou. Atualize antes de confirmar.' USING ERRCODE='40001'; END IF;
+ IF budget->>'mode'='combat' AND control_key IS NULL THEN
+  RAISE EXCEPTION 'Rodada do combate indisponível.' USING ERRCODE='55004'; END IF;
  IF budget->>'mode'='combat' AND budget->>'actorId' IS DISTINCT FROM p_character_id::text THEN
-  RAISE EXCEPTION 'Aguarde o turno do Médico de Campo.' USING ERRCODE='55004'; END IF;
- IF budget->>'key' IS NOT NULL AND EXISTS(SELECT 1 FROM public.character_resgate_movements
-  WHERE character_id=p_character_id AND turn_key=budget->>'key') THEN
+  RAISE EXCEPTION 'Ação preparada ainda não é confirmada por este fluxo. Aguarde o próprio turno.' USING ERRCODE='55004'; END IF;
+ IF control_key IS NOT NULL AND EXISTS(SELECT 1 FROM public.character_resgate_movements
+  WHERE character_id=p_character_id AND turn_key=control_key) THEN
   RAISE EXCEPTION 'Resgate já foi registrado neste controle de rodada/turno manual.' USING ERRCODE='55004'; END IF;
  INSERT INTO public.character_activity_events(id,operation_id,character_id,author_id,category,status,payload,request_hash)
  VALUES(p_operation_id,p_operation_id,p_character_id,auth.uid(),'application','confirmed',
   jsonb_build_object('kind','resgate_movement','targetId',target_id,'targetName',target.name,
-   'turnKey',budget->>'key','mode',budget->>'mode','freeActionConfirmed',true,
+   'turnKey',budget->>'key','controlKey',control_key,'mode',budget->>'mode','freeActionConfirmed',true,
    'shortRangeConfirmed',true,'normalMovementConfirmed',true,'roundConfirmed',true),fingerprint)
  RETURNING * INTO receipt;
  INSERT INTO public.character_resgate_movements(operation_id,character_id,target_character_id,turn_key)
- VALUES(receipt.id,p_character_id,target_id,budget->>'key');
+ VALUES(receipt.id,p_character_id,target_id,control_key);
  RETURN receipt;
 END $$;
 REVOKE ALL ON FUNCTION public.confirm_character_resgate_movement(uuid,uuid,jsonb) FROM PUBLIC,anon;

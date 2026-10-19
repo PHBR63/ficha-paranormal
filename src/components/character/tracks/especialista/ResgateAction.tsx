@@ -109,7 +109,7 @@ export function ResgateAction({ characterId, nex, onRefetch }: Props) {
         {!options.data.medicalKit && <p role="alert" className="text-destructive">Requer kit de Medicina identificado.</p>}
         {options.data.usedInCurrentControl && <p role="status">Resgate já registrado nesta rodada ou turno manual.</p>}
         {budget.data?.mode === 'combat' && budget.data.actorId !== characterId &&
-          <p role="status">Ação livre é feita no seu turno. Aguarde sua vez na rodada.</p>}
+          <p role="status">Resgate preparado fora do turno exige registro e gatilho no servidor. Este painel ainda não confirma essa execução; aguarde seu turno ou resolva com a mesa.</p>}
         <label className="block space-y-1"><span>Aliado machucado ou morrendo</span>
           <select aria-label="Alvo de Resgate" className="w-full rounded border border-border bg-background p-2 text-foreground"
             value={targetId} disabled={action.busy || action.uncertain} onChange={event => setTargetId(event.target.value)}>

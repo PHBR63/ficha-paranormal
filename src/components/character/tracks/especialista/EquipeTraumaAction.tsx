@@ -75,6 +75,7 @@ export function EquipeTraumaAction({ characterId, nex, peCurrent, onRefetch }: P
   const withinBudget = !!budget.data && (!budget.data.tracked || budget.data.remaining >= 2);
   const ready = !!options.data?.eligible && !!options.data.trained && !!options.data.medicalKit
     && !!target && !!condition && standardAction && adjacent && enoughPE && withinBudget
+    && (budget.data?.mode !== 'combat' || budget.data.actorId === characterId)
     && !action.busy && !action.uncertain;
 
   useEffect(() => {
@@ -99,7 +100,7 @@ export function EquipeTraumaAction({ characterId, nex, peCurrent, onRefetch }: P
       <div><strong className="text-sm text-blue-200">Equipe de Trauma</strong>
         <p className="text-xs text-muted-foreground">Ação padrão · 2 PE · uma condição negativa de aliado adjacente.</p></div>
       <Button type="button" size="sm" variant="outline" onClick={() => { setOpen(value => !value); void options.refetch(); }}>
-        {open ? 'Fechar' : 'Preparar remoção'}
+        {open ? 'Fechar' : 'Escolher condição'}
       </Button>
     </div>
     {confirmed && <p role="status" className="text-sm text-blue-200">
@@ -136,6 +137,8 @@ export function EquipeTraumaAction({ characterId, nex, peCurrent, onRefetch }: P
         {!enoughPE && <p role="alert" className="text-destructive">PE insuficiente.</p>}
         {budget.error && <p role="alert" className="text-destructive">Orçamento do turno indisponível.</p>}
         {budget.data?.tracked && !withinBudget && <p role="alert" className="text-destructive">Limite de PE deste turno insuficiente.</p>}
+        {budget.data?.mode === 'combat' && budget.data.actorId !== characterId &&
+          <p role="status">Ação preparada fora do turno exige registro e gatilho no servidor. Este painel ainda não confirma essa execução; aguarde seu turno ou resolva com a mesa.</p>}
         {action.error && <p role="alert" className="text-destructive">{action.error}</p>}
         {action.uncertain && <Button type="button" variant="outline" disabled={action.busy}
           onClick={() => void action.recover()}>Recuperar confirmação</Button>}

@@ -28,6 +28,15 @@ VALUES('a1830000-0000-4000-8000-000000000021','a1830000-0000-4000-8000-000000000
 INSERT INTO public.campaign_members(campaign_id,user_id,character_id,role) VALUES
  ('a1830000-0000-4000-8000-000000000021','a1830000-0000-4000-8000-000000000002','a1830000-0000-4000-8000-000000000011','player'),
  ('a1830000-0000-4000-8000-000000000021','a1830000-0000-4000-8000-000000000004','a1830000-0000-4000-8000-000000000013','player');
+DO $$
+DECLARE first_key text; other_actor_key text; next_round_key text;
+BEGIN
+ first_key:=public.character_resgate_control_key('{"mode":"combat","campaignId":"a1830000-0000-4000-8000-000000000020","scene":1,"round":1,"key":"v2:medic"}'::jsonb);
+ other_actor_key:=public.character_resgate_control_key('{"mode":"combat","campaignId":"a1830000-0000-4000-8000-000000000020","scene":1,"round":1,"key":"v2:ally"}'::jsonb);
+ next_round_key:=public.character_resgate_control_key('{"mode":"combat","campaignId":"a1830000-0000-4000-8000-000000000020","scene":1,"round":2,"key":"v2:ally"}'::jsonb);
+ IF first_key IS NULL OR first_key<>other_actor_key OR first_key=next_round_key THEN
+  RAISE EXCEPTION 'Resgate não conservou uma única chave por rodada independente do combatente'; END IF;
+END $$;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','a1830000-0000-4000-8000-000000000002',true);
 DO $$
@@ -103,6 +112,46 @@ BEGIN
  PERFORM public.begin_character_manual_turn(gen_random_uuid(),medic,1);
  IF public.get_character_resgate_defense_status(medic)->>'bonus'<>'0' THEN
   RAISE EXCEPTION 'Resgate não expirou no início do próximo turno'; END IF;
+ -- O tracker legado mantém preparação apenas no navegador. Um UUID enviado
+ -- pelo cliente sem recibo de preparação do servidor não autoriza uso externo.
+ PERFORM set_config('request.jwt.claim.sub','a1830000-0000-4000-8000-000000000001',true);
+ PERFORM public.save_campaign_combat_v2('a1830000-0000-4000-8000-000000000020',0,
+  jsonb_build_object('active',true,'round',1,'currentTurnIndex',1,'combatants',
+   jsonb_build_array(jsonb_build_object('id',medic,'name','QA Médico','initiative',15),
+    jsonb_build_object('id',ally_v2,'name','QA Aliado v2','initiative',10))));
+ PERFORM set_config('request.jwt.claim.sub','a1830000-0000-4000-8000-000000000002',true);
+ budget:=public.get_character_pe_budget(medic);
+ request:=jsonb_build_object('targetId',ally_v2,'freeActionConfirmed',true,
+  'shortRangeConfirmed',true,'normalMovementConfirmed',true,'roundConfirmed',true,
+  'expectedNex',65,'expectedTurnKey',budget->>'key',
+  'preparedActionId','a1830000-0000-4000-8000-000000000099','triggerConfirmed',true);
+ BEGIN
+  PERFORM public.confirm_character_resgate_movement('a1830000-0000-4000-8000-000000000036',medic,request);
+  RAISE EXCEPTION 'Preparação não comprovada liberou Resgate fora do turno';
+ EXCEPTION WHEN SQLSTATE '55004' THEN NULL; END;
+ IF EXISTS(SELECT 1 FROM public.character_activity_events
+  WHERE operation_id='a1830000-0000-4000-8000-000000000036') THEN
+  RAISE EXCEPTION 'Tentativa preparada rejeitada deixou recibo'; END IF;
+ PERFORM set_config('request.jwt.claim.sub','a1830000-0000-4000-8000-000000000003',true);
+ UPDATE public.characters SET conditions='[{"id":"abalado","name":"Abalado"}]'::jsonb
+  WHERE id=ally_v2;
+ PERFORM set_config('request.jwt.claim.sub','a1830000-0000-4000-8000-000000000002',true);
+ options:=public.get_character_equipe_trauma_options(medic);
+ SELECT target->'conditionsSnapshot' INTO snapshot FROM jsonb_array_elements(options->'targets') target
+  WHERE target->>'id'=ally_v2::text;
+ request:=jsonb_build_object('targetId',ally_v2,'conditionId','abalado',
+  'standardActionConfirmed',true,'adjacencyConfirmed',true,
+  'expectedTargetConditions',snapshot,'expectedPE',4,'expectedNex',65,
+  'expectedTurnKey',budget->>'key',
+  'preparedActionId','a1830000-0000-4000-8000-000000000098','triggerConfirmed',true);
+ BEGIN
+  PERFORM public.confirm_character_equipe_trauma('a1830000-0000-4000-8000-000000000037',medic,request);
+  RAISE EXCEPTION 'Preparação não comprovada liberou Equipe de Trauma fora do turno';
+ EXCEPTION WHEN SQLSTATE '55004' THEN NULL; END;
+ IF (SELECT pe_current FROM public.characters WHERE id=medic)<>4
+  OR EXISTS(SELECT 1 FROM public.character_activity_events
+   WHERE operation_id='a1830000-0000-4000-8000-000000000037') THEN
+  RAISE EXCEPTION 'Tentativa preparada de Equipe gerou gasto ou recibo'; END IF;
 END $$;
 ROLLBACK;
-SELECT 'PASS: Equipe de Trauma e Resgate, v1/v2, PE, histórico, reenvio e turno manual' AS result;
+SELECT 'PASS: Equipe de Trauma e Resgate, v1/v2, PE, rodada, histórico, reenvio e turno manual' AS result;
