@@ -644,6 +644,7 @@ export function MobileCharacterSheet({
   // Calcular bônus de defesa de origem, habilidades de classe e poderes gerais
   // Usa optional chaining para proteção durante carregamento
   const defenseBonuses = useDefenseBonuses({
+    characterId: character?.id,
     origin: character?.origin || '',
     abilities: character?.abilities || [],
     generalPowers: character?.general_powers || [],
