@@ -40,6 +40,17 @@ describe('Histórico de alterações de condições', () => {
     expect(describeCharacterActivity(event({ kind: 'estrategista_movement' }))).toContain('Sem gasto de PE');
     expect(describeCharacterActivity(event({ kind: 'estrategista_turn_review' }))).toContain('mestre confirmou');
   });
+  it('mostra dados, bônus, PV e PE nas duas fichas após Paramédico', () => {
+    const source = describeCharacterActivity(event({ kind: 'paramedico', targetName: 'Aliado', diceCount: 3,
+      dice: [4, 7, 2], originBonus: 2, totalHealing: 15, effectiveHealing: 9,
+      hpBefore: 11, hpAfter: 20, adjacencyConfirmed: true, peCost: 3, peBefore: 8, peAfter: 5 }));
+    expect(source).toContain('3d10 [4 + 7 + 2] + 2 de Agente de Saúde = 15 PV');
+    expect(source).toContain('Cura efetiva 9 PV (11 → 20)');
+    expect(source).toContain('3 PE (8 → 5)');
+    const target = describeCharacterActivity(event({ kind: 'paramedico_healing_received', sourceName: 'Médica',
+      healed: 9, hpBefore: 11, hpAfter: 20 }));
+    expect(target).toContain('Paramédico de Médica · +9 PV (11 → 20)');
+  });
   it('explica chance, d10 e benefício a partir do recibo confirmado', () => {
     const text=describeCharacterActivity({...event({kind:'combat_attack',entry:{label:'Ataque',total:20,results:[20]},concealmentResult:{level:'total',attackerBlind:false,heatVisionApplied:false,chance:50,die:4,failed:true,targetDefense:10}}),category:'roll'});
     expect(text).toContain('chance 50%'); expect(text).toContain('d10 4'); expect(text).toContain('falha por camuflagem; dano bloqueado');

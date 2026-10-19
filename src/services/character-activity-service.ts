@@ -14,6 +14,8 @@ type ActivityDatabase = { public: {
   Functions: {
     get_character_inspirar_tests: { Args: { p_character_id: string }; Returns: { target_id: string; target_name: string; event_id: string; test_label: string; test_type: string; original_total: number; performed_at: string }[] };
     confirm_character_inspirar_confianca: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
+    get_character_paramedico_options: { Args: { p_character_id: string }; Returns: Json };
+    confirm_character_paramedico: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     get_character_estrategista_targets: { Args: { p_character_id: string }; Returns: { id: string; name: string }[] };
     confirm_character_estrategista: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     list_character_estrategista_grants: { Args: { p_character_id: string }; Returns: { operation_id: string; source_name: string; status: string; granted_at: string; turn_controlled: boolean; review_required: boolean; reviewed: boolean; can_review: boolean }[] };

@@ -11,7 +11,7 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
     'confirm_character_explosive_action' | 'confirm_character_explosive_targets' |
     'confirm_character_explosive_effect' | 'confirm_character_explosive_control' |
     'confirm_character_post_attack_stealth' | 'confirm_character_estrategista' |
-    'confirm_character_inspirar_confianca' = 'confirm_character_item_action') {
+    'confirm_character_inspirar_confianca' | 'confirm_character_paramedico' = 'confirm_character_item_action') {
   const queries = useQueryClient();
   const running = useRef(false);
   const intent = useRef<{ id: string; characterId: string; request: Json } | undefined>(undefined);
@@ -46,6 +46,10 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
         // O histórico usa [família, usuário, ficha, filtros]; a ficha está na terceira posição.
         queries.invalidateQueries({ predicate: query => query.queryKey[0] === 'character-activity' && query.queryKey[2] === id }),
         queries.invalidateQueries({ queryKey: ['temporary-resources', id] }),
+      ]).concat([
+        // A cobrança pode esgotar o limite do turno mesmo sem evento realtime.
+        queries.invalidateQueries({ predicate: query => query.queryKey[0] === 'pe-turn-budget'
+          && query.queryKey[2] === command.characterId }),
       ]));
       if (refreshes.some(result => result.status === 'rejected')) setError('Ação confirmada. Recarregue para conferir os saldos; não repita a aplicação.');
       try { if (await onRefetch() === null) throw new Error('Ficha não atualizada'); }

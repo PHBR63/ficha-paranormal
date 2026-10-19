@@ -62,6 +62,8 @@ import {
   type ItemParanormalElement as ParanormalElement,
 } from '@/lib/catalogs';
 import type { PatentLimits } from '@/lib/inventory-system';
+import { KIT_SKILL_IDS } from '@/lib/accessory-modifications';
+import { SKILLS } from '@/lib/character-data';
 
 // Props do componente
 interface ItemCatalogModalProps {
@@ -70,7 +72,7 @@ interface ItemCatalogModalProps {
   patent: string;
   patentLimits: PatentLimits;
   categoryCounts: Record<'I' | 'II' | 'III' | 'IV', number>;
-  onAddItem: (item: CatalogItem) => void;
+  onAddItem: (item: CatalogItem, kitSkill?: string) => void;
 }
 
 // Mapeamento de categorias para cores
@@ -99,11 +101,12 @@ function ItemCard({
   reason,
 }: {
   item: CatalogItem;
-  onSelect: () => void;
+  onSelect: (kitSkill?: string) => void;
   canAdd: boolean;
   reason?: string;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [kitSkill, setKitSkill] = useState('');
   const TypeIcon = TYPE_ICONS[item.type];
 
   return (
@@ -132,6 +135,15 @@ function ItemCard({
                 {ITEM_TYPE_LABELS[item.type].label}
               </Badge>
             </div>
+
+            {item.id === 'kit_pericia' && <label className="mt-2 block text-sm text-foreground">
+              Perícia deste kit
+              <select aria-label="Perícia deste kit" className="mt-1 block w-full rounded border border-border bg-background p-2 text-foreground"
+                value={kitSkill} onChange={event => setKitSkill(event.target.value)}>
+                <option value="">Selecione a perícia</option>
+                {KIT_SKILL_IDS.map(id => <option key={id} value={id}>{SKILLS.find(skill => skill.id === id)?.name ?? id}</option>)}
+              </select>
+            </label>}
 
             {/* Stats principais */}
             <div className="flex items-center gap-3 mt-2 text-sm flex-wrap">
@@ -207,8 +219,8 @@ function ItemCard({
                     <Button
                       size="icon"
                       className="h-8 w-8"
-                      onClick={onSelect}
-                      disabled={!canAdd}
+                      onClick={() => onSelect(kitSkill || undefined)}
+                      disabled={!canAdd || (item.id === 'kit_pericia' && !kitSkill)}
                     >
                       {canAdd ? (
                         <Plus className="w-4 h-4" />
@@ -219,7 +231,7 @@ function ItemCard({
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{canAdd ? 'Adicionar ao inventário' : reason}</p>
+                  <p>{!canAdd ? reason : item.id === 'kit_pericia' && !kitSkill ? 'Escolha a perícia deste kit.' : 'Adicionar ao inventário'}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -411,7 +423,7 @@ export function ItemCatalogModal({
                         <ItemCard
                           key={item.id}
                           item={item}
-                          onSelect={() => onAddItem(item)}
+                          onSelect={kitSkill => onAddItem(item, kitSkill)}
                           canAdd={status.allowed}
                           reason={status.reason}
                         />

@@ -2089,13 +2089,15 @@ export function MobileCharacterSheet({
               classTrack={character.class_track}
               nex={character.nex}
               peCurrent={character.pe_current}
+              characterId={character.id}
+              characterName={character.name}
+              onRefetch={onRefetch}
               onPEChange={handlePEChange}
               onActivateEffect={activatedEffects.activateEffect}
               isEffectActive={activatedEffects.isEffectActive}
               onTrackPESpent={roundTracking.trackPESpent}
               pvCurrent={character.hp_current}
               pvMax={character.hp_max}
-              onHPChange={(newHP) => handleCombatStatsChange?.({ hp: newHP, pe: character.pe_current, san: character.san_current })}
               computedEffects={unifiedEffects?.computed}
               versatilityTrack={character.versatility_track}
             />
