@@ -2337,7 +2337,7 @@ export function MobileCombatRollModal({
                 buttons={[
                   {
                     id: 'roll-attack',
-                    label: attackConfirmation.confirming ? 'Confirmando PE…' : attackConfirmation.pending ? 'Tentar confirmar ataque' : 'Rolar Ataque',
+                    label: attackConfirmation.confirming ? 'Confirmando ataque…' : attackConfirmation.pending ? 'Tentar confirmar ataque' : 'Rolar Ataque',
                     icon: isRolling ? (
                       <motion.div
                         animate={{ rotate: 360 }}

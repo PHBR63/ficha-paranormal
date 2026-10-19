@@ -2500,7 +2500,7 @@ export function CombatRollModal({
                   disabled={attackConfirmation.confirming || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable || !!sneakAttackError))}
                 >
                   <Dices className="w-5 h-5 mr-2" />
-                  {attackConfirmation.confirming ? "CONFIRMANDO PE…" : attackConfirmation.pending ? "TENTAR CONFIRMAR ATAQUE" : "ROLAR ATAQUE"}
+                  {attackConfirmation.confirming ? "CONFIRMANDO ATAQUE…" : attackConfirmation.pending ? "TENTAR CONFIRMAR ATAQUE" : "ROLAR ATAQUE"}
                 </Button>
               </motion.div>
             )}
