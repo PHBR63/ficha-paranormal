@@ -85,6 +85,7 @@ interface CombatWeaponsTableProps {
   maxPE?: number;
   onPEChange?: ConfirmDicePE;
   onConfirmAttack?: ConfirmCombatAttack;
+  onMirarRegistered?: () => Promise<unknown>;
   characterId?: string;
   combatControlled?: boolean;
   expectedTurnKey?: string | null;
@@ -163,6 +164,7 @@ export function CombatWeaponsTable({
   maxPE,
   onPEChange,
   onConfirmAttack,
+  onMirarRegistered,
   characterId,
   combatControlled,
   expectedTurnKey,
@@ -408,6 +410,7 @@ export function CombatWeaponsTable({
           maxPE={maxPE}
           onPEChange={onPEChange}
           onConfirmAttack={onConfirmAttack}
+          onMirarRegistered={onMirarRegistered}
           characterId={characterId}
           combatControlled={combatControlled}
           expectedTurnKey={expectedTurnKey}

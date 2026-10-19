@@ -41,7 +41,7 @@ function describeConditionChanges(before: Json | undefined, after: Json | undefi
 export function describeCharacterActivity(event: CharacterActivityEvent): string {
   const payload = event.payload;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return 'Registro sem detalhes';
-  if (payload.kind === 'mirar') return `Mirar com ${payload.weaponName ?? 'arma equipada'} · ação de movimento registrada na rodada ${payload.round} · 0 PE · próximo ataque até o fim do próximo turno; alvo visível e alcance conferidos pela mesa`;
+  if (payload.kind === 'mirar') return `Mirar com ${payload.weaponName ?? 'arma equipada'} · ação de movimento registrada na rodada ${payload.round} · ${payload.peCost ?? 0} PE ${payload.lethalShotPrepaid === true ? 'gasto para Disparo Letal' : '(registro antigo, sem Disparo Letal pré-pago)'} · próximo ataque até o fim do próximo turno; alvo visível e alcance conferidos pela mesa`;
   if (payload.kind === 'post_attack_stealth') {
     const result = payload.result;
     if (!result || typeof result !== 'object' || Array.isArray(result)) return 'Furtividade após ataque: registro incompleto; confira o histórico.';

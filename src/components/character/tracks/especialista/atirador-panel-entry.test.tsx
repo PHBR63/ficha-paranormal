@@ -17,7 +17,7 @@ describe.each([false, true])('painel do Atirador de Elite no mobile=%s', mobile 
       intellect={2} onPEChange={onPEChange} onActivateEffect={onActivateEffect}
       isEffectActive={() => true} />);
 
-    expect(screen.getByText('No ataque')).toBeInTheDocument();
+    expect(screen.getByText('Ao Mirar')).toBeInTheDocument();
     expect(screen.getByText(/O servidor confirma o custo e o histórico/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Usar' })).not.toBeInTheDocument();
     expect(screen.queryByText('ATIVO')).not.toBeInTheDocument();

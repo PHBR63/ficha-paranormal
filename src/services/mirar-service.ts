@@ -8,7 +8,7 @@ export async function getMirarStatus(characterId: string): Promise<boolean> {
   return !!data && typeof data === 'object' && !Array.isArray(data) && data.available === true;
 }
 
-/** Registra a ação de movimento sem PE e conserva o UUID em caso de resposta incerta. */
+/** Confirma Mirar e o débito de 1 PE numa transação; conserva o UUID em caso de resposta incerta. */
 export async function confirmMirar(characterId: string, operationId: string, turnKey: string, weaponId: string): Promise<void> {
   validateActivityId(characterId); validateActivityId(operationId);
   if (!turnKey.startsWith('v2:') || !weaponId || weaponId.length > 120) throw new Error('Turno ou arma inválidos para Mirar.');
@@ -20,8 +20,9 @@ export async function confirmMirar(characterId: string, operationId: string, tur
   });
   const receipt = confirmActivity(data, characterId, operationId);
   const payload = receipt.payload;
-  if (receipt.status !== 'confirmed' || !payload || typeof payload !== 'object' || Array.isArray(payload) || payload.kind !== 'mirar') {
-    throw new Error('Mirar não confirmado no histórico.');
+  if (receipt.status !== 'confirmed' || !payload || typeof payload !== 'object' || Array.isArray(payload)
+    || payload.kind !== 'mirar' || payload.lethalShotPrepaid !== true || payload.peCost !== 1) {
+    throw new Error('Mirar e o gasto de PE não foram confirmados no histórico.');
   }
   window.dispatchEvent(new CustomEvent('character-server-updated', { detail: characterId }));
 }

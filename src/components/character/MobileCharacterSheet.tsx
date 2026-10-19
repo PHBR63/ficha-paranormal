@@ -2598,6 +2598,7 @@ export function MobileCharacterSheet({
           onPEChange={handlePEChange}
           temporaryPE={temporaryResources.pe}
           confirmationUnavailable={peBudget.isLoading ? "Carregando o orçamento de PE do servidor…" : peBudget.error || !peBudget.data ? "Não foi possível conferir o turno. Recarregue a ficha antes de atacar." : undefined}
+          onMirarRegistered={async () => { await Promise.all([onRefetch?.(), peBudget.refetch(), temporaryResources.refetch()]); }}
           onConfirmAttack={async request => {
             await confirmCombatAttack(character.id, request, peBudget.data?.key ?? null);
             try { await onRefetch?.(); await peBudget.refetch(); await temporaryResources.refetch(); }

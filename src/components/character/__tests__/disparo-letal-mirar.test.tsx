@@ -46,12 +46,17 @@ describe.each(['default', 'compact'] as const)('Disparo Letal no layout %s', var
       config={config} onConfigChange={onConfigChange} variant={variant}
       combatControlled mirarRegistered={false} onRegisterMirar={onRegisterMirar} />);
     expect(screen.getByRole('checkbox', { name: /Confirmo que fiz a ação Mirar/ })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Registrar ação Mirar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar Mirar e gastar 1 PE' }));
     expect(onRegisterMirar).toHaveBeenCalledOnce();
     view.rerender(<DisparoLetalSelector nex={40} currentPE={2} pontariaTrained
       config={config} onConfigChange={onConfigChange} variant={variant}
       combatControlled mirarRegistered onRegisterMirar={onRegisterMirar} />);
     expect(screen.getByRole('checkbox', { name: /Confirmo que fiz a ação Mirar/ })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Mirar registrado' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Mirar e 1 PE registrados' })).toBeDisabled();
+    // Após o débito, o bônus continua disponível mesmo com saldo zero.
+    view.rerender(<DisparoLetalSelector nex={40} currentPE={0} pontariaTrained
+      config={{ enabled: false, mirarDeclared: true }} onConfigChange={onConfigChange} variant={variant}
+      combatControlled mirarRegistered onRegisterMirar={onRegisterMirar} />);
+    expect(screen.getByRole('switch')).toBeEnabled();
   });
 });

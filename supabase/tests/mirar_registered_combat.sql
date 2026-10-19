@@ -14,6 +14,12 @@ INSERT INTO public.campaign_members_v2(campaign_id,user_id,character_id,role) VA
 INSERT INTO public.campaign_combat_state_v2(campaign_id,state) VALUES
  ('a1800000-0000-4000-8000-000000000004',
   '{"active":true,"round":1,"currentTurnIndex":0,"combatants":[{"id":"a1800000-0000-4000-8000-000000000003","name":"QA Mirar","initiative":12}]}');
+INSERT INTO public.character_activity_events(id,operation_id,character_id,author_id,category,status,payload,request_hash)
+VALUES('a1800000-0000-4000-8000-000000000012','a1800000-0000-4000-8000-000000000012',
+ 'a1800000-0000-4000-8000-000000000003','a1800000-0000-4000-8000-000000000002',
+ 'application','confirmed',jsonb_build_object('kind','mirar','campaignId','a1800000-0000-4000-8000-000000000004',
+ 'scene',(SELECT scene_number FROM public.campaign_combat_state_v2 WHERE campaign_id='a1800000-0000-4000-8000-000000000004'),
+ 'round',1,'peCost',0),'legacy');
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','a1800000-0000-4000-8000-000000000002',true);
 DO $$
@@ -29,26 +35,38 @@ BEGIN
   RAISE EXCEPTION 'Disparo Letal aceito sem Mirar';
  EXCEPTION WHEN SQLSTATE '55004' THEN NULL; END;
  IF (SELECT pe_current FROM public.characters WHERE id=c)<>20 THEN RAISE EXCEPTION 'Recusa cobrou PE'; END IF;
+ IF public.get_character_mirar_status(c)->>'available'<>'false' THEN
+  RAISE EXCEPTION 'Mirar antigo sem débito liberou Disparo Letal'; END IF;
  aim:=public.confirm_character_mirar('a1800000-0000-4000-8000-000000000010',c,budget->>'key','qa-rifle');
  IF (public.confirm_character_mirar(aim.id,c,budget->>'key','qa-rifle')).id<>aim.id
-  OR public.get_character_mirar_status(c)->>'available'<>'true' THEN
-  RAISE EXCEPTION 'Mirar não registrado ou retry inválido'; END IF;
- attack:=public.confirm_character_combat_attack('a1800000-0000-4000-8000-000000000011',c,20,1,budget->>'key',selection,payload);
+  OR public.get_character_mirar_status(c)->>'available'<>'true'
+  OR aim.payload->>'peCost'<>'1' OR (SELECT pe_current FROM public.characters WHERE id=c)<>19
+  OR aim.payload->'peBudget'->>'cost'<>'1' THEN
+  RAISE EXCEPTION 'Mirar não cobrou uma única vez ou retry inválido'; END IF;
+ BEGIN
+  PERFORM public.confirm_character_mirar(gen_random_uuid(),c,budget->>'key','qa-rifle');
+  RAISE EXCEPTION 'Segundo Mirar cobrou novamente';
+ EXCEPTION WHEN SQLSTATE '55004' THEN NULL; END;
+ attack:=public.confirm_character_combat_attack('a1800000-0000-4000-8000-000000000011',c,19,0,budget->>'key',selection,payload);
  IF attack.payload->>'mirarOperationId'<>aim.id::text
-  OR (public.confirm_character_combat_attack(attack.id,c,20,1,budget->>'key',selection,payload)).id<>attack.id
+  OR attack.payload->>'lethalShotPrepaid'<>'true' OR attack.payload->>'peCost'<>'0'
+  OR (public.confirm_character_combat_attack(attack.id,c,19,0,budget->>'key',selection,payload)).id<>attack.id
   OR public.get_character_mirar_status(c)->>'available'<>'false'
-  OR (SELECT pe_current FROM public.characters WHERE id=c)<>19 THEN
+  OR (SELECT pe_current FROM public.characters WHERE id=c)<>19
+  OR (SELECT count(*) FROM public.character_activity_events WHERE id IN (aim.id,attack.id))<>2 THEN
   RAISE EXCEPTION 'Ataque não vinculou/consumiu Mirar ou cobrou duas vezes'; END IF;
  BEGIN
-  PERFORM public.confirm_character_combat_attack(gen_random_uuid(),c,19,1,budget->>'key',selection,payload);
+  PERFORM public.confirm_character_combat_attack(gen_random_uuid(),c,19,0,budget->>'key',selection,payload);
   RAISE EXCEPTION 'Mirar reutilizado';
  EXCEPTION WHEN SQLSTATE '55004' THEN NULL; END;
  PERFORM public.confirm_character_mirar(gen_random_uuid(),c,budget->>'key','qa-rifle');
- PERFORM public.confirm_character_combat_attack(gen_random_uuid(),c,19,0,budget->>'key',
+ PERFORM public.confirm_character_combat_attack(gen_random_uuid(),c,18,0,budget->>'key',
   selection||'{"lethalShot":false,"mirarDeclared":false}',payload);
  IF public.get_character_mirar_status(c)->>'available'<>'false' THEN
   RAISE EXCEPTION 'Ataque comum não consumiu Mirar'; END IF;
  PERFORM public.confirm_character_mirar(gen_random_uuid(),c,budget->>'key','qa-rifle');
+ IF (SELECT pe_current FROM public.characters WHERE id=c)<>17 THEN
+  RAISE EXCEPTION 'Mirar não consumido não cobrou na preparação'; END IF;
 END $$;
 RESET ROLE;
 UPDATE public.campaign_combat_state_v2 SET state=jsonb_set(state,'{round}','2'::jsonb)

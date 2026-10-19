@@ -194,7 +194,7 @@ export function useAtiradorDeEliteTrack({
     // O ataque confirmado é a única entrada para custo, margem e histórico de Disparo Letal.
     if (ability.id === 'disparo-letal') {
       toast.info('Use Disparo Letal no ataque', {
-        description: 'Selecione a arma em Combate, confirme Mirar e ative o benefício no ataque.',
+        description: 'Selecione a arma em Combate e registre Mirar para gastar 1 PE; ative o benefício já pago no próximo ataque.',
       });
       return;
     }
