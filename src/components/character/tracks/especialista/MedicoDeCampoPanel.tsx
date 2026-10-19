@@ -8,13 +8,10 @@
  */
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Stethoscope, 
-  Activity, 
   ShieldPlus, 
-  Sparkles, 
   Info,
   CheckCircle2
 } from '@/components/icons/ordem-icons';
@@ -26,7 +23,10 @@ import {
   type UseMedicoDeCampoTrackProps 
 } from './useMedicoDeCampoTrack';
 import { ParamedicoAction } from './ParamedicoAction';
-import { EquipeTraumaModal, type CampaignAlly } from './EquipeTraumaModal';
+import { EquipeTraumaAction } from './EquipeTraumaAction';
+import { ResgateAction } from './ResgateAction';
+import { ReanimacaoAction } from './ReanimacaoAction';
+import type { CampaignAlly } from './EquipeTraumaModal';
 import type { ActiveCondition } from '@/hooks/character/useConditions';
 
 // =====================================================
@@ -73,7 +73,7 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
           <p className="text-xs font-medium text-emerald-300">Bônus de Suporte (SUE)</p>
           <div className="flex gap-2 flex-wrap">
             <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-300">
-              +{track.targetDefenseBonus} Defesa ao curar
+              +{track.targetDefenseBonus} Defesa após curar ou remover condição do aliado
             </Badge>
           </div>
         </div>
@@ -87,28 +87,10 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
       /> : <p role="alert" className="text-sm text-destructive">Ficha indisponível para confirmar Paramédico.</p>)}
 
       {/* NEX 40% - Equipe de Trauma */}
-      {track.hasEquipeTrauma && (
-        <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-blue-900/30 border border-blue-500/20">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Activity className="h-4 w-4 text-blue-400 shrink-0" />
-            <div className="min-w-0">
-              <span className={`font-medium ${isMobile ? 'text-sm' : 'text-sm'}`}>Equipe de Trauma</span>
-              <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground`}>
-                Remove condição • 2 PE
-              </p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            variant={track.canAffordEquipeTrauma ? "default" : "outline"}
-            disabled={!track.canAffordEquipeTrauma}
-            onClick={track.handleOpenEquipeTrauma}
-            className="shrink-0"
-          >
-            Usar
-          </Button>
-        </div>
-      )}
+      {track.hasEquipeTrauma && (props.characterId ? <EquipeTraumaAction
+        characterId={props.characterId} nex={props.nex} peCurrent={props.peCurrent}
+        onRefetch={props.onRefetch}
+      /> : <p role="alert" className="text-sm text-destructive">Ficha indisponível para confirmar Equipe de Trauma.</p>)}
 
       {/* NEX 65% - Resgate (Passivo) */}
       {track.hasResgate && (
@@ -121,44 +103,28 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
           </div>
           <p className={`${isMobile ? 'text-xs mt-1' : 'text-xs'} text-muted-foreground`}>
             {isMobile 
-              ? 'Ação livre para aliado machucado. +5 Defesa ao curar.'
-              : '1x/rodada: ação livre para se aproximar de aliado machucado/morrendo. Ao curar: você e o aliado recebem +5 Defesa até seu próximo turno.'
+              ? 'Ação livre para aliado machucado ou morrendo. +5 Defesa ao cuidar do aliado.'
+              : '1x/rodada: ação livre para se aproximar de aliado machucado/morrendo. Ao curar PV ou remover condição do aliado: +5 Defesa para ambos até seu próximo turno.'
             }
           </p>
           {!isMobile && (
             <div className="flex items-center gap-2 mt-1 p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
               <CheckCircle2 className="h-3 w-3 text-emerald-400" />
               <span className="text-xs text-emerald-300">
-                +{track.targetDefenseBonus} Defesa ao curar (você e aliado)
+                +{track.targetDefenseBonus} Defesa após cuidar do aliado (ambos)
               </span>
             </div>
           )}
+          {props.characterId && <ResgateAction characterId={props.characterId} nex={props.nex}
+            onRefetch={props.onRefetch} />}
         </div>
       )}
 
       {/* NEX 99% - Reanimação */}
-      {track.hasReanimacao && (
-        <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-yellow-900/30 border border-yellow-500/20">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Sparkles className="h-4 w-4 text-yellow-400 shrink-0" />
-            <div className="min-w-0">
-              <span className={`font-medium ${isMobile ? 'text-sm' : 'text-sm'}`}>Reanimação</span>
-              <p className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground`}>
-                10 PE • 1x/cena
-              </p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            variant={props.reanimacaoUsedThisScene ? "outline" : track.canAffordReanimacao ? "default" : "outline"}
-            disabled={!track.canAffordReanimacao}
-            onClick={track.handleReanimacao}
-            className="shrink-0"
-          >
-            {props.reanimacaoUsedThisScene ? 'Usado' : 'Usar'}
-          </Button>
-        </div>
-      )}
+      {track.hasReanimacao && (props.characterId ? <ReanimacaoAction
+        characterId={props.characterId} nex={props.nex} peCurrent={props.peCurrent}
+        onRefetch={props.onRefetch}
+      /> : <p role="alert" className="text-sm text-destructive">Ficha indisponível para confirmar Reanimação.</p>)}
     </div>
   );
 
@@ -175,20 +141,6 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
           {TrackContent()}
         </MobileCollapsibleSection>
 
-        {/* Modal de Equipe de Trauma (Mobile) */}
-        <EquipeTraumaModal
-          open={track.showEquipeTraumaModal}
-          onOpenChange={track.setShowEquipeTraumaModal}
-          characterId={props.characterId ?? ''}
-          characterName={props.characterName ?? 'Você'}
-          characterConditions={props.characterConditions ?? []}
-          campaignAllies={props.campaignAllies}
-          onConfirm={track.handleEquipeTrauma}
-          hasResgate={track.hasResgate}
-          defenseBonus={track.targetDefenseBonus}
-          peCost={2}
-          canAfford={track.canAffordEquipeTrauma}
-        />
       </>
     );
   }
@@ -226,20 +178,6 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
         </CardContent>
       </Card>
 
-      {/* Modal de Equipe de Trauma (Desktop) */}
-      <EquipeTraumaModal
-        open={track.showEquipeTraumaModal}
-        onOpenChange={track.setShowEquipeTraumaModal}
-        characterId={props.characterId ?? ''}
-        characterName={props.characterName ?? 'Você'}
-        characterConditions={props.characterConditions ?? []}
-        campaignAllies={props.campaignAllies}
-        onConfirm={track.handleEquipeTrauma}
-        hasResgate={track.hasResgate}
-        defenseBonus={track.targetDefenseBonus}
-        peCost={2}
-        canAfford={track.canAffordEquipeTrauma}
-      />
     </>
   );
 }

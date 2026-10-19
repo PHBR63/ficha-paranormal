@@ -242,6 +242,7 @@ export function useBonusSummaryFromSUE({
   
   // Mantém hooks legados para dados ainda não migrados para o SUE
   const defenseBonuses = useDefenseBonuses({ 
+    characterId,
     origin, 
     abilities, 
     generalPowers, 

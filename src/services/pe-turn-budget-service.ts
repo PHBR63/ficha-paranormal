@@ -2,7 +2,7 @@ import { activityClient, activityFailure, awaitActivityResponse, confirmActivity
 
 export interface PETurnBudget {
   mode: 'manual' | 'combat' | 'untracked'; tracked: boolean; key: string | null;
-  number?: number; round?: number; spent: number; limit: number; ritualLimit: number;
+  number?: number; round?: number; actorId?: string; spent: number; limit: number; ritualLimit: number;
   remaining: number; ritualRemaining: number;
 }
 

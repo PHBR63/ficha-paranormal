@@ -380,6 +380,7 @@ export function CharacterSheetProvider({
 
   // Hook SUE como fonte única de verdade
   const bonusSummary = useBonusSummaryFromSUE({
+    characterId: character?.id,
     origin: character?.origin || '',
     abilities: character?.abilities || [],
     generalPowers: character?.general_powers || [],

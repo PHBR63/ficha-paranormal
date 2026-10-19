@@ -11,7 +11,9 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
     'confirm_character_explosive_action' | 'confirm_character_explosive_targets' |
     'confirm_character_explosive_effect' | 'confirm_character_explosive_control' |
     'confirm_character_post_attack_stealth' | 'confirm_character_estrategista' |
-    'confirm_character_inspirar_confianca' | 'confirm_character_paramedico' = 'confirm_character_item_action') {
+    'confirm_character_inspirar_confianca' | 'confirm_character_paramedico' |
+    'confirm_character_equipe_trauma' | 'confirm_character_resgate_movement' |
+    'confirm_character_reanimacao_death' | 'confirm_character_reanimacao' = 'confirm_character_item_action') {
   const queries = useQueryClient();
   const running = useRef(false);
   const intent = useRef<{ id: string; characterId: string; request: Json } | undefined>(undefined);
@@ -39,6 +41,10 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
       }
       const event = confirmActivity(response.data, command.characterId, command.id);
       intent.current = undefined; setUncertain(false); setReceipt(event);
+      if (['confirm_character_paramedico', 'confirm_character_equipe_trauma',
+        'confirm_character_reanimacao_death', 'confirm_character_reanimacao'].includes(procedure)) {
+        window.dispatchEvent(new Event('character-medico-support-updated'));
+      }
       const targetId = command.request && typeof command.request === 'object' && !Array.isArray(command.request)
         && typeof command.request.targetId === 'string' ? command.request.targetId : command.characterId;
       // O recibo é definitivo; saldos são recarregados mesmo se o realtime estiver indisponível.

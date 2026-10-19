@@ -451,7 +451,7 @@ export interface EffectMechanics {
     usesPerScene: number;                                      // Usos por cena
     peCost: number;                                            // Custo em PE
     actionType: 'complete' | 'full-round';                     // Tipo de ação
-    hpRestored: 'roll' | 'half' | 'full';                      // PV restaurados
+    hpRestored: 'roll' | 'half' | 'full' | 'one';              // PV restaurados
   };
 
   // =====================================================
@@ -1125,7 +1125,7 @@ export interface ComputedEffects {
       usesPerScene: number;
       peCost: number;
       actionType: 'complete' | 'full-round';
-      hpRestored: 'roll' | 'half' | 'full';
+      hpRestored: 'roll' | 'half' | 'full' | 'one';
       source: string;
     }>;
 

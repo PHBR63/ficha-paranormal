@@ -12,6 +12,7 @@
 
 import { useMemo } from 'react';
 import { getActiveRitualEffect } from '@/lib/rituals/legacy-exports';
+import { useServerResgateDefense } from '@/hooks/character/useServerResgateDefense';
 
 // Interface para breakdown de bônus de defesa
 export interface DefenseBonusBreakdown {
@@ -80,6 +81,7 @@ export interface ActivatedEffectForDefense {
 
 // Props do hook
 interface UseDefenseBonusesProps {
+  characterId?: string;
   origin: string;                    // ID da origem do personagem
   abilities: string[];               // Lista de habilidades de classe
   generalPowers?: Array<{            // Lista de poderes gerais
@@ -108,6 +110,7 @@ interface UseDefenseBonusesProps {
  * Hook que calcula bônus de defesa e resistências de origens, habilidades de classe, poderes gerais e rituais
  */
 export function useDefenseBonuses({
+  characterId,
   origin,
   abilities,
   generalPowers = [],
@@ -121,6 +124,7 @@ export function useDefenseBonuses({
   isLightMeleeEquipped = false,
   armorBaseDefense,
 }: UseDefenseBonusesProps): DefenseBonuses {
+  const serverResgateBonus = useServerResgateDefense(characterId);
   return useMemo(() => {
     const breakdown: DefenseBonusBreakdown[] = [];
     const resistanceBreakdown: ResistanceBonusBreakdown[] = [];
@@ -277,8 +281,8 @@ export function useDefenseBonuses({
       e.id === 'resgate-defense'
     );
     
-    if (resgateEffect) {
-      const selfBonus = (resgateEffect.metadata?.selfBonus as number) ?? 5;
+    if (serverResgateBonus > 0 || (!characterId && resgateEffect)) {
+      const selfBonus = serverResgateBonus || (resgateEffect?.metadata?.selfBonus as number) || 5;
       breakdown.push({
         source: 'Resgate (Cura)',
         type: 'track_effect',
@@ -434,7 +438,7 @@ export function useDefenseBonuses({
         breakdown: resistanceBreakdown,
       }
     };
-  }, [origin, abilities, generalPowers, classPowers, inventory, activeRituals, activatedEffects, activeConditionalBonuses, intellect, agility, isLightMeleeEquipped, armorBaseDefense]);
+  }, [characterId, origin, abilities, generalPowers, classPowers, inventory, activeRituals, activatedEffects, activeConditionalBonuses, intellect, agility, isLightMeleeEquipped, armorBaseDefense, serverResgateBonus]);
 }
 
 /**
