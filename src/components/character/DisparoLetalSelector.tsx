@@ -49,10 +49,13 @@ export interface DisparoLetalSelectorProps {
   config: DisparoLetalConfig;
   onConfigChange: (config: DisparoLetalConfig) => void;
   combatControlled?: boolean;
+  turnControlled?: boolean;
   mirarRegistered?: boolean;
+  mirarPending?: boolean;
   mirarRegistering?: boolean;
   mirarError?: string;
   onRegisterMirar?: () => void;
+  onDismissMirar?: () => void;
   variant?: 'default' | 'compact';
   className?: string;
 }
@@ -140,10 +143,13 @@ export function DisparoLetalSelector({
   config,
   onConfigChange,
   combatControlled = false,
+  turnControlled = combatControlled,
   mirarRegistered = false,
+  mirarPending = false,
   mirarRegistering = false,
   mirarError,
   onRegisterMirar,
+  onDismissMirar,
   variant = 'default',
   className,
 }: DisparoLetalSelectorProps) {
@@ -151,7 +157,7 @@ export function DisparoLetalSelector({
   const isUnlocked = nex >= DISPARO_LETAL_MIN_NEX;
   
   // Valida PE disponível
-  const canAfford = (combatControlled && mirarRegistered) || currentPE >= DISPARO_LETAL_PE_COST;
+  const canAfford = mirarRegistered || currentPE >= DISPARO_LETAL_PE_COST;
   const showInsufficientPE = config.enabled && !canAfford;
 
   // Handler para toggle
@@ -169,20 +175,24 @@ export function DisparoLetalSelector({
       <Checkbox
         checked={config.mirarDeclared}
         onCheckedChange={checked => handleMirarDeclaration(checked === true)}
-        disabled={!pontariaTrained || (combatControlled && !mirarRegistered)}
+        disabled={!pontariaTrained || !mirarRegistered}
         aria-label="Confirmo que fiz a ação Mirar e este é o próximo ataque no prazo"
       />
-      <span>{combatControlled ? 'Mirar registrado no servidor; este é meu próximo ataque até o fim do próximo turno.'
-        : 'Fiz a ação Mirar; este é meu próximo ataque até o fim do meu próximo turno.'}</span>
+      <span>{turnControlled ? 'Mirar registrado no servidor; este é meu próximo ataque até o fim do próximo turno.'
+        : 'Mirar registrado: confirmo com a mesa que este é meu próximo ataque e ainda está no prazo.'}</span>
     </label>
   );
 
-  const registerControl = combatControlled && (
+  const registerControl = (
     <div className="mt-2 space-y-2 text-xs">
-      <p>Mirar usa uma ação de movimento. Ao registrar Disparo Letal, o servidor cobra 1 PE agora. Confirme com a mesa o alvo visível e dentro do alcance da arma.</p>
+      <p>Mirar usa uma ação de movimento. O servidor cobra 1 PE ao registrar; o ataque não cobra outra vez. Confirme com a mesa o alvo visível e dentro do alcance da arma.</p>
+      {!turnControlled && <p>Sem turnos ativos, a mesa confirma se o benefício ainda está no prazo. Nenhum turno é criado automaticamente.</p>}
+      {mirarPending && !mirarRegistered && <p role="status" className="text-amber-300">Há um Mirar pago com outra arma. Use essa arma ou encerre o preparo sem estorno.</p>}
       <Button type="button" variant="outline" className="h-auto min-h-10 w-full whitespace-normal"
-        disabled={!pontariaTrained || !canAfford || mirarRegistering || mirarRegistered || !onRegisterMirar}
+        disabled={!pontariaTrained || !canAfford || mirarRegistering || mirarRegistered || mirarPending || !onRegisterMirar}
         onClick={onRegisterMirar}>{mirarRegistering ? 'Aguardando servidor…' : mirarRegistered ? 'Mirar e 1 PE registrados' : 'Registrar Mirar e gastar 1 PE'}</Button>
+      {mirarPending && <Button type="button" variant="ghost" className="h-auto min-h-10 w-full whitespace-normal"
+        disabled={mirarRegistering || !onDismissMirar} onClick={onDismissMirar}>Encerrar Mirar sem estornar PE</Button>}
       {mirarError && <p role="alert" className="text-red-300">{mirarError}</p>}
     </div>
   );

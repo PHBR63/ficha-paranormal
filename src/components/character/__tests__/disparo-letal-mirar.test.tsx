@@ -7,7 +7,7 @@ import {
 } from '../DisparoLetalSelector';
 
 describe.each(['default', 'compact'] as const)('Disparo Letal no layout %s', variant => {
-  it('exige declarar Mirar antes de oferecer o gasto e o bônus', () => {
+  it('exige registrar Mirar antes de oferecer o bônus', () => {
     const onConfigChange = vi.fn();
     const initial = createEmptyDisparoLetalConfig();
     const { rerender } = render(<DisparoLetalSelector nex={40} currentPE={2} pontariaTrained
@@ -18,16 +18,29 @@ describe.each(['default', 'compact'] as const)('Disparo Letal no layout %s', var
       enabled: false, peCost: 0, criticalMarginBonus: 0,
     });
 
+    expect(screen.getByRole('checkbox', { name: /Confirmo que fiz a ação Mirar/ })).toBeDisabled();
+    rerender(<DisparoLetalSelector nex={40} currentPE={2} pontariaTrained mirarRegistered
+      config={initial} onConfigChange={onConfigChange} variant={variant} />);
     fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo que fiz a ação Mirar/ }));
     expect(onConfigChange).toHaveBeenLastCalledWith({ enabled: false, mirarDeclared: true });
     rerender(<DisparoLetalSelector nex={40} currentPE={2} pontariaTrained
-      config={{ enabled: false, mirarDeclared: true }} onConfigChange={onConfigChange} variant={variant} />);
+      config={{ enabled: false, mirarDeclared: true }} onConfigChange={onConfigChange} mirarRegistered variant={variant} />);
     expect(screen.getByRole('switch').hasAttribute('disabled')).toBe(false);
     fireEvent.click(screen.getByRole('switch'));
     expect(onConfigChange).toHaveBeenLastCalledWith({ enabled: true, mirarDeclared: true });
     expect(calculateDisparoLetalResult(40, { enabled: true, mirarDeclared: true })).toEqual({
       enabled: true, peCost: 1, criticalMarginBonus: 2,
     });
+  });
+  it('sem turnos, registra o PE antes do ataque e permite encerrar sem estorno', () => {
+    const onDismissMirar = vi.fn();
+    render(<DisparoLetalSelector nex={40} currentPE={0} pontariaTrained
+      config={createEmptyDisparoLetalConfig()} onConfigChange={vi.fn()} variant={variant}
+      mirarRegistered mirarPending onDismissMirar={onDismissMirar} />);
+    expect(screen.getByText(/Sem turnos ativos, a mesa confirma/)).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /Confirmo que fiz a ação Mirar/ })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Encerrar Mirar sem estornar PE' }));
+    expect(onDismissMirar).toHaveBeenCalledOnce();
   });
 
   it('bloqueia Mirar para Pontaria destreinada e informa o requisito', () => {
