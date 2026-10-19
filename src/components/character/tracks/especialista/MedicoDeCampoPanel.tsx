@@ -172,7 +172,7 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
           icon={<Stethoscope className="h-4 w-4 text-emerald-400" />}
           badge={`NEX ${props.nex}%`}
         >
-          <TrackContent />
+          {TrackContent()}
         </MobileCollapsibleSection>
 
         {/* Modal de Equipe de Trauma (Mobile) */}
@@ -222,7 +222,7 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <TrackContent />
+          {TrackContent()}
         </CardContent>
       </Card>
 
