@@ -13,11 +13,17 @@ export function useMirarAction(characterId: string | undefined, controlled: bool
     catch (cause) { setRegistered(false); setError(cause instanceof Error ? cause.message : 'Não foi possível conferir Mirar.'); }
   }, [characterId, controlled]);
   useEffect(() => { if (open) void refresh(); }, [open, refresh]);
-  const register = async (turnKey: string | null | undefined, weaponId: string | undefined) => {
+  const register = async (turnKey: string | null | undefined, weaponId: string | undefined, afterConfirmed?: () => Promise<unknown>) => {
     if (!characterId || !controlled || !turnKey || !weaponId || busy) return;
     setBusy(true); setError('');
     operationId.current ??= crypto.randomUUID();
-    try { await confirmMirar(characterId, operationId.current, turnKey, weaponId); operationId.current = null; await refresh(); }
+    try {
+      await confirmMirar(characterId, operationId.current, turnKey, weaponId);
+      operationId.current = null;
+      // O ataque só deve ser habilitado após a ficha mostrar o saldo já debitado.
+      await afterConfirmed?.();
+      await refresh();
+    }
     catch (cause) {
       const failure = cause as Error & { serverRejected?: boolean };
       if (failure.serverRejected) operationId.current = null;

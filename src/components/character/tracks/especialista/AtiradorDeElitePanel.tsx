@@ -112,7 +112,7 @@ function AtiradorDeElitePanelComponent(props: AtiradorDeElitePanelProps) {
                     {ability.peCost} PE
                   </Badge>
                   {ability.id === 'disparo-letal' ? (
-                    <Badge variant="secondary">No ataque</Badge>
+                    <Badge variant="secondary">Ao Mirar</Badge>
                   ) : (
                     <Button
                       size="sm"
@@ -138,7 +138,7 @@ function AtiradorDeElitePanelComponent(props: AtiradorDeElitePanelProps) {
 
             {ability.id === 'disparo-letal' && (
               <p className="text-xs text-muted-foreground">
-                Selecione a arma em Combate, confirme Mirar e ative o benefício no ataque. O servidor confirma o custo e o histórico.
+                Selecione a arma em Combate e registre Mirar para gastar 1 PE. No próximo ataque no prazo, ative o benefício já pago. O servidor confirma o custo e o histórico.
               </p>
             )}
 

@@ -10,7 +10,7 @@ beforeEach(() => vi.resetAllMocks());
 describe('Mirar confirmado pelo servidor', () => {
   it('recupera disponibilidade e envia identidade do turno e da arma', async () => {
     fake.rpc.mockResolvedValueOnce({ data: { controlled: true, available: true }, error: null })
-      .mockResolvedValueOnce({ data: { operation_id: operation, character_id: character, status: 'confirmed', payload: { kind: 'mirar' } }, error: null });
+      .mockResolvedValueOnce({ data: { operation_id: operation, character_id: character, status: 'confirmed', payload: { kind: 'mirar', lethalShotPrepaid: true, peCost: 1 } }, error: null });
     expect(await getMirarStatus(character)).toBe(true);
     await confirmMirar(character, operation, 'v2:camp:1:2:actor', 'rifle');
     expect(fake.rpc).toHaveBeenLastCalledWith('confirm_character_mirar', {
@@ -21,6 +21,6 @@ describe('Mirar confirmado pelo servidor', () => {
     fake.rpc.mockResolvedValueOnce({ data: null, error: { code: '55004' } });
     await expect(confirmMirar(character, operation, 'v2:camp:1:2:actor', 'rifle')).rejects.toMatchObject({ serverRejected: true });
     fake.rpc.mockResolvedValueOnce({ data: { operation_id: operation, character_id: character, status: 'confirmed', payload: { kind: 'combat_attack' } }, error: null });
-    await expect(confirmMirar(character, operation, 'v2:camp:1:2:actor', 'rifle')).rejects.toThrow('Mirar não confirmado');
+    await expect(confirmMirar(character, operation, 'v2:camp:1:2:actor', 'rifle')).rejects.toThrow('Mirar e o gasto de PE não foram confirmados');
   });
 });

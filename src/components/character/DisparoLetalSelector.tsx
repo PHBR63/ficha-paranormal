@@ -151,7 +151,7 @@ export function DisparoLetalSelector({
   const isUnlocked = nex >= DISPARO_LETAL_MIN_NEX;
   
   // Valida PE disponível
-  const canAfford = currentPE >= DISPARO_LETAL_PE_COST;
+  const canAfford = (combatControlled && mirarRegistered) || currentPE >= DISPARO_LETAL_PE_COST;
   const showInsufficientPE = config.enabled && !canAfford;
 
   // Handler para toggle
@@ -179,10 +179,10 @@ export function DisparoLetalSelector({
 
   const registerControl = combatControlled && (
     <div className="mt-2 space-y-2 text-xs">
-      <p>Mirar usa uma ação de movimento. Confirme com a mesa o alvo visível e dentro do alcance da arma.</p>
+      <p>Mirar usa uma ação de movimento. Ao registrar Disparo Letal, o servidor cobra 1 PE agora. Confirme com a mesa o alvo visível e dentro do alcance da arma.</p>
       <Button type="button" variant="outline" className="h-auto min-h-10 w-full whitespace-normal"
-        disabled={!pontariaTrained || mirarRegistering || mirarRegistered || !onRegisterMirar}
-        onClick={onRegisterMirar}>{mirarRegistering ? 'Aguardando servidor…' : mirarRegistered ? 'Mirar registrado' : 'Registrar ação Mirar'}</Button>
+        disabled={!pontariaTrained || !canAfford || mirarRegistering || mirarRegistered || !onRegisterMirar}
+        onClick={onRegisterMirar}>{mirarRegistering ? 'Aguardando servidor…' : mirarRegistered ? 'Mirar e 1 PE registrados' : 'Registrar Mirar e gastar 1 PE'}</Button>
       {mirarError && <p role="alert" className="text-red-300">{mirarError}</p>}
     </div>
   );

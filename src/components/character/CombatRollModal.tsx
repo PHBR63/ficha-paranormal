@@ -163,6 +163,7 @@ interface CombatRollModalProps {
   maxPE: number;
   onPEChange: ConfirmDicePE;
   onConfirmAttack?: ConfirmCombatAttack;
+  onMirarRegistered?: () => Promise<unknown>;
   temporaryPE?: number;
   confirmationUnavailable?: string;
   
@@ -262,6 +263,7 @@ export function CombatRollModal({
   maxPE,
   onPEChange,
   onConfirmAttack,
+  onMirarRegistered,
   temporaryPE = 0,
   confirmationUnavailable,
   characterClass,
@@ -744,12 +746,12 @@ export function CombatRollModal({
     }
     
     // Adicionar custo do Disparo Letal se ativo (Atirador de Elite)
-    if (isAtiradorElite && disparoLetalResult.enabled) {
+    if (isAtiradorElite && disparoLetalResult.enabled && !combatControlled) {
       total += disparoLetalResult.peCost;
     }
     
     return total + (activeTechniqueEffects?.peCost ?? 0);
-  }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalResult.enabled, disparoLetalResult.peCost]);
+  }, [activeTechniqueEffects?.peCost, selectedBonuses, availableBonuses, specialAttackConfig.enabled, specialAttackResult.peCost, isInfiltrador, sneakAttackConfig.enabled, sneakAttackResult.peCost, isAtiradorElite, disparoLetalResult.enabled, disparoLetalResult.peCost, combatControlled]);
 
   // Verificar se pode pagar o PE
   const canAffordPE = currentPE + temporaryPE >= totalPECost;
@@ -2215,7 +2217,7 @@ export function CombatRollModal({
                     mirarRegistered={mirar.registered}
                     mirarRegistering={mirar.busy}
                     mirarError={mirar.error}
-                    onRegisterMirar={() => { void mirar.register(expectedTurnKey, weapon?.id); }}
+                    onRegisterMirar={() => { void mirar.register(expectedTurnKey, weapon?.id, onMirarRegistered); }}
                     variant="default"
                   />
                 )}
