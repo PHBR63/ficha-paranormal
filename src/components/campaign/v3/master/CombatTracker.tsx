@@ -26,6 +26,7 @@ import { CampaignScenePanel } from '../CampaignScenePanel';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 import type { CampaignCombatController } from '@/hooks/campaign/useCampaignCombat';
 import { advanceCombatTurn, removeCombatant, sortCombatants, type CombatantEntry } from '@/lib/campaign-combat';
+import { MedicalExtraActionGrant } from './MedicalExtraActionGrant';
 
 interface CombatTrackerProps {
   campaignId: string;
@@ -175,6 +176,11 @@ export const CombatTracker = memo(function CombatTracker({
       {Object.values(initiativeDrafts).some(value => !isValidInitiative(value)) && (
         <p role="alert" className="text-xs text-destructive">A iniciativa deve ser um número inteiro entre -1000 e 1000.</p>
       )}
+
+      {combatants[currentTurnIndex] && members.some(member => member.characters?.id === combatants[currentTurnIndex].id) &&
+        <MedicalExtraActionGrant key={`${campaignId}:${combatants[currentTurnIndex].id}:${round}:${currentTurnIndex}`}
+          campaignId={campaignId} characterId={combatants[currentTurnIndex].id}
+          characterName={combatants[currentTurnIndex].name} />}
 
       {/* Lista de combatentes */}
       <ScrollArea className="max-h-[400px]">

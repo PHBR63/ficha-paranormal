@@ -8,6 +8,10 @@ const mock = vi.hoisted(() => ({
   status: { eligible: true, trained: true, medicalKit: true, maxExtraDice: 1,
     originBonus: 2, targets: [{ id: 'ally', name: 'Aliado', currentHp: 4, maxHp: 20 }] },
   rpc: vi.fn(),
+  medicalAction: { tracked: true, eligible: true, turnKey: 'manual:test:1', spent: 0, extra: 0, available: 1 },
+}));
+vi.mock('@/hooks/character/useMedicalStandardAction', () => ({
+  useMedicalStandardAction: () => ({ data: mock.medicalAction, error: null }),
 }));
 vi.mock('@/hooks/useItemSituationalAction', () => ({ useItemSituationalAction: () => ({
   busy: false, uncertain: false, error: '', receipt: null, confirm: mock.confirm, recover: mock.recover,
@@ -33,6 +37,7 @@ beforeEach(() => {
   mock.confirm.mockReset();
   mock.rpc.mockImplementation(async () => ({ data: mock.status, error: null }));
   mock.status.trained = true; mock.status.medicalKit = true;
+  mock.medicalAction.available = 1;
 });
 
 describe('Paramédico confirmado no servidor', () => {
@@ -51,7 +56,7 @@ describe('Paramédico confirmado no servidor', () => {
     await screen.findByRole('option', { name: /Aliado/ });
     fireEvent.change(screen.getByLabelText('Alvo do Paramédico'), { target: { value: 'ally' } });
     fireEvent.change(screen.getByLabelText('Dados extras de Paramédico'), { target: { value: '1' } });
-    fireEvent.click(screen.getByText('Confirmei uma ação padrão disponível.'));
+    fireEvent.click(screen.getByText(/Confirmei com a mesa uma ação padrão disponível/));
     expect(screen.getByRole('button', { name: 'Confirmar cura · 3 PE' })).toBeDisabled();
     fireEvent.click(screen.getByText('Confirmei com a mesa que o aliado está adjacente.'));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar cura · 3 PE' }));
@@ -64,6 +69,16 @@ describe('Paramédico confirmado no servidor', () => {
     renderAction(1);
     fireEvent.click(screen.getByRole('button', { name: 'Preparar cura' }));
     expect(await screen.findByText(/PE insuficiente para esta cura/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Confirmar cura · 2 PE' })).toBeDisabled();
+    expect(mock.confirm).not.toHaveBeenCalled();
+  });
+
+  it('não confirma segunda cura médica sem ação padrão extra registrada', async () => {
+    mock.medicalAction.available = 0;
+    renderAction();
+    fireEvent.click(screen.getByRole('button', { name: 'Preparar cura' }));
+    expect(await screen.findByText(/ação padrão médica deste turno já foi usada/)).toBeVisible();
+    fireEvent.click(screen.getByText(/Confirmei com a mesa uma ação padrão disponível/));
     expect(screen.getByRole('button', { name: 'Confirmar cura · 2 PE' })).toBeDisabled();
     expect(mock.confirm).not.toHaveBeenCalled();
   });

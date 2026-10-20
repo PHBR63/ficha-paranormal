@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
 import { useTemporaryResources } from '@/hooks/character/useTemporaryResources';
+import { useMedicalStandardAction } from '@/hooks/character/useMedicalStandardAction';
 import { useItemSituationalAction } from '@/hooks/useItemSituationalAction';
 import { activityClient, activityFailure } from '@/services/character-activity-service';
 import type { Json } from '@/integrations/supabase/types';
@@ -68,6 +69,7 @@ export function EquipeTraumaAction({ characterId, nex, peCurrent, onRefetch }: P
   const refreshOptions = options.refetch;
   const budget = usePETurnBudget(characterId);
   const temporary = useTemporaryResources(characterId);
+  const medicalAction = useMedicalStandardAction(characterId);
   const action = useItemSituationalAction(characterId, onRefetch ?? (() => undefined), 'confirm_character_equipe_trauma');
   const target = options.data?.targets.find(entry => entry.id === targetId);
   const condition = target?.conditions.find(entry => entry.id === conditionId);
@@ -75,6 +77,8 @@ export function EquipeTraumaAction({ characterId, nex, peCurrent, onRefetch }: P
   const withinBudget = !!budget.data && (!budget.data.tracked || budget.data.remaining >= 2);
   const ready = !!options.data?.eligible && !!options.data.trained && !!options.data.medicalKit
     && !!target && !!condition && standardAction && adjacent && enoughPE && withinBudget
+    && !!medicalAction.data && medicalAction.data.eligible
+    && (!medicalAction.data.tracked || (medicalAction.data.available ?? 0) > 0)
     && (budget.data?.mode !== 'combat' || budget.data.actorId === characterId)
     && !action.busy && !action.uncertain;
 
@@ -114,6 +118,8 @@ export function EquipeTraumaAction({ characterId, nex, peCurrent, onRefetch }: P
         {!options.data.eligible && <p role="alert" className="text-destructive">Requer Médico de Campo no NEX 40% ou superior.</p>}
         {!options.data.trained && <p role="alert" className="text-destructive">Requer Medicina treinada.</p>}
         {!options.data.medicalKit && <p role="alert" className="text-destructive">Requer kit de Medicina identificado no inventário.</p>}
+        {medicalAction.error && <p role="alert" className="text-destructive">Não foi possível conferir ações médicas deste turno. Atualize a ficha.</p>}
+        {medicalAction.data?.tracked && (medicalAction.data.available ?? 0) < 1 && <p role="alert" className="text-destructive">A ação padrão médica deste turno já foi usada ou ainda não é seu turno. Peça ao mestre que registre uma ação extra, se houver uma habilidade que a conceda.</p>}
         <label className="block space-y-1"><span>Aliado da campanha</span>
           <select aria-label="Alvo de Equipe de Trauma" className="w-full rounded border border-border bg-background p-2 text-foreground"
             value={targetId} disabled={action.busy || action.uncertain}
@@ -130,7 +136,7 @@ export function EquipeTraumaAction({ characterId, nex, peCurrent, onRefetch }: P
           </select></label>}
         {target && target.conditions.length === 0 && <p>O aliado não tem condição negativa conhecida e removível. Condições personalizadas precisam de revisão da mesa.</p>}
         <label className="flex items-start gap-2"><Checkbox checked={standardAction} disabled={action.busy || action.uncertain}
-          onCheckedChange={value => setStandardAction(value === true)} />Confirmei uma ação padrão disponível.</label>
+          onCheckedChange={value => setStandardAction(value === true)} />Confirmei com a mesa uma ação padrão disponível, considerando ataques, rituais e outros poderes.</label>
         <label className="flex items-start gap-2"><Checkbox checked={adjacent} disabled={action.busy || action.uncertain}
           onCheckedChange={value => setAdjacent(value === true)} />Confirmei com a mesa que o aliado está adjacente.</label>
         <p className="text-xs text-muted-foreground">Ao declarar e confirmar o uso, o servidor remove a condição e cobra 2 PE na mesma operação. Morrendo e estados derivados de PV/SAN exigem outro procedimento; Inconsciente por zero PV exige cura.</p>

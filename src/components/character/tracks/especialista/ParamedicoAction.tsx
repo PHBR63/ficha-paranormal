@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useItemSituationalAction } from '@/hooks/useItemSituationalAction';
 import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
 import { useTemporaryResources } from '@/hooks/character/useTemporaryResources';
+import { useMedicalStandardAction } from '@/hooks/character/useMedicalStandardAction';
 import { activityClient, activityFailure } from '@/services/character-activity-service';
 
 interface ParamedicoOptions {
@@ -62,6 +63,7 @@ export function ParamedicoAction({ characterId, characterName, currentHp, maxHp,
   const refetchOptions = options.refetch;
   const budget = usePETurnBudget(characterId);
   const temporary = useTemporaryResources(characterId);
+  const medicalAction = useMedicalStandardAction(characterId);
   const action = useItemSituationalAction(characterId, onRefetch ?? (() => undefined), 'confirm_character_paramedico');
   const target = targetId === characterId
     ? { id: characterId, name: characterName, currentHp, maxHp }
@@ -72,7 +74,9 @@ export function ParamedicoAction({ characterId, characterName, currentHp, maxHp,
   const ready = !!options.data?.eligible && !!options.data.trained && !!options.data.medicalKit
     && extraDice <= options.data.maxExtraDice
     && !!target && !!standardAction && (targetId === characterId || adjacent)
-    && enoughPE && withinBudget && !action.busy && !action.uncertain;
+    && enoughPE && withinBudget && !!medicalAction.data
+    && medicalAction.data.eligible && (!medicalAction.data.tracked || (medicalAction.data.available ?? 0) > 0)
+    && !action.busy && !action.uncertain;
 
   useEffect(() => {
     const payload = action.receipt?.payload;
@@ -115,6 +119,8 @@ export function ParamedicoAction({ characterId, characterName, currentHp, maxHp,
           {!options.data.eligible && <p role="alert" className="text-destructive">Paramédico não está disponível para esta trilha e NEX.</p>}
           {!options.data.trained && <p role="alert" className="text-destructive">É necessário ser treinado em Medicina.</p>}
           {!options.data.medicalKit && <p role="alert" className="text-destructive">É necessário possuir um kit identificado como de Medicina. Defina a perícia de um kit genérico no inventário.</p>}
+          {medicalAction.error && <p role="alert" className="text-destructive">Não foi possível conferir ações médicas deste turno. Atualize a ficha.</p>}
+          {medicalAction.data?.tracked && (medicalAction.data.available ?? 0) < 1 && <p role="alert" className="text-destructive">A ação padrão médica deste turno já foi usada ou ainda não é seu turno. Peça ao mestre que registre uma ação extra, se houver uma habilidade que a conceda.</p>}
           <label className="block space-y-1">
             <span>Alvo da cura</span>
             <select aria-label="Alvo do Paramédico" className="w-full rounded border border-border bg-background p-2 text-foreground"
@@ -138,7 +144,7 @@ export function ParamedicoAction({ characterId, characterName, currentHp, maxHp,
           </label>
           {options.data.originBonus > 0 && <p>Bônus de Agente de Saúde: +{options.data.originBonus} PV (Intelecto).</p>}
           <label className="flex items-start gap-2"><Checkbox checked={standardAction} disabled={action.busy || action.uncertain}
-            onCheckedChange={value => setStandardAction(value === true)} />Confirmei uma ação padrão disponível.</label>
+            onCheckedChange={value => setStandardAction(value === true)} />Confirmei com a mesa uma ação padrão disponível, considerando ataques, rituais e outros poderes.</label>
           {targetId !== characterId && <label className="flex items-start gap-2"><Checkbox checked={adjacent} disabled={action.busy || action.uncertain}
             onCheckedChange={value => setAdjacent(value === true)} />Confirmei com a mesa que o aliado está adjacente.</label>}
           <p className="font-medium">Cura: {2 + extraDice}d10{options.data.originBonus > 0 ? ` + ${options.data.originBonus}` : ''} PV · custo: {cost} PE</p>
