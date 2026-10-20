@@ -58,6 +58,7 @@ describe('Equipe de Trauma e Resgate', () => {
     fake.rpc.mockResolvedValue({ data: { eligible: true, trained: true, medicalKit: true, usedInCurrentControl: true,
       targets: [{ id: 'ally', name: 'Aliado', currentHp: 4, maxHp: 20 }] }, error: null });
     mount(<ResgateAction characterId="medico" nex={65} />);
+    expect(screen.getByText(/Ao carregar uma pessoa, conte 5 espaços em vez dos 10 habituais/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Registrar movimento' }));
     expect(await screen.findByText('Resgate já registrado nesta rodada ou turno manual.')).toBeVisible();
     fireEvent.change(screen.getByLabelText('Alvo de Resgate'), { target: { value: 'ally' } });

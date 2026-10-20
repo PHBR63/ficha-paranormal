@@ -66,10 +66,11 @@ interface Props {
   nex: number;
   peCurrent: number;
   onRefetch?: () => unknown | Promise<unknown>;
+  canAct?: boolean;
 }
 
 /** O mestre confirma a morte; o médico executa a ação completa na mesma cena. */
-export function ReanimacaoAction({ characterId, nex, peCurrent, onRefetch }: Props) {
+export function ReanimacaoAction({ characterId, nex, peCurrent, onRefetch, canAct = true }: Props) {
   const [open, setOpen] = useState(false);
   const [campaignId, setCampaignId] = useState('');
   const [targetId, setTargetId] = useState('');
@@ -100,7 +101,7 @@ export function ReanimacaoAction({ characterId, nex, peCurrent, onRefetch }: Pro
   const withinBudget = !!budget.data && (!budget.data.tracked || budget.data.remaining >= 10);
   const canRegister = !!campaign?.canConfirmDeath && Number.isInteger(campaign.sceneNumber)
     && !!target && target.currentHp === 0 && !target.deathId && deathConfirmed && !busy;
-  const canReanimate = !!options.data?.eligible && !!options.data.trained && !!options.data.medicalKit
+  const canReanimate = canAct && !!options.data?.eligible && !!options.data.trained && !!options.data.medicalKit
     && !!campaign && Number.isInteger(campaign.sceneNumber) && !campaign.usedInScene
     && !!target && target.currentHp === 0 && !!target.deathId && target.deathCause === 'ordinary'
     && completeAction && enoughPE && withinBudget && turnAvailable && !busy;

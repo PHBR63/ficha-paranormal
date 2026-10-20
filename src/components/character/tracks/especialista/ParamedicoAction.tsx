@@ -43,10 +43,11 @@ interface ParamedicoActionProps {
   nex: number;
   peCurrent: number;
   onRefetch?: () => unknown | Promise<unknown>;
+  canAct?: boolean;
 }
 
 /** A mesa declara ação e posição; a cura, os dados, o gasto e o histórico vêm do servidor. */
-export function ParamedicoAction({ characterId, characterName, currentHp, maxHp, nex, peCurrent, onRefetch }: ParamedicoActionProps) {
+export function ParamedicoAction({ characterId, characterName, currentHp, maxHp, nex, peCurrent, onRefetch, canAct = true }: ParamedicoActionProps) {
   const [open, setOpen] = useState(false);
   const [targetId, setTargetId] = useState(characterId);
   const [extraDice, setExtraDice] = useState(0);
@@ -71,7 +72,7 @@ export function ParamedicoAction({ characterId, characterName, currentHp, maxHp,
   const cost = 2 + extraDice;
   const enoughPE = peCurrent + temporary.pe >= cost;
   const withinBudget = !!budget.data && (!budget.data.tracked || budget.data.remaining >= cost);
-  const ready = !!options.data?.eligible && !!options.data.trained && !!options.data.medicalKit
+  const ready = canAct && !!options.data?.eligible && !!options.data.trained && !!options.data.medicalKit
     && extraDice <= options.data.maxExtraDice
     && !!target && !!standardAction && (targetId === characterId || adjacent)
     && enoughPE && withinBudget && !!medicalAction.data

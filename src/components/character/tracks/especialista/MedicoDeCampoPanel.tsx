@@ -12,12 +12,12 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Stethoscope, 
   ShieldPlus, 
-  Info,
-  CheckCircle2
+  Info
 } from '@/components/icons/ordem-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMedicalStandardAction } from '@/hooks/character/useMedicalStandardAction';
+import { useMedicalActionStatus } from '@/hooks/character/useMedicalActionStatus';
 import { MobileCollapsibleSection } from '../../mobile/MobileCollapsibleSection';
 import { 
   useMedicoDeCampoTrack,
@@ -61,6 +61,8 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
   const isMobile = useIsMobile();
   const track = useMedicoDeCampoTrack(props);
   const medicalAction = useMedicalStandardAction(props.characterId ?? '');
+  const actionStatus = useMedicalActionStatus(props.characterId);
+  const canAct = actionStatus.data?.canAct === true;
 
   // Não renderiza se não for Médico de Campo
   if (!track.isMedicoCampo) return null;
@@ -69,6 +71,11 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
   
   const TrackContent = () => (
     <div className="space-y-3">
+      {props.characterId && !canAct && <p role="alert" className="rounded-lg border border-amber-500/30 bg-amber-950/20 p-2 text-xs text-amber-100">
+        {actionStatus.data?.reason ?? (actionStatus.error
+          ? 'Não foi possível conferir a capacidade de agir no servidor. Atualize a ficha.'
+          : 'Conferindo capacidade de agir no servidor…')}
+      </p>}
       {(track.hasParamedico || track.hasEquipeTrauma) && medicalAction.data && (
         <p role="status" className="rounded-lg border border-emerald-500/25 bg-emerald-950/20 p-2 text-xs text-emerald-100">
           {medicalAction.data.tracked
@@ -77,13 +84,13 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
           {' '}Ataques, rituais e outros poderes ainda exigem conferência da mesa.
         </p>
       )}
-      {/* Indicador de bônus de suporte do SUE (desktop only) */}
+      {/* A regra da trilha não equivale a um bônus ativo; o estado confirmado fica em ResgateAction. */}
       {!isMobile && track.hasResgate && track.sueSupport && (
         <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-1">
-          <p className="text-xs font-medium text-emerald-300">Bônus de Suporte (SUE)</p>
+          <p className="text-xs font-medium text-emerald-300">Regra de suporte · Resgate</p>
           <div className="flex gap-2 flex-wrap">
             <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-300">
-              +{track.targetDefenseBonus} Defesa após curar ou remover condição do aliado
+              +{track.targetDefenseBonus} Defesa para ambos após cura ou remoção confirmada
             </Badge>
           </div>
         </div>
@@ -94,12 +101,14 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
         characterId={props.characterId} characterName={props.characterName ?? 'Você'}
         currentHp={track.pvCurrent} maxHp={track.pvMax} nex={props.nex}
         peCurrent={props.peCurrent} onRefetch={props.onRefetch}
+        canAct={canAct}
       /> : <p role="alert" className="text-sm text-destructive">Ficha indisponível para confirmar Paramédico.</p>)}
 
       {/* NEX 40% - Equipe de Trauma */}
       {track.hasEquipeTrauma && (props.characterId ? <EquipeTraumaAction
         characterId={props.characterId} nex={props.nex} peCurrent={props.peCurrent}
         onRefetch={props.onRefetch}
+        canAct={canAct}
       /> : <p role="alert" className="text-sm text-destructive">Ficha indisponível para confirmar Equipe de Trauma.</p>)}
 
       {/* NEX 65% - Resgate (Passivo) */}
@@ -117,16 +126,11 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
               : '1x/rodada: ação livre para se aproximar de aliado machucado/morrendo. Ao curar PV ou remover condição do aliado: +5 Defesa para ambos até seu próximo turno.'
             }
           </p>
-          {!isMobile && (
-            <div className="flex items-center gap-2 mt-1 p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
-              <CheckCircle2 className="h-3 w-3 text-emerald-400" />
-              <span className="text-xs text-emerald-300">
-                +{track.targetDefenseBonus} Defesa após cuidar do aliado (ambos)
-              </span>
-            </div>
-          )}
+          {!isMobile && <p className="text-xs text-muted-foreground">
+            O bônus só está ativo quando o servidor confirmar o efeito e sua duração; confira o estado abaixo.
+          </p>}
           {props.characterId && <ResgateAction characterId={props.characterId} nex={props.nex}
-            onRefetch={props.onRefetch} />}
+            onRefetch={props.onRefetch} canAct={canAct} />}
         </div>
       )}
 
@@ -134,6 +138,7 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
       {track.hasReanimacao && (props.characterId ? <ReanimacaoAction
         characterId={props.characterId} nex={props.nex} peCurrent={props.peCurrent}
         onRefetch={props.onRefetch}
+        canAct={canAct}
       /> : <p role="alert" className="text-sm text-destructive">Ficha indisponível para confirmar Reanimação.</p>)}
     </div>
   );

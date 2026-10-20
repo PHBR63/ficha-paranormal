@@ -49,10 +49,11 @@ interface Props {
   nex: number;
   peCurrent: number;
   onRefetch?: () => unknown | Promise<unknown>;
+  canAct?: boolean;
 }
 
 /** A mesa confirma a ação e a adjacência; o servidor remove a condição e cobra PE de modo atômico. */
-export function EquipeTraumaAction({ characterId, nex, peCurrent, onRefetch }: Props) {
+export function EquipeTraumaAction({ characterId, nex, peCurrent, onRefetch, canAct = true }: Props) {
   const [open, setOpen] = useState(false);
   const [targetId, setTargetId] = useState('');
   const [conditionId, setConditionId] = useState('');
@@ -75,7 +76,7 @@ export function EquipeTraumaAction({ characterId, nex, peCurrent, onRefetch }: P
   const condition = target?.conditions.find(entry => entry.id === conditionId);
   const enoughPE = peCurrent + temporary.pe >= 2;
   const withinBudget = !!budget.data && (!budget.data.tracked || budget.data.remaining >= 2);
-  const ready = !!options.data?.eligible && !!options.data.trained && !!options.data.medicalKit
+  const ready = canAct && !!options.data?.eligible && !!options.data.trained && !!options.data.medicalKit
     && !!target && !!condition && standardAction && adjacent && enoughPE && withinBudget
     && !!medicalAction.data && medicalAction.data.eligible
     && (!medicalAction.data.tracked || (medicalAction.data.available ?? 0) > 0)
