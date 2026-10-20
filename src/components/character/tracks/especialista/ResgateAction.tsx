@@ -28,10 +28,10 @@ function parseOptions(value: unknown): Options {
     usedInCurrentControl: data.usedInCurrentControl, targets };
 }
 
-interface Props { characterId: string; nex: number; onRefetch?: () => unknown | Promise<unknown> }
+interface Props { characterId: string; nex: number; onRefetch?: () => unknown | Promise<unknown>; canAct?: boolean }
 
 /** Movimento livre: a mesa confirma alcance e caminho; o servidor controla uso por turno ativo. */
-export function ResgateAction({ characterId, nex, onRefetch }: Props) {
+export function ResgateAction({ characterId, nex, onRefetch, canAct = true }: Props) {
   const [open, setOpen] = useState(false);
   const [targetId, setTargetId] = useState('');
   const [freeAction, setFreeAction] = useState(false);
@@ -59,7 +59,7 @@ export function ResgateAction({ characterId, nex, onRefetch }: Props) {
   const budget = usePETurnBudget(characterId);
   const action = useItemSituationalAction(characterId, onRefetch ?? (() => undefined), 'confirm_character_resgate_movement');
   const target = options.data?.targets.find(entry => entry.id === targetId);
-  const ready = !!options.data?.eligible && !!options.data.trained && !!options.data.medicalKit
+  const ready = canAct && !!options.data?.eligible && !!options.data.trained && !!options.data.medicalKit
     && !!target && !options.data.usedInCurrentControl && freeAction && shortRange && normalMovement && roundConfirmed
     && (budget.data?.mode !== 'combat' || budget.data.actorId === characterId)
     && !!budget.data && !action.busy && !action.uncertain;
@@ -101,6 +101,11 @@ export function ResgateAction({ characterId, nex, onRefetch }: Props) {
     <p className="text-xs text-muted-foreground">
       O +5 de Defesa é automático para curas de Paramédico e remoções de Equipe de Trauma. Outras fontes registradas neste turno podem ser confirmadas pelo mestre abaixo.
     </p>
+    <p className="text-xs text-muted-foreground">
+      Ao carregar uma pessoa, conte 5 espaços em vez dos 10 habituais (Livro Base v1.3, pp. 31 e 53).
+      {' '}Se o mestre atribuir outro total por tamanho ou peso, divida esse total por 2 e arredonde para baixo.
+      Essa carga precisa ser considerada no inventário enquanto o personagem é carregado.
+    </p>
     <ResgateOtherSourceReview characterId={characterId} onRefetch={onRefetch} />
     {open && <div className="space-y-3 text-sm">
       {options.isLoading && <p>Conferindo aliados no servidor…</p>}
@@ -128,7 +133,7 @@ export function ResgateAction({ characterId, nex, onRefetch }: Props) {
           onCheckedChange={value => setNormalMovement(value === true)} />Posso chegar ao aliado com meu deslocamento normal.</label>
         <label className="flex items-start gap-2"><Checkbox checked={roundConfirmed} disabled={action.busy || action.uncertain}
           onCheckedChange={value => setRoundConfirmed(value === true)} />A mesa confirmou que ainda não usei Resgate nesta rodada.</label>
-        <p className="text-xs text-muted-foreground">Sem controle de turnos, a mesa confere o limite de 1 vez por rodada. Ao carregar um personagem, conte metade dos espaços ocupados; confirme a carga com o mestre.</p>
+        <p className="text-xs text-muted-foreground">Sem controle de turnos, a mesa confere o limite de 1 vez por rodada.</p>
         {budget.error && <p role="alert" className="text-destructive">Turno indisponível. Atualize antes de confirmar.</p>}
         {action.error && <p role="alert" className="text-destructive">{action.error}</p>}
         {action.uncertain && <Button type="button" variant="outline" disabled={action.busy}

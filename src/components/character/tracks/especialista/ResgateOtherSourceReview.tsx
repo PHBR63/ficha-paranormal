@@ -12,6 +12,8 @@ interface ReviewableEffect {
   targetName: string;
   effect: string;
   createdAt: string;
+  campaignId?: string;
+  campaignVersion?: 'v1' | 'v2';
 }
 interface ReviewOptions { canReview: boolean; events: ReviewableEffect[] }
 
@@ -26,6 +28,11 @@ function parseReviewOptions(value: unknown): ReviewOptions {
     if (typeof entry.id !== 'string' || typeof entry.targetId !== 'string'
       || typeof entry.targetName !== 'string' || typeof entry.effect !== 'string'
       || typeof entry.createdAt !== 'string') throw new Error('Efeito incompleto.');
+    if ((entry.campaignId !== undefined || entry.campaignVersion !== undefined)
+      && (typeof entry.campaignId !== 'string'
+        || !['v1', 'v2'].includes(entry.campaignVersion as string))) {
+      throw new Error('Campanha do efeito incompleta.');
+    }
     return entry as unknown as ReviewableEffect;
   });
   return { canReview: data.canReview, events };
@@ -46,11 +53,16 @@ export function ResgateOtherSourceReview({ characterId, onRefetch }: Props) {
       return parseReviewOptions(data);
     }, refetchOnReconnect: true, refetchOnWindowFocus: true, refetchInterval: 5000,
   });
-  const action = useItemSituationalAction(characterId, onRefetch ?? (() => undefined), 'confirm_character_resgate_review');
+  const combatAction = useItemSituationalAction(characterId, onRefetch ?? (() => undefined), 'confirm_character_resgate_review');
+  const manualAction = useItemSituationalAction(characterId, onRefetch ?? (() => undefined), 'confirm_character_resgate_manual_review');
+  const action = budget.data?.mode === 'manual' ? manualAction : combatAction;
   const refreshOptions = options.refetch;
   const selected = options.data?.events.find(event => event.id === effectId);
   const ready = !!options.data?.canReview && !!selected && masterConfirmed && !!budget.data?.key
-    && budget.data.mode === 'combat' && budget.data.actorId === characterId && !action.busy && !action.uncertain;
+    && (budget.data.mode === 'manual'
+      ? !!selected.campaignId && !!selected.campaignVersion
+      : budget.data.mode === 'combat' && budget.data.actorId === characterId)
+    && !action.busy && !action.uncertain;
 
   useEffect(() => {
     if (!action.receipt) return;
@@ -61,7 +73,7 @@ export function ResgateOtherSourceReview({ characterId, onRefetch }: Props) {
   if (options.isLoading || (!options.data?.canReview && !options.error)) return null;
   return <div className="rounded border border-emerald-500/30 bg-background/40 p-3 space-y-2 text-sm">
     <strong className="text-emerald-200">Outras fontes de Resgate · confirmação do mestre</strong>
-    <p className="text-xs text-muted-foreground">Selecione uma cura efetiva ou remoção de condição já salva na ficha do aliado neste turno. A confirmação concede +5 Defesa a ambos; não cura novamente nem gasta PE.</p>
+    <p className="text-xs text-muted-foreground">Selecione uma cura efetiva ou remoção de condição já salva na ficha do aliado neste turno controlado. A confirmação concede +5 Defesa a ambos; não cura novamente nem gasta PE.</p>
     {options.error && <p role="alert" className="text-destructive">Não foi possível conferir os efeitos. Atualize e tente novamente.</p>}
     {options.data?.canReview && <>
       <select aria-label="Efeito para Resgate" className="w-full rounded border border-border bg-background p-2 text-foreground"
@@ -71,7 +83,7 @@ export function ResgateOtherSourceReview({ characterId, onRefetch }: Props) {
           {event.targetName} · {event.effect}
         </option>)}
       </select>
-      {options.data.events.length === 0 && <p role="status" className="text-xs">Nenhuma cura ou remoção elegível neste turno. Eventos antigos e outras cenas exigem resolução manual.</p>}
+      {options.data.events.length === 0 && <p role="status" className="text-xs">Nenhuma cura ou remoção elegível neste turno. Eventos antigos e outras cenas exigem resolução da mesa.</p>}
       <label className="flex items-start gap-2"><Checkbox checked={masterConfirmed} disabled={!selected || action.busy || action.uncertain}
         onCheckedChange={value => setMasterConfirmed(value === true)} />Confirmei como mestre que o médico causou esse efeito no aliado.</label>
       {action.error && <p role="alert" className="text-destructive">{action.error}</p>}
@@ -81,6 +93,9 @@ export function ResgateOtherSourceReview({ characterId, onRefetch }: Props) {
       <Button type="button" disabled={!ready} onClick={() => {
         if (!selected || !budget.data?.key) return;
         void action.confirm({ sourceEventId: selected.id, targetId: selected.targetId,
+          ...(budget.data.mode === 'manual' ? {
+            campaignId: selected.campaignId, campaignVersion: selected.campaignVersion,
+          } : {}),
           expectedTurnKey: budget.data.key, masterConfirmed: true });
       }}>Conceder +5 Defesa</Button>
     </>}

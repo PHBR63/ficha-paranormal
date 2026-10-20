@@ -16,6 +16,7 @@ type ActivityDatabase = { public: {
     confirm_character_inspirar_confianca: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     get_character_paramedico_options: { Args: { p_character_id: string }; Returns: Json };
     get_character_medical_action_status: { Args: { p_character_id: string }; Returns: Json };
+    get_character_medical_capability: { Args: { p_character_id: string }; Returns: Json };
     confirm_character_medical_extra_action: { Args: { p_operation_id: string; p_campaign_id: string; p_character_id: string; p_expected_turn_key: string; p_source_name: string }; Returns: CharacterActivityEvent };
     confirm_character_paramedico: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     get_character_equipe_trauma_options: { Args: { p_character_id: string }; Returns: Json };
@@ -24,6 +25,7 @@ type ActivityDatabase = { public: {
     confirm_character_resgate_movement: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     get_character_resgate_review_options: { Args: { p_character_id: string }; Returns: Json };
     confirm_character_resgate_review: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
+    confirm_character_resgate_manual_review: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     get_character_reanimacao_options: { Args: { p_character_id: string }; Returns: Json };
     confirm_character_reanimacao_death: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };
     confirm_character_reanimacao: { Args: { p_operation_id: string; p_character_id: string; p_request: Json }; Returns: CharacterActivityEvent };

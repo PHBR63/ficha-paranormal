@@ -9,6 +9,7 @@ const mock = vi.hoisted(() => ({
     originBonus: 2, targets: [{ id: 'ally', name: 'Aliado', currentHp: 4, maxHp: 20 }] },
   rpc: vi.fn(),
   medicalAction: { tracked: true, eligible: true, turnKey: 'manual:test:1', spent: 0, extra: 0, available: 1 },
+  actionStatus: { canAct: true, reason: null as string | null },
 }));
 vi.mock('@/hooks/character/useMedicalStandardAction', () => ({
   useMedicalStandardAction: () => ({ data: mock.medicalAction, error: null }),
@@ -35,8 +36,12 @@ function renderAction(peCurrent = 4) {
 
 beforeEach(() => {
   mock.confirm.mockReset();
-  mock.rpc.mockImplementation(async () => ({ data: mock.status, error: null }));
+  mock.rpc.mockImplementation(async (name: string) => ({
+    data: name === 'get_character_medical_capability' ? mock.actionStatus : mock.status,
+    error: null,
+  }));
   mock.status.trained = true; mock.status.medicalKit = true;
+  mock.actionStatus.canAct = true; mock.actionStatus.reason = null;
   mock.medicalAction.available = 1;
 });
 
@@ -99,8 +104,25 @@ describe('Paramédico confirmado no servidor', () => {
     const props = { characterId: 'source', classTrack: 'medico-campo', nex: 40, peCurrent: 4,
       onPEChange: vi.fn(), computedEffects: { support: { onHealEffects: [] } } as unknown as ComputedEffects };
     const view = render(<QueryClientProvider client={query}><MedicoDeCampoPanel {...props} /></QueryClientProvider>);
-    expect(screen.queryByText('Bônus de Suporte (SUE)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Regra de suporte · Resgate')).not.toBeInTheDocument();
     view.rerender(<QueryClientProvider client={query}><MedicoDeCampoPanel {...props} nex={65} /></QueryClientProvider>);
-    expect(screen.getByText('Bônus de Suporte (SUE)')).toBeVisible();
+    expect(screen.getByText('Regra de suporte · Resgate')).toBeVisible();
+    expect(screen.getByText(/O bônus só está ativo quando o servidor confirmar/)).toBeVisible();
+    expect(screen.queryByText(/\+5 Defesa confirmado pelo servidor/)).not.toBeInTheDocument();
+  });
+
+  it('bloqueia a cura na ficha quando o servidor confirma incapacidade de agir', async () => {
+    mock.actionStatus.canAct = false;
+    mock.actionStatus.reason = 'O personagem está incapaz de agir.';
+    const query = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={query}><MedicoDeCampoPanel characterId="source"
+      classTrack="medico-campo" nex={10} peCurrent={4} pvCurrent={8} pvMax={20}
+      onPEChange={vi.fn()} /></QueryClientProvider>);
+    expect(await screen.findByText('O personagem está incapaz de agir.')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Preparar cura' }));
+    await screen.findByLabelText('Alvo do Paramédico');
+    fireEvent.click(screen.getByText(/Confirmei com a mesa uma ação padrão disponível/));
+    expect(screen.getByRole('button', { name: 'Confirmar cura · 2 PE' })).toBeDisabled();
+    expect(mock.confirm).not.toHaveBeenCalled();
   });
 });
