@@ -17,6 +17,7 @@ import {
 } from '@/components/icons/ordem-icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMedicalStandardAction } from '@/hooks/character/useMedicalStandardAction';
 import { MobileCollapsibleSection } from '../../mobile/MobileCollapsibleSection';
 import { 
   useMedicoDeCampoTrack,
@@ -59,6 +60,7 @@ import React from 'react';
 function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
   const isMobile = useIsMobile();
   const track = useMedicoDeCampoTrack(props);
+  const medicalAction = useMedicalStandardAction(props.characterId ?? '');
 
   // Não renderiza se não for Médico de Campo
   if (!track.isMedicoCampo) return null;
@@ -67,6 +69,14 @@ function MedicoDeCampoPanelComponent(props: MedicoDeCampoPanelProps) {
   
   const TrackContent = () => (
     <div className="space-y-3">
+      {(track.hasParamedico || track.hasEquipeTrauma) && medicalAction.data && (
+        <p role="status" className="rounded-lg border border-emerald-500/25 bg-emerald-950/20 p-2 text-xs text-emerald-100">
+          {medicalAction.data.tracked
+            ? `Ações padrão médicas neste turno: ${medicalAction.data.spent} usadas de ${1 + medicalAction.data.extra} disponíveis.`
+            : 'Sem controle de turnos ativo: a mesa confirma a ação padrão; nenhuma rodada é criada automaticamente.'}
+          {' '}Ataques, rituais e outros poderes ainda exigem conferência da mesa.
+        </p>
+      )}
       {/* Indicador de bônus de suporte do SUE (desktop only) */}
       {!isMobile && track.hasResgate && track.sueSupport && (
         <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-1">

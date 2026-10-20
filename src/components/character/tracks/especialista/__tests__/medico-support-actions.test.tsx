@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fake = vi.hoisted(() => ({ confirm: vi.fn(), rpc: vi.fn(), budget: {
   mode: 'manual', tracked: true, key: 'manual:medico:1', remaining: 5, actorId: undefined as string | undefined,
-} }));
+}, medicalAction: { tracked: true, eligible: true, turnKey: 'manual:medico:1', spent: 0, extra: 0, available: 1 } }));
+vi.mock('@/hooks/character/useMedicalStandardAction', () => ({
+  useMedicalStandardAction: () => ({ data: fake.medicalAction, error: null }),
+}));
 vi.mock('@/hooks/useItemSituationalAction', () => ({ useItemSituationalAction: () => ({
   busy: false, uncertain: false, error: '', receipt: null, confirm: fake.confirm, recover: vi.fn(),
 }) }));
@@ -29,6 +32,7 @@ beforeEach(() => {
   fake.confirm.mockReset(); fake.rpc.mockReset();
   fake.budget.mode = 'manual'; fake.budget.key = 'manual:medico:1'; fake.budget.actorId = undefined;
   fake.budget.remaining = 5;
+  fake.medicalAction.available = 1;
 });
 
 describe('Equipe de Trauma e Resgate', () => {
@@ -43,7 +47,7 @@ describe('Equipe de Trauma e Resgate', () => {
     fireEvent.change(screen.getByLabelText('Alvo de Equipe de Trauma'), { target: { value: 'ally' } });
     fireEvent.change(screen.getByLabelText('Condição a remover'), { target: { value: 'cego' } });
     expect(screen.getByRole('button', { name: 'Remover condição · 2 PE' })).toBeDisabled();
-    fireEvent.click(screen.getByText('Confirmei uma ação padrão disponível.'));
+    fireEvent.click(screen.getByText(/Confirmei com a mesa uma ação padrão disponível/));
     fireEvent.click(screen.getByText('Confirmei com a mesa que o aliado está adjacente.'));
     fireEvent.click(screen.getByRole('button', { name: 'Remover condição · 2 PE' }));
     expect(fake.confirm).toHaveBeenCalledWith(expect.objectContaining({ targetId: 'ally', conditionId: 'cego',
@@ -90,7 +94,7 @@ describe('Equipe de Trauma e Resgate', () => {
     expect(await screen.findByText(/Equipe de Trauma é usada e cobrada quando declarada/)).toBeVisible();
     fireEvent.change(screen.getByLabelText('Alvo de Equipe de Trauma'), { target: { value: 'ally' } });
     fireEvent.change(screen.getByLabelText('Condição a remover'), { target: { value: 'abalado' } });
-    fireEvent.click(screen.getByText('Confirmei uma ação padrão disponível.'));
+    fireEvent.click(screen.getByText(/Confirmei com a mesa uma ação padrão disponível/));
     fireEvent.click(screen.getByText('Confirmei com a mesa que o aliado está adjacente.'));
     expect(screen.getByRole('button', { name: 'Remover condição · 2 PE' })).toBeDisabled();
     expect(fake.confirm).not.toHaveBeenCalled();

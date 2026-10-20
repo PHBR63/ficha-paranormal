@@ -55,6 +55,7 @@ export function useItemSituationalAction(characterId: string, onRefetch: () => u
         queries.invalidateQueries({ predicate: query => query.queryKey[0] === 'character-activity' && query.queryKey[2] === id }),
         queries.invalidateQueries({ queryKey: ['temporary-resources', id] }),
         queries.invalidateQueries({ queryKey: ['resgate-defense-status', id] }),
+        queries.invalidateQueries({ queryKey: ['medical-action-status', id] }),
       ]).concat([
         // A cobrança pode esgotar o limite do turno mesmo sem evento realtime.
         queries.invalidateQueries({ predicate: query => query.queryKey[0] === 'pe-turn-budget'

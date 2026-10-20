@@ -16,6 +16,15 @@ function describePETurnBudget(value: Json | undefined): string {
   return ` · ${context}: ${value.spentAfter} PE gastos${value.minimumCostException === true ? ' · Exceção do custo mínimo' : ''}`;
 }
 
+/** Exibe somente o consumo médico efetivamente confirmado pelo servidor. */
+function describeMedicalAction(value: Json | undefined): string {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return '';
+  if (value.tracked === false) return ' · Ação padrão declarada sem controle de turnos';
+  if (value.tracked === true && typeof value.spentAfter === 'number')
+    return ` · Ação padrão médica registrada (${value.spentAfter} usada(s) neste turno)`;
+  return '';
+}
+
 /** Compara instâncias por identidade; aceita strings antigas e não inventa dados ausentes. */
 function describeConditionChanges(before: Json | undefined, after: Json | undefined): string {
   if (!Array.isArray(before) || !Array.isArray(after)) return '';
@@ -78,6 +87,7 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
   if (payload.kind === 'fragmentation_area') return `Fragmentação · área confirmada pelo mestre · ${payload.targetCount} alvo(s), incluindo exclusões · resistências e aplicações individuais`;
   if (payload.kind === 'fragmentation_damage') return `Fragmentação em ${payload.targetName} · Reflexos declarado ${payload.resistanceTotal} / DT ${payload.dt}: ${payload.passed ? 'sucesso, metade' : 'falha'} · RD declarada ${payload.declaredDamageReduction} · dano ${payload.damage} · PV temporários consumidos ${payload.temporaryHPUsed} · PV ${payload.hpBefore} → ${payload.hpAfter} · aplicado pelo mestre`;
   const peBudgetDetails = describePETurnBudget(payload.peBudget);
+  const medicalActionDetails = describeMedicalAction(payload.medicalAction);
   const nested = payload.entry ?? payload.result;
   const result = nested && typeof nested === 'object' && !Array.isArray(nested) ? nested : payload;
   // O saldo normal pode ficar igual quando a fonte temporária absorve todo o gasto.
@@ -148,10 +158,11 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
   if (payload.kind === 'manual_turn_pause') return `Controle manual pausado no turno ${payload.turnNumber} · Saldo e efeitos preservados`;
   if (payload.kind === 'estrategista') return `Estrategista · ${payload.targetCount} aliado(s): ${Array.isArray(payload.targetNames) ? payload.targetNames.join(', ') : 'nomes indisponíveis'} · Ação padrão e alcance ${payload.range} declarados · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails} · +1 ação de movimento no próximo turno de cada alvo`;
   if (payload.kind === 'inspirar_confianca') return `Inspirar Confiança · ${payload.targetName}: ${payload.testLabel} ${payload.originalTotal} → ${payload.rerollTotal} · Reação e alcance ${payload.range} declarados · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails}${payload.requiresReview === true ? ' · Efeitos do ataque exigem revisão da mesa' : ''}`;
-  if (payload.kind === 'paramedico') return `Paramédico em ${payload.targetName} · ${payload.diceCount}d10 [${Array.isArray(payload.dice) ? payload.dice.join(' + ') : 'dados indisponíveis'}]${Number(payload.originBonus) > 0 ? ` + ${payload.originBonus} de Agente de Saúde` : ''} = ${payload.totalHealing} PV · Cura efetiva ${payload.effectiveHealing} PV (${payload.hpBefore} → ${payload.hpAfter}) · Ação padrão${payload.adjacencyConfirmed === true ? ' e adjacência declaradas' : ' declarada'} · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails}`;
+  if (payload.kind === 'paramedico') return `Paramédico em ${payload.targetName} · ${payload.diceCount}d10 [${Array.isArray(payload.dice) ? payload.dice.join(' + ') : 'dados indisponíveis'}]${Number(payload.originBonus) > 0 ? ` + ${payload.originBonus} de Agente de Saúde` : ''} = ${payload.totalHealing} PV · Cura efetiva ${payload.effectiveHealing} PV (${payload.hpBefore} → ${payload.hpAfter}) · Ação padrão${payload.adjacencyConfirmed === true ? ' e adjacência declaradas' : ' declarada'}${medicalActionDetails} · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails}`;
   if (payload.kind === 'paramedico_healing_received') return `Paramédico de ${payload.sourceName} · +${payload.healed} PV (${payload.hpBefore} → ${payload.hpAfter}) · Cura confirmada no servidor`;
-  if (payload.kind === 'equipe_trauma') return `Equipe de Trauma em ${payload.targetName} · ${payload.conditionName} removida · Ação padrão e adjacência declaradas · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails}`;
+  if (payload.kind === 'equipe_trauma') return `Equipe de Trauma em ${payload.targetName} · ${payload.conditionName} removida · Ação padrão e adjacência declaradas${medicalActionDetails} · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails}`;
   if (payload.kind === 'equipe_trauma_received') return `Equipe de Trauma de ${payload.sourceName} · ${payload.conditionName ?? payload.conditionId} removida · Confirmado no servidor`;
+  if (payload.kind === 'medical_extra_action') return `Ação padrão médica extra confirmada pelo mestre · Fonte: ${payload.sourceName} · Disponíveis após confirmação: ${payload.availableAfter} · Sem gasto de PE`;
   if (payload.kind === 'reanimacao_death') return `Morte de ${payload.targetName} confirmada pelo mestre na cena ${payload.sceneNumber} · ${payload.cause === 'massive_damage' ? 'Dano massivo: Reanimação indisponível' : 'Elegível para conferência de Reanimação'} · 0 PE`;
   if (payload.kind === 'reanimacao_death_received') return `Morte confirmada pelo mestre na cena ${payload.sceneNumber} · ${payload.cause === 'massive_damage' ? 'Dano massivo' : 'Sem dano massivo'} · 0 PE`;
   if (payload.kind === 'reanimacao') return `Reanimação em ${payload.targetName} · Cena ${payload.sceneNumber} · PV ${payload.hpBefore} → 1 (regra desta mesa) · Ação completa declarada · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails}`;
