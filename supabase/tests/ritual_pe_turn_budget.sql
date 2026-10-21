@@ -71,8 +71,8 @@ INSERT INTO public.campaign_members_v2(campaign_id,user_id,role,character_id) VA
 SET LOCAL ROLE authenticated;
 DO $$
 DECLARE c uuid:='00000000-0000-4000-8000-000000000722'; campaign uuid:='00000000-0000-4000-8000-000000000724';
- combat jsonb:='{"active":true,"round":1,"currentTurnIndex":0,"combatants":[{"id":"npc-a","name":"A","initiative":12},{"id":"npc-b","name":"B","initiative":10}]}';
- first_key text; body jsonb; pe integer; receipt public.character_activity_events;
+ combat jsonb:='{"active":true,"round":1,"currentTurnIndex":0,"combatants":[{"id":"00000000-0000-4000-8000-000000000722","name":"Agente","initiative":12},{"id":"npc-b","name":"B","initiative":10}]}';
+ first_key text; second_key text; body jsonb; pe integer; receipt public.character_activity_events;
 BEGIN
  PERFORM public.save_campaign_combat_v2(campaign,0,combat);
  first_key:=public.get_character_pe_budget(c)->>'key';
@@ -87,7 +87,21 @@ BEGIN
   RAISE EXCEPTION 'Troca de ator não reiniciou orçamento'; END IF;
  PERFORM public.cast_character_ritual(receipt.operation_id,c,pe,1,body);
  IF (public.get_character_pe_budget(c)->>'spent')::integer<>0 THEN RAISE EXCEPTION 'Retry antigo cobrou novo turno'; END IF;
- PERFORM public.save_campaign_combat_v2(campaign,2,combat||'{"round":2}'::jsonb);
+ -- Um turno extra da mesma criatura ainda na rodada 1 tem orçamento próprio.
+ PERFORM public.save_campaign_combat_v2(campaign,2,combat);
+ second_key:=public.get_character_pe_budget(c)->>'key';
+ IF second_key=first_key OR (public.get_character_pe_budget(c)->>'spent')::integer<>0 THEN
+  RAISE EXCEPTION 'Segundo turno na mesma rodada herdou o gasto do primeiro'; END IF;
+ SELECT pe_current INTO pe FROM public.characters WHERE id=c;
+ PERFORM public.cast_character_ritual(gen_random_uuid(),c,pe,1,body);
+ IF (public.get_character_pe_budget(c)->>'spent')::integer<>1 THEN
+  RAISE EXCEPTION 'Segundo turno não registrou gasto próprio'; END IF;
+ -- Alterar só outros campos do tracker não pode liberar outro orçamento.
+ PERFORM public.save_campaign_combat_v2(campaign,3,combat||'{"qaNote":"mesmo turno"}'::jsonb);
+ IF public.get_character_pe_budget(c)->>'key'<>second_key
+  OR (public.get_character_pe_budget(c)->>'spent')::integer<>1 THEN
+  RAISE EXCEPTION 'Atualização sem troca de turno reiniciou orçamento'; END IF;
+ PERFORM public.save_campaign_combat_v2(campaign,4,combat||'{"round":2}'::jsonb);
  IF public.get_character_pe_budget(c)->>'key'=first_key THEN RAISE EXCEPTION 'Rodada reutilizou chave antiga'; END IF;
  BEGIN PERFORM public.pause_character_manual_turn(gen_random_uuid(),c,3); RAISE EXCEPTION 'Pausa manual durante combate';
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;

@@ -1,5 +1,51 @@
 import type { ComputedEffects } from "@/lib/unified-effects-engine";
 
+/**
+ * Remove do resumo efeitos de arma calculados explicitamente pelo modal.
+ * Recebe o resumo consolidado e IDs já tratados; devolve uma cópia sem esses
+ * dados e margens, preservando outras fontes com valores iguais.
+ */
+export function withoutHandledCombatEffects(
+  computed: ComputedEffects | undefined,
+  handledEffectIds: readonly string[],
+): ComputedEffects | undefined {
+  if (!computed || handledEffectIds.length === 0) return computed;
+  const handled = new Set(handledEffectIds);
+  const removedDice = computed.damage.breakdown
+    .filter((entry) => entry.effectId && handled.has(entry.effectId) && typeof entry.value === "string")
+    .map((entry) => entry.value as string);
+  const extraDice = [...computed.damage.extraDice];
+  for (const dice of removedDice) {
+    const index = extraDice.indexOf(dice);
+    if (index >= 0) extraDice.splice(index, 1);
+  }
+  const removedCritical = computed.critical.breakdown.filter(
+    (entry) => entry.effectId && handled.has(entry.effectId),
+  );
+  return {
+    ...computed,
+    damage: {
+      ...computed.damage,
+      extraDice,
+      breakdown: computed.damage.breakdown.filter(
+        (entry) => !entry.effectId || !handled.has(entry.effectId),
+      ),
+    },
+    critical: {
+      ...computed.critical,
+      marginBonus: computed.critical.marginBonus - removedCritical
+        .filter((entry) => entry.type === "margin")
+        .reduce((total, entry) => total + entry.value, 0),
+      multiplierBonus: computed.critical.multiplierBonus - removedCritical
+        .filter((entry) => entry.type === "multiplier")
+        .reduce((total, entry) => total + entry.value, 0),
+      breakdown: computed.critical.breakdown.filter(
+        (entry) => !entry.effectId || !handled.has(entry.effectId),
+      ),
+    },
+  };
+}
+
 /** Mira de Elite depende da arma usada, não apenas de um ataque à distância. */
 export function hasLongFirearmDamage(
   weapon?: { type?: string; ammoType?: string } | null,

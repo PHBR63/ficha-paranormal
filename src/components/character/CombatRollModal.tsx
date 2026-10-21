@@ -8,6 +8,7 @@ import { getCompatibleAmmunition, getAmmunitionEffects, type CombatAmmunition } 
 import { CombatAmmunitionSelector } from './CombatAmmunitionSelector';
 import { WeaponModificationNotes } from './WeaponModificationNotes';
 import type { ConfirmCombatAttack, CombatCostSelection } from '@/services/combat-attack-service';
+import { AttackIntentGate, type AttackGateSelection } from './AttackIntentGate';
 /**
  * CombatRollModal - Modal de combate com rolagem de ataque e dano
  * Permite selecionar bônus de classe, poderes paranormais e rituais
@@ -53,7 +54,7 @@ import { rollSkillTest, rollDamage, DiceRollResult } from '@/lib/dice-roller';
 import { useCombatRollWithSUE, type WeaponEntryCompat } from '@/hooks/use-combat-roll-with-sue';
 import { validateSneakAttackDeclaration, type SneakAttackDeclaration } from '@/lib/sneak-attack-context';
 import { ComputedEffects } from '@/lib/unified-effects-engine';
-import { getWeaponDamageEffects, hasLongFirearmDamage } from '@/lib/effects/weapon-damage-effects';
+import { getWeaponDamageEffects, hasLongFirearmDamage, withoutHandledCombatEffects } from '@/lib/effects/weapon-damage-effects';
 import { getSkillBonus } from '@/lib/character-data';
 import { useRitualBonusesForCombat, useRitualCombatBonuses, SustainedRitualInput, WeaponBuff, ELEMENT_BUFF_COLORS, useCombatFeedback } from '@/hooks';
 import { formatDamageFormula as formatBuffDamage } from '@/lib/rituals/legacy-exports';
@@ -145,6 +146,7 @@ interface CombatRollModalProps {
   characterId?: string;
   combatControlled?: boolean;
   expectedTurnKey?: string | null;
+  campaignId?: string | null;
   onClose: (pendingAttack?: boolean) => void;
   weapon: WeaponEntry | null;
   
@@ -255,6 +257,7 @@ export function CombatRollModal({
   characterId,
   combatControlled = false,
   expectedTurnKey,
+  campaignId,
   onClose,
   weapon,
   attributes,
@@ -289,7 +292,12 @@ export function CombatRollModal({
   ammunition = [],
 }: CombatRollModalProps) {
   const mirar = useMirarAction(characterId, weapon?.id, open);
-  const unifiedEffects = useMemo(() => getWeaponDamageEffects(sheetEffects, weapon), [sheetEffects, weapon]);
+  const handledCombatEffectIds = useMemo(() =>
+    classTrack?.toLowerCase().includes('aniquilador') && nex >= 99
+      ? ['track-maquina-de-matar'] : [], [classTrack, nex]);
+  const unifiedEffects = useMemo(() => withoutHandledCombatEffects(
+    getWeaponDamageEffects(sheetEffects, weapon), handledCombatEffectIds,
+  ), [sheetEffects, weapon, handledCombatEffectIds]);
   // === HOOK DE COMBATE INTEGRADO COM SUE ===
   // Provê funções executeAttackRoll e executeDamageRoll que automaticamente
   // aplicam todos os bônus do SUE (origem, trilha, poderes, rituais, condições).
@@ -365,9 +373,10 @@ export function CombatRollModal({
       {
         representedEffectIds: unifiedEffects?.damage.breakdown.flatMap(entry => entry.effectId ? [entry.effectId] : []) ?? [],
         isLongFirearm: hasLongFirearmDamage(weapon),
+        handledEffectIds: handledCombatEffectIds,
       },
     );
-  }, [classTrack, nex, attributesForTrack, attackType, combinedActivatedEffects, unifiedEffects, weapon]);
+  }, [classTrack, nex, attributesForTrack, attackType, combinedActivatedEffects, unifiedEffects, weapon, handledCombatEffectIds]);
   
   // === PROCESSAR WEAPON BUFFS (Amaldiçoar Arma, etc.) ===
   // REGRA OFICIAL: Rituais NÃO acumulam entre si - usa o MAIOR de cada tipo
@@ -442,14 +451,14 @@ export function CombatRollModal({
     ritualName: string;
     enhancement: string | null; // "Discente", "Verdadeiro" ou null para base
     total: number;
-    criticalMultiplier?: number;
-    isCritical: boolean;
   } | null>(null);
   
   // Estados dos modificadores manuais (bônus do mestre)
   const [manualAttackMod, setManualAttackMod] = useState(0);
   const [manualDamageMod, setManualDamageMod] = useState(0);
   const [targetDefense, setTargetDefense] = useState<number | null>(null);
+  const [gateSelection, setGateSelection] = useState<AttackGateSelection>({ mode: 'waiting' });
+  const intentRequired = !!(combatControlled && campaignId && characterId);
   const [visibility, setVisibility] = useState<AttackVisibilitySelection>({ level: 'none', confirmed: false, totalCover: false });
   const attackerBlind = activeConditions.some(id => resolveConditionId(id) === 'cego');
   const visibilityUnavailable = visibility.totalCover || ((visibility.level !== 'none' || attackerBlind) && !visibility.confirmed)
@@ -1226,7 +1235,9 @@ export function CombatRollModal({
       critical -= nonTrackCriticalBonus;
     } else if (classPowerBonuses?.criticalMarginBonus && !isGuerreiro) {
       // Sistema legado - backup (só se não for Guerreiro)
-      critical -= classPowerBonuses.criticalMarginBonus;
+      // A síntese legada já contém Máquina de Matar, tratada pela arma favorita abaixo.
+      critical -= Math.max(0, classPowerBonuses.criticalMarginBonus
+        - (handledCombatEffectIds.includes('track-maquina-de-matar') ? 2 : 0));
     }
     
     // Aplicar bônus de weapon buffs (Amaldiçoar Arma, etc.)
@@ -1262,7 +1273,7 @@ export function CombatRollModal({
     }
     
     return Math.max(1, critical); // Mínimo de 1
-  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex, trackCombatBonuses, isAtiradorElite, disparoLetalResult.enabled, disparoLetalResult.criticalMarginBonus]);
+  }, [weapon, passiveBonuses, classPowerBonuses, weaponBuffBonuses, unifiedEffects, maquinaDeMatarActive, activeTechniqueEffects, classTrack, nex, trackCombatBonuses, handledCombatEffectIds, isAtiradorElite, disparoLetalResult.enabled, disparoLetalResult.criticalMarginBonus]);
 
   // Multiplicador de crítico da arma (incluindo SUE, weapon buffs, trilha e Técnicas)
   // Conversão segura para string - pode vir como número ou string
@@ -1322,6 +1333,7 @@ export function CombatRollModal({
     if (preparingAttack.current || attackConfirmation.confirming) return;
     if (attackConfirmation.pending) { void attackConfirmation.confirm(); return; }
     if (!weapon || !canAffordPE || confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable || sneakAttackError) return;
+    if (intentRequired && (gateSelection.mode === 'waiting' || gateSelection.weaponId !== weapon.id)) return;
     preparingAttack.current = true;
 
     // Feedback de rolagem
@@ -1342,6 +1354,8 @@ export function CombatRollModal({
     if (burst.enabled) result.label += ' — Rajada';
     const selection: CombatCostSelection = {
       weaponId: weapon.id,
+      ...(gateSelection.mode === 'targeted' && gateSelection.weaponId === weapon.id
+        ? { targetCharacterId: gateSelection.targetCharacterId, attackIntentId: gateSelection.attackIntentId } : {}),
       concealment: visibility.level, concealmentConfirmed: visibility.confirmed || (visibility.level === 'none' && !attackerBlind),
       totalCover: visibility.totalCover, attackerBlind, targetDefense,
       burst: burst.enabled,
@@ -1462,8 +1476,8 @@ export function CombatRollModal({
     const potenciaMaximaMultiplier = 1; // Desativado aqui, processado em specialAttackResult
     
     // Dados extras (de poderes como Golpe Pesado, origens, trilhas)
-    let extraDiceCount = 0;
-    let extraDiceSize = parsed.size;
+    // Cada fonte conserva o tamanho dos próprios dados, inclusive com bônus mistos (d6 e d8).
+    const extraDiceGroups: Array<{ count: number; size: number }> = [];
     
     // Dados extras do SUE (origem, trilha, condições)
     // Suporta marcador especial "NW" para dados do tipo da arma (ex: "1W" = 1 dado do tipo da arma)
@@ -1473,8 +1487,7 @@ export function CombatRollModal({
         const weaponDieMatch = diceStr.match(/^(\d+)W$/i);
         if (weaponDieMatch) {
           const count = parseInt(weaponDieMatch[1]) || 1;
-          extraDiceCount += isCritical ? count * criticalMultiplier : count;
-          extraDiceSize = parsed.size; // Usa o tamanho do dado da arma
+          extraDiceGroups.push({ count: isCritical ? count * criticalMultiplier : count, size: parsed.size });
           return;
         }
         
@@ -1482,8 +1495,7 @@ export function CombatRollModal({
         const match = diceStr.match(/(\d*)d(\d+)/i);
         if (match) {
           const count = parseInt(match[1]) || 1;
-          extraDiceCount += isCritical ? count * criticalMultiplier : count;
-          if (match[2]) extraDiceSize = parseInt(match[2]);
+          extraDiceGroups.push({ count, size: parseInt(match[2]) });
         }
       });
     } else if (classPowerBonuses?.extraDamageDice && classPowerBonuses.extraDamageDice.length > 0) {
@@ -1493,16 +1505,15 @@ export function CombatRollModal({
         const weaponDieMatch = diceStr.match(/^(\d+)W$/i);
         if (weaponDieMatch) {
           const count = parseInt(weaponDieMatch[1]) || 1;
-          extraDiceCount += isCritical ? count * criticalMultiplier : count;
-          extraDiceSize = parsed.size;
+          if (handledCombatEffectIds.length > 0) return;
+          extraDiceGroups.push({ count: isCritical ? count * criticalMultiplier : count, size: parsed.size });
           return;
         }
         
         const match = diceStr.match(/(\d*)d(\d+)/i);
         if (match) {
           const count = parseInt(match[1]) || 1;
-          extraDiceCount += isCritical ? count * criticalMultiplier : count;
-          if (match[2]) extraDiceSize = parseInt(match[2]);
+          extraDiceGroups.push({ count, size: parseInt(match[2]) });
         }
       });
     }
@@ -1514,16 +1525,14 @@ export function CombatRollModal({
         const weaponDieMatch = diceStr.match(/^(\d+)W$/i);
         if (weaponDieMatch) {
           const count = parseInt(weaponDieMatch[1]) || 1;
-          extraDiceCount += isCritical ? count * criticalMultiplier : count;
-          extraDiceSize = parsed.size;
+          extraDiceGroups.push({ count: isCritical ? count * criticalMultiplier : count, size: parsed.size });
           return;
         }
         
         const match = diceStr.match(/(\d*)d(\d+)/i);
         if (match) {
           const count = parseInt(match[1]) || 1;
-          extraDiceCount += isCritical ? count * criticalMultiplier : count;
-          if (match[2]) extraDiceSize = parseInt(match[2]);
+          extraDiceGroups.push({ count, size: parseInt(match[2]) });
         }
       });
     }
@@ -1532,7 +1541,7 @@ export function CombatRollModal({
     // Estes dados são de tipo elemental específico do ritual - AGORA SEPARADOS
     let weaponBuffDiceCount = 0;
     let weaponBuffDiceSize = 6;
-    let weaponBuffBaseDice = 0; // Dados base antes do crítico (para exibição da fórmula)
+    let weaponBuffBaseDice = 0; // Dados extras do ritual não aumentam no crítico.
     let weaponBuffEnhancement: string | null = null;
     
     if (weaponBuffBonuses.bonusDamage && weaponBuffs.length > 0) {
@@ -1547,9 +1556,7 @@ export function CombatRollModal({
       }
       
       weaponBuffBaseDice = buffDamage.diceCount || 1;
-      weaponBuffDiceCount = isCritical 
-        ? weaponBuffBaseDice * criticalMultiplier 
-        : weaponBuffBaseDice;
+      weaponBuffDiceCount = weaponBuffBaseDice;
       weaponBuffDiceSize = buffDamage.diceType || 6;
     }
     
@@ -1600,8 +1607,7 @@ export function CombatRollModal({
         const extraMatch = b.damageBonus.match(/(\d*)d(\d+)?/i);
         if (extraMatch) {
           const count = parseInt(extraMatch[1]) || 1;
-          extraDiceCount += isCritical ? count * criticalMultiplier : count;
-          if (extraMatch[2]) extraDiceSize = parseInt(extraMatch[2]);
+          extraDiceGroups.push({ count, size: extraMatch[2] ? parseInt(extraMatch[2]) : parsed.size });
         }
       }
     });
@@ -1623,8 +1629,7 @@ export function CombatRollModal({
           const extraMatch = bonus.damageBonus.match(/(\d*)d(\d+)/i);
           if (extraMatch) {
             const count = parseInt(extraMatch[1]) || 1;
-            extraDiceCount += isCritical ? count * criticalMultiplier : count;
-            extraDiceSize = parseInt(extraMatch[2]);
+            extraDiceGroups.push({ count, size: parseInt(extraMatch[2]) });
           }
         }
       }
@@ -1650,11 +1655,9 @@ export function CombatRollModal({
     
     // Rolar dados extras
     const extraDice: number[] = [];
-    for (let i = 0; i < extraDiceCount; i++) {
-      if (useMaxDamage) {
-        extraDice.push(extraDiceSize);
-      } else {
-        extraDice.push(Math.floor(Math.random() * extraDiceSize) + 1);
+    for (const group of extraDiceGroups) {
+      for (let i = 0; i < group.count; i++) {
+        extraDice.push(useMaxDamage ? group.size : Math.floor(Math.random() * group.size) + 1);
       }
     }
     
@@ -1738,8 +1741,6 @@ export function CombatRollModal({
         ritualName: activeBuff.ritualName,
         enhancement: weaponBuffEnhancement,
         total: buffDiceTotal,
-        criticalMultiplier: isCritical ? criticalMultiplier : undefined,
-        isCritical,
       });
     } else {
       setBuffDiceResult(null);
@@ -2482,6 +2483,10 @@ export function CombatRollModal({
 
 </div>
                 {temporaryPE > 0 && <p className="text-sm text-muted-foreground">PE disponíveis: {currentPE} normais + {temporaryPE} temporários. Temporários são consumidos primeiro.</p>}
+        {intentRequired && campaignId && characterId && weapon && phase === 'setup' &&
+          <AttackIntentGate key={`${campaignId}:${characterId}:${weapon.id}`} campaignId={campaignId}
+            attackerId={characterId} weaponId={weapon.id} enabled={open}
+            onSelectionChange={setGateSelection} />}
         {confirmationUnavailable && !attackConfirmation.pending && <p role="status" className="p-3 text-sm text-muted-foreground">{confirmationUnavailable}</p>}
         {sneakAttackError && !attackConfirmation.pending && <p role="alert" className="p-3 text-sm text-destructive">{sneakAttackError}</p>}
         {attackConfirmation.error && (
@@ -2495,7 +2500,7 @@ export function CombatRollModal({
                   className="w-full font-display"
                   size="lg"
                   onClick={handleRollAttack}
-                  disabled={attackConfirmation.confirming || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable || !!sneakAttackError))}
+                  disabled={attackConfirmation.confirming || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable || !!sneakAttackError || (intentRequired && (gateSelection.mode === 'waiting' || gateSelection.weaponId !== weapon?.id))))}
                 >
                   <Dices className="w-5 h-5 mr-2" />
                   {attackConfirmation.confirming ? "CONFIRMANDO ATAQUE…" : attackConfirmation.pending ? "TENTAR CONFIRMAR ATAQUE" : "ROLAR ATAQUE"}
@@ -2816,11 +2821,6 @@ export function CombatRollModal({
                                 </span>
                               </Badge>
                               
-                              {buffDiceResult.isCritical && buffDiceResult.criticalMultiplier && (
-                                <Badge variant="outline" className="text-[10px] border-amber-500/50 text-amber-500">
-                                  x{buffDiceResult.criticalMultiplier} crítico
-                                </Badge>
-                              )}
                             </div>
                             
                             {/* Dados do buff com cor do elemento */}

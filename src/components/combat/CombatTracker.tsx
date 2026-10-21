@@ -593,6 +593,11 @@ export function CombatTracker({
 
   return (
     <div className="space-y-6">
+      <p role="note" className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-foreground">
+        Este painel de combate legado é manual e local. A mesa confirma ações preparadas,
+        seus gatilhos e o prazo até o próximo turno do personagem. Reações comuns não
+        têm um limite geral por rodada; limites de defesas especiais são conferidos à parte.
+      </p>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

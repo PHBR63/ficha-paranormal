@@ -7,6 +7,8 @@ import { activityClient, activityFailure, activityJson, awaitActivityResponse, c
 /** Configuração escolhida; o servidor calcula os custos e valida classe, NEX e arma. */
 export interface CombatCostSelection {
   weaponId: string;
+  targetCharacterId?: string;
+  attackIntentId?: string;
   burst?: boolean;
   concealment?: ConcealmentLevel;
   concealmentConfirmed?: boolean;

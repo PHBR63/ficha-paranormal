@@ -664,7 +664,7 @@ export interface ComputedEffects {
   critical: {
     marginBonus: number;
     multiplierBonus: number;
-    breakdown: Array<{ source: string; value: number; type: 'margin' | 'multiplier' }>;
+    breakdown: Array<{ source: string; value: number; type: 'margin' | 'multiplier'; effectId?: string }>;
   };
   defense: {
     general: number;
@@ -1665,17 +1665,17 @@ export function consolidateEffects(
     }
     if (m.extraDamageDice) {
       result.damage.extraDice.push(m.extraDamageDice);
-      result.damage.breakdown.push({ source, value: m.extraDamageDice });
+      result.damage.breakdown.push({ source, value: m.extraDamageDice, effectId: effect.id });
     }
 
     // === Crítico ===
     if (m.criticalMarginBonus) {
       result.critical.marginBonus += m.criticalMarginBonus;
-      result.critical.breakdown.push({ source, value: m.criticalMarginBonus, type: 'margin' });
+      result.critical.breakdown.push({ source, value: m.criticalMarginBonus, type: 'margin', effectId: effect.id });
     }
     if (m.criticalMultiplierBonus) {
       result.critical.multiplierBonus += m.criticalMultiplierBonus;
-      result.critical.breakdown.push({ source, value: m.criticalMultiplierBonus, type: 'multiplier' });
+      result.critical.breakdown.push({ source, value: m.criticalMultiplierBonus, type: 'multiplier', effectId: effect.id });
     }
 
     // === Defesa ===

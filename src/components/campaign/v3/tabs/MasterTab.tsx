@@ -25,6 +25,7 @@ import { PlayerControlCard } from '@/components/campaign/v3/master/PlayerControl
 import { MasterQuickActions } from '@/components/campaign/v3/master/MasterQuickActions';
 import { CombatTracker } from '@/components/campaign/v3/master/CombatTracker';
 import { BulkDamageModal } from '@/components/campaign/v3/master/BulkDamageModal';
+import { applyDamagePerCharacter } from '@/lib/campaign-bulk-damage';
 import { AudioControlPanel } from '@/components/campaign/v3/master/AudioControlPanel';
 import { NPCManager } from '@/components/campaign/master';
 import { MacrosPanel } from '@/components/campaign/chat';
@@ -49,7 +50,6 @@ interface MasterTabProps {
   onRestFull?: (characterId: string) => Promise<boolean>;
   onGroupRest?: () => Promise<void>;
   onClearAllConditions?: () => Promise<void>;
-  onBulkDamage?: (characterIds: string[], damage: number) => Promise<void>;
   onSendMessage?: (content: string, type?: string, metadata?: Record<string, unknown>) => void;
   isUpdating?: boolean;
   // Áudio
@@ -78,7 +78,6 @@ export const MasterTab = memo(function MasterTab({
   onRestFull,
   onGroupRest,
   onClearAllConditions,
-  onBulkDamage,
   onSendMessage,
   isUpdating,
   audioLibrary = [],
@@ -99,16 +98,9 @@ export const MasterTab = memo(function MasterTab({
   // conferindo a autorização do mestre em cada ajuste individual.
   const membersWithCharacter = members.filter(m => m.characters);
 
-  // Handler para dano em área
-  const handleBulkDamage = useCallback(async (characterIds: string[], damage: number) => {
-    if (onBulkDamage) {
-      await onBulkDamage(characterIds, damage);
-    } else if (onModifyHP) {
-      for (const charId of characterIds) {
-        await onModifyHP(charId, -damage);
-      }
-    }
-  }, [onBulkDamage, onModifyHP]);
+  // O mesmo contrato de confirmação é usado no painel principal e no mapa.
+  const handleBulkDamage = useCallback((characterIds: string[], damage: number) =>
+    applyDamagePerCharacter(characterIds, damage, onModifyHP), [onModifyHP]);
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
@@ -262,6 +254,8 @@ export const MasterTab = memo(function MasterTab({
         onOpenChange={setBulkDamageOpen}
         members={members}
         onApplyDamage={handleBulkDamage}
+        canApply={!!onModifyHP}
+        serverCampaignId={combatAvailable ? campaignId : undefined}
         isUpdating={isUpdating}
       />
     </div>

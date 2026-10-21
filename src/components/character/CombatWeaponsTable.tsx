@@ -89,6 +89,7 @@ interface CombatWeaponsTableProps {
   characterId?: string;
   combatControlled?: boolean;
   expectedTurnKey?: string | null;
+  campaignId?: string | null;
   temporaryPE?: number;
   confirmationUnavailable?: string;
   
@@ -168,6 +169,7 @@ export function CombatWeaponsTable({
   characterId,
   combatControlled,
   expectedTurnKey,
+  campaignId,
   temporaryPE,
   confirmationUnavailable,  characterClass,
   classTrack,
@@ -414,6 +416,7 @@ export function CombatWeaponsTable({
           characterId={characterId}
           combatControlled={combatControlled}
           expectedTurnKey={expectedTurnKey}
+          campaignId={campaignId}
           temporaryPE={temporaryPE}
           confirmationUnavailable={confirmationUnavailable}
           characterClass={characterClass || ''}

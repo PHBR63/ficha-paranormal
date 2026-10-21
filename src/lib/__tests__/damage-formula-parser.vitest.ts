@@ -206,14 +206,28 @@ describe('rollDamageFromFormula', () => {
       expect(result.diceResults[0].rolls).toHaveLength(3); // 1 * 3 = 3 dados
     });
 
-    it('deve multiplicar dados extras em crítico', () => {
+    it('não multiplica dados extras em crítico', () => {
       const result = rollDamageFromFormula('1d6', {
         isCritical: true,
         extraDice: [{ count: 1, sides: 6 }],
       });
-      
-      // Dados extras também são multiplicados
-      expect(result.extraDiceResults[0].rolls).toHaveLength(2);
+
+      expect(result.diceResults[0].rolls).toHaveLength(2);
+      expect(result.extraDiceResults[0].rolls).toHaveLength(1);
+    });
+
+    it('multiplica apenas dado extra identificado como dado da arma', () => {
+      const result = rollDamageFromFormula('1d8', {
+        isCritical: true,
+        criticalMultiplier: 3,
+        extraDice: [
+          { count: 1, sides: 8, criticalAsWeapon: true },
+          { count: 2, sides: 6 },
+        ],
+      });
+
+      expect(result.extraDiceResults[0].rolls).toHaveLength(3);
+      expect(result.extraDiceResults[1].rolls).toHaveLength(2);
     });
   });
 
