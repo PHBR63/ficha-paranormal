@@ -12,6 +12,8 @@
 
 [Acessar o Let's Roll](https://ficha-paranormal.lovable.app) · [Instalar como aplicativo](https://ficha-paranormal.lovable.app/install) · [Documentação técnica](#documentação-técnica)
 
+<img src="docs/images/home.png" alt="Página inicial do Let's Roll com o título 'A Membrana está se rompendo' e os cinco elementos do Outro Lado" width="880" />
+
 </div>
 
 ---
@@ -25,9 +27,22 @@ O projeto busca reduzir cálculos repetitivos sem retirar do mestre e dos jogado
 > [!IMPORTANT]
 > Este é um projeto de fã não oficial. Ordem Paranormal e suas propriedades pertencem aos respectivos autores e detentores de direitos. O Let's Roll não substitui os livros oficiais.
 
+---
+
+## O que o site oferece
+
+| Área | O que você faz |
+|---|---|
+| 📋 **Ficha de agente** | Cria e evolui personagens com atributos, perícias, origem, classe, trilha, poderes e rituais — tudo calculado automaticamente. |
+| 🎲 **Rolagens integradas** | Testes, ataques, dano, iniciativa e resistências com o contexto completo do personagem. |
+| 🗺️ **Mapa tático** | Conduz cenas com tokens, névoa de guerra, pings, áreas de efeito e câmera sincronizada. |
+| 💬 **Campanha viva** | Chat em tempo real, sessões, diário, notas, handouts e áudio compartilhado. |
+| 🧪 **Regras fiéis** | Motor de regras baseado no Livro Base v1.3, sem inventar mecânicas. |
+| 📱 **Onde estiver** | Aplicativo instalável (PWA) com suporte completo a celular. |
+
 ## Conteúdo
 
-- [Experiência de jogo](#experiência-de-jogo)
+- [Primeiros passos](#primeiros-passos)
 - [Ficha de agente](#ficha-de-agente)
 - [Regras, rolagens e combate](#regras-rolagens-e-combate)
 - [Campanhas](#campanhas)
@@ -43,19 +58,25 @@ O projeto busca reduzir cálculos repetitivos sem retirar do mestre e dos jogado
 
 ---
 
-## Experiência de jogo
+## Primeiros passos
 
-O Let's Roll oferece dois contextos conectados:
+O acesso é identificado por conta. Depois de entrar, a **Central de Operações** reúne seus agentes, mesas e ações rápidas em um só lugar.
 
-### Modo Ficha
+| Acesso | Central de Operações |
+|---|---|
+| <img src="docs/images/acesso.png" alt="Tela de acesso restrito do Let's Roll" width="430" /> | <img src="docs/images/dashboard.png" alt="Central de Operações com contadores de agentes e campanhas" width="430" /> |
 
-Criação, consulta e progressão de agentes, com atributos, perícias, origem, classe, trilha, poderes, rituais, equipamentos e condições reunidos na ficha digital.
-
-### Modo Mestre
-
-Criação e condução de campanhas com participantes, sessões, chat, notas, handouts, áudio, iniciativa e mapa tático sincronizados em tempo real.
+1. **Crie sua conta** na página de acesso.
+2. **Crie seu primeiro agente** pelo assistente guiado.
+3. **Entre em uma campanha** com um código de convite ou crie a sua como mestre.
 
 ## Ficha de agente
+
+O coração do Let's Roll. A criação é um assistente passo a passo que valida cada escolha contra as regras oficiais — nada de ficha inválida por descuido.
+
+<div align="center">
+<img src="docs/images/criacao.png" alt="Assistente de criação de agente com o passo 'Conceito do Agente'" width="820" />
+</div>
 
 ### Criação e progressão
 
@@ -72,7 +93,6 @@ Criação e condução de campanhas com participantes, sessões, chat, notas, ha
 
 - catálogos de armas, proteções, munições, acessórios e itens;
 - controle de categoria, espaços e carga;
-- equipamentos e itens carregados;
 - modificações próprias para armas, munições, proteções e acessórios;
 - bloqueio de uma modificação já aplicada ao mesmo item;
 - itens amaldiçoados cadastrados separadamente;
@@ -111,7 +131,7 @@ Rolagens com contexto de personagem passam pelos adaptadores do SUE:
 - Fortitude, Reflexos e Vontade;
 - dano de rituais.
 
-Os resultados podem apresentar os dados rolados, o dado mantido, modificadores, total e fontes dos bônus. Ataque e dano permanecem etapas distintas.
+Os resultados apresentam os dados rolados, o dado mantido, modificadores, total e fontes dos bônus. Ataque e dano permanecem etapas distintas.
 
 ### Recursos de combate
 
