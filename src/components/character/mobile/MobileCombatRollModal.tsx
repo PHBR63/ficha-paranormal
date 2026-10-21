@@ -8,6 +8,7 @@ import { getCompatibleAmmunition, getAmmunitionEffects, type CombatAmmunition } 
 import { CombatAmmunitionSelector } from '../CombatAmmunitionSelector';
 import { WeaponModificationNotes } from '../WeaponModificationNotes';
 import type { ConfirmCombatAttack, CombatCostSelection } from '@/services/combat-attack-service';
+import { AttackIntentGate, type AttackGateSelection } from '../AttackIntentGate';
 /**
  * MobileCombatRollModal - Modal de combate completo para mobile
  * Interface step-by-step: Setup → Ataque → Dano
@@ -27,7 +28,7 @@ import type { ConfirmCombatAttack, CombatCostSelection } from '@/services/combat
 
 import { useConfirmedDiceRoll, type ConfirmDicePE } from '@/hooks/useConfirmedDiceRoll';
 import { getCombatPowerDicePenalty } from '@/lib/class-powers/combat-test-dice';
-import { getWeaponDamageEffects, hasLongFirearmDamage } from '@/lib/effects/weapon-damage-effects';
+import { getWeaponDamageEffects, hasLongFirearmDamage, withoutHandledCombatEffects } from '@/lib/effects/weapon-damage-effects';
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -147,6 +148,7 @@ interface MobileCombatRollModalProps {
   characterId?: string;
   combatControlled?: boolean;
   expectedTurnKey?: string | null;
+  campaignId?: string | null;
   onClose: (pendingAttack?: boolean) => void;
   weapon: WeaponEntry | null;
   attributes: {
@@ -238,6 +240,7 @@ export function MobileCombatRollModal({
   characterId,
   combatControlled = false,
   expectedTurnKey,
+  campaignId,
   onClose,
   weapon,
   attributes,
@@ -270,7 +273,12 @@ export function MobileCombatRollModal({
   excludedEffects = [], // SUE Hardening: Efeitos excluídos por stacking
 }: MobileCombatRollModalProps) {
   const mirar = useMirarAction(characterId, weapon?.id, open);
-  const unifiedEffects = useMemo(() => getWeaponDamageEffects(sheetEffects, weapon), [sheetEffects, weapon]);
+  const handledCombatEffectIds = useMemo(() =>
+    classTrack?.toLowerCase().includes('aniquilador') && nex >= 99
+      ? ['track-maquina-de-matar'] : [], [classTrack, nex]);
+  const unifiedEffects = useMemo(() => withoutHandledCombatEffects(
+    getWeaponDamageEffects(sheetEffects, weapon), handledCombatEffectIds,
+  ), [sheetEffects, weapon, handledCombatEffectIds]);
   // === HOOK DE COMBATE INTEGRADO COM SUE ===
   // Preparação para migração: hook já configurado para uso futuro
   // Quando a migração estiver completa, substituirá rollSkillTest/rollDamage
@@ -311,6 +319,8 @@ export function MobileCombatRollModal({
   const [manualAttackMod, setManualAttackMod] = useState(0);
   const [manualDamageMod, setManualDamageMod] = useState(0); // NOVO - paridade desktop
   const [targetDefense, setTargetDefense] = useState<number | null>(null);
+  const [gateSelection, setGateSelection] = useState<AttackGateSelection>({ mode: 'waiting' });
+  const intentRequired = !!(combatControlled && campaignId && characterId);
   const [visibility, setVisibility] = useState<AttackVisibilitySelection>({ level: 'none', confirmed: false, totalCover: false });
   const attackerBlind = activeConditions.some(id => resolveConditionId(id) === 'cego');
   const visibilityUnavailable = visibility.totalCover || ((visibility.level !== 'none' || attackerBlind) && !visibility.confirmed)
@@ -325,8 +335,6 @@ export function MobileCombatRollModal({
     ritualName: string;
     enhancement: string | null;
     total: number;
-    criticalMultiplier?: number;
-    isCritical: boolean;
   } | null>(null);
   
   // === ESTADOS DO ANIQUILADOR ===
@@ -417,9 +425,10 @@ export function MobileCombatRollModal({
       {
         representedEffectIds: unifiedEffects?.damage.breakdown.flatMap(entry => entry.effectId ? [entry.effectId] : []) ?? [],
         isLongFirearm: hasLongFirearmDamage(weapon),
+        handledEffectIds: handledCombatEffectIds,
       },
     );
-  }, [classTrack, nex, attributes, attackType, combinedActivatedEffects, unifiedEffects, weapon]);
+  }, [classTrack, nex, attributes, attackType, combinedActivatedEffects, unifiedEffects, weapon, handledCombatEffectIds]);
   
   // === PROCESSAR WEAPON BUFFS (Amaldiçoar Arma, etc.) ===
   const weaponBuffBonuses = useMemo(() => {
@@ -1173,6 +1182,7 @@ export function MobileCombatRollModal({
     if (preparingAttack.current || attackConfirmation.confirming) return;
     if (attackConfirmation.pending) { void attackConfirmation.confirm(); return; }
     if (!weapon || !canAffordPE || confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable || sneakAttackError) return;
+    if (intentRequired && (gateSelection.mode === 'waiting' || gateSelection.weaponId !== weapon.id)) return;
     preparingAttack.current = true;
 
     setIsRolling(true);
@@ -1193,6 +1203,8 @@ export function MobileCombatRollModal({
     if (burst.enabled) result.label += ' — Rajada';
     const selection: CombatCostSelection = {
       weaponId: weapon.id,
+      ...(gateSelection.mode === 'targeted' && gateSelection.weaponId === weapon.id
+        ? { targetCharacterId: gateSelection.targetCharacterId, attackIntentId: gateSelection.attackIntentId } : {}),
       concealment: visibility.level, concealmentConfirmed: visibility.confirmed || (visibility.level === 'none' && !attackerBlind),
       totalCover: visibility.totalCover, attackerBlind, targetDefense,
       burst: burst.enabled,
@@ -1260,7 +1272,7 @@ export function MobileCombatRollModal({
       },
 
     }).finally(() => { preparingAttack.current = false; setIsRolling(false); });
-  }, [visibility, attackerBlind, visibilityUnavailable, burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, sneakAttackError, isAtiradorElite, disparoLetalConfig, disparoLetalResult.enabled, resetDisparoLetal, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback, combatControlled, mirar]);
+  }, [visibility, attackerBlind, visibilityUnavailable, burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, sneakAttackError, isAtiradorElite, disparoLetalConfig, disparoLetalResult.enabled, resetDisparoLetal, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback, combatControlled, mirar, intentRequired, gateSelection]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
@@ -1310,8 +1322,8 @@ export function MobileCombatRollModal({
       const potenciaMaximaMultiplier = advancedBonuses.potenciaMaxima && isMelee ? 2 : 1;
       
       // Dados extras
-      let extraDiceCount = 0;
-      let extraDiceSize = parsed.size;
+      // Conserva o tamanho dos dados de cada fonte quando bônus de dano são misturados.
+      const extraDiceGroups: Array<{ count: number; size: number }> = [];
       
       // SUE extra dice
       // Suporta marcador especial "NW" para dados do tipo da arma (ex: "1W" = 1 dado do tipo da arma)
@@ -1321,16 +1333,14 @@ export function MobileCombatRollModal({
           const weaponDieMatch = diceStr.match(/^(\d+)W$/i);
           if (weaponDieMatch) {
             const count = parseInt(weaponDieMatch[1]) || 1;
-            extraDiceCount += isCritical ? count * criticalMultiplier : count;
-            extraDiceSize = parsed.size; // Usa o tamanho do dado da arma
+            extraDiceGroups.push({ count: isCritical ? count * criticalMultiplier : count, size: parsed.size });
             return;
           }
           
           const match = diceStr.match(/(\d*)d(\d+)/i);
           if (match) {
             const count = parseInt(match[1]) || 1;
-            extraDiceCount += isCritical ? count * criticalMultiplier : count;
-            if (match[2]) extraDiceSize = parseInt(match[2]);
+            extraDiceGroups.push({ count, size: parseInt(match[2]) });
           }
         });
       }
@@ -1342,16 +1352,14 @@ export function MobileCombatRollModal({
           const weaponDieMatch = diceStr.match(/^(\d+)W$/i);
           if (weaponDieMatch) {
             const count = parseInt(weaponDieMatch[1]) || 1;
-            extraDiceCount += isCritical ? count * criticalMultiplier : count;
-            extraDiceSize = parsed.size;
+            extraDiceGroups.push({ count: isCritical ? count * criticalMultiplier : count, size: parsed.size });
             return;
           }
           
           const match = diceStr.match(/(\d*)d(\d+)/i);
           if (match) {
             const count = parseInt(match[1]) || 1;
-            extraDiceCount += isCritical ? count * criticalMultiplier : count;
-            if (match[2]) extraDiceSize = parseInt(match[2]);
+            extraDiceGroups.push({ count, size: parseInt(match[2]) });
           }
         });
       }
@@ -1373,7 +1381,7 @@ export function MobileCombatRollModal({
         }
         
         weaponBuffBaseDice = buffDamage.diceCount || 1;
-        weaponBuffDiceCount = isCritical ? weaponBuffBaseDice * criticalMultiplier : weaponBuffBaseDice;
+        weaponBuffDiceCount = weaponBuffBaseDice;
         weaponBuffDiceSize = buffDamage.diceType || 6;
       }
       
@@ -1415,8 +1423,7 @@ export function MobileCombatRollModal({
           const extraMatch = b.damageBonus.match(/(\d*)d(\d+)?/i);
           if (extraMatch) {
             const count = parseInt(extraMatch[1]) || 1;
-            extraDiceCount += isCritical ? count * criticalMultiplier : count;
-            if (extraMatch[2]) extraDiceSize = parseInt(extraMatch[2]);
+            extraDiceGroups.push({ count, size: extraMatch[2] ? parseInt(extraMatch[2]) : parsed.size });
           }
         }
       });
@@ -1436,8 +1443,7 @@ export function MobileCombatRollModal({
             const extraMatch = bonus.damageBonus.match(/(\d*)d(\d+)/i);
             if (extraMatch) {
               const count = parseInt(extraMatch[1]) || 1;
-              extraDiceCount += isCritical ? count * criticalMultiplier : count;
-              extraDiceSize = parseInt(extraMatch[2]);
+              extraDiceGroups.push({ count, size: parseInt(extraMatch[2]) });
             }
           }
         }
@@ -1459,8 +1465,10 @@ export function MobileCombatRollModal({
       
       // Rolar dados extras
       const extraDice: number[] = [];
-      for (let i = 0; i < extraDiceCount; i++) {
-        extraDice.push(useMaxDamage ? extraDiceSize : Math.floor(Math.random() * extraDiceSize) + 1);
+      for (const group of extraDiceGroups) {
+        for (let i = 0; i < group.count; i++) {
+          extraDice.push(useMaxDamage ? group.size : Math.floor(Math.random() * group.size) + 1);
+        }
       }
       
       // Rolar dados do Ataque Furtivo
@@ -1526,8 +1534,6 @@ export function MobileCombatRollModal({
           ritualName: activeBuff.ritualName,
           enhancement: weaponBuffEnhancement,
           total: buffDiceTotal,
-          criticalMultiplier: isCritical ? criticalMultiplier : undefined,
-          isCritical,
         });
       } else {
         setBuffDiceResult(null);
@@ -2319,6 +2325,10 @@ export function MobileCombatRollModal({
               </motion.div>
             )}
           </AnimatePresence>
+          {intentRequired && campaignId && characterId && weapon && phase === 'setup' &&
+            <AttackIntentGate key={`${campaignId}:${characterId}:${weapon.id}`} campaignId={campaignId}
+              attackerId={characterId} weaponId={weapon.id} enabled={open}
+              onSelectionChange={setGateSelection} />}
         </MobileDrawerBody>
 
         {temporaryPE > 0 && <p className="text-sm text-muted-foreground">PE disponíveis: {currentPE} normais + {temporaryPE} temporários. Temporários são consumidos primeiro.</p>}
@@ -2348,7 +2358,7 @@ export function MobileCombatRollModal({
                     ) : <Target className="w-5 h-5" />,
                     onClick: rollAttack,
                     type: 'primary',
-                    disabled: attackConfirmation.confirming || isRolling || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable || !!sneakAttackError)),
+                    disabled: attackConfirmation.confirming || isRolling || (!attackConfirmation.pending && (!canAffordPE || !!confirmationUnavailable || ammunitionUnavailable || visibilityUnavailable || !!sneakAttackError || (intentRequired && (gateSelection.mode === 'waiting' || gateSelection.weaponId !== weapon?.id)))),
                   }
                 ]}
               />

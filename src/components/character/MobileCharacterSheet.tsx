@@ -2580,6 +2580,7 @@ export function MobileCharacterSheet({
           characterId={character.id}
           combatControlled={peBudget.data?.mode === 'combat'}
           expectedTurnKey={peBudget.data?.key ?? null}
+          campaignId={ritualCampaignVersion === 'v2' ? ritualCampaignId : null}
           ammunition={character.inventory.filter(item => item.itemType === 'consumable') as any}
           open={combatModalOpen}
           onClose={(pending = false) => {

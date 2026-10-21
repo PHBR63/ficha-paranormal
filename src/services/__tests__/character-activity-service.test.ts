@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { activityJson, listCharacterActivity, recordCharacterRoll, hideCharacterActivity } from '../character-activity-service';
+import { activityFailure, activityJson, listCharacterActivity, recordCharacterRoll, hideCharacterActivity } from '../character-activity-service';
 import { applyCharacterEffect, castCharacterRitual } from '../ritual-application-service';
 import { describeCharacterActivity } from '@/lib/character-activity-presentation';
 import type { CharacterActivityEvent } from '@/types/character-activity';
@@ -10,6 +10,10 @@ const operationId = '00000000-0000-4000-8000-000000000002';
 const event: CharacterActivityEvent = { id: operationId, operation_id: operationId, character_id: characterId, author_id: characterId, category: 'roll', payload: {}, status: 'confirmed', created_at: '2026-10-06T12:00:00Z', campaign_id: null, campaign_version: null };
 beforeEach(() => { vi.clearAllMocks(); fake.rpc.mockResolvedValue({ data: event, error: null }); });
 describe('histórico por ficha confirmado no servidor', () => {
+  it('explica rejeição de ação fora do turno sem anunciar gasto', () => {
+    expect(activityFailure('Ataque não confirmado.', { code: '55004' }).message)
+      .toContain('Nenhum PE ou PV foi gasto');
+  });
   it('recusa evento de outra ficha mesmo em resposta sem erro', async () => {
     fake.rpc.mockResolvedValue({ data: { ...event, character_id: operationId }, error: null });
     await expect(recordCharacterRoll(characterId, operationId, {})).rejects.toThrow('ficha correta');

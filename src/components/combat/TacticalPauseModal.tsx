@@ -97,11 +97,11 @@ const COMBAT_RULES = [
   },
   {
     title: 'Limite de PE',
-    content: 'Você pode gastar no máximo seu NEX ÷ 5 (mínimo 1) PE por rodada.',
+    content: 'Com controle de turnos ativo, você pode gastar no máximo seu NEX ÷ 5 (mínimo 1) PE por turno.',
   },
   {
     title: 'Ataque de Oportunidade',
-    content: 'Quando um inimigo sai de sua área de ameaça, você pode usar sua reação para fazer um ataque.',
+    content: 'Com o poder Ataque de Oportunidade, quando um inimigo sai voluntariamente de um espaço adjacente, você pode gastar 1 PE e sua reação para atacá-lo corpo a corpo. A mesa confirma o gatilho.',
   },
   {
     title: 'Flanquear',
@@ -421,7 +421,7 @@ export function TacticalPauseModal({
                       <ul className="text-xs text-muted-foreground space-y-1">
                         <li>• Use cobertura para aumentar sua Defesa</li>
                         <li>• Flanqueie inimigos para +2 no ataque</li>
-                        <li>• Ataques de oportunidade são gratuitos</li>
+                        <li>• Ataque de Oportunidade exige o poder, reação, 1 PE e gatilho confirmado pela mesa</li>
                         <li>• Rituais sustentados custam PE todo turno</li>
                         <li>• Morrendo: você tem 3 rodadas para ser estabilizado</li>
                       </ul>

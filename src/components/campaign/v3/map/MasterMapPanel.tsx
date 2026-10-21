@@ -24,6 +24,7 @@ import { PlayerControlCard } from '@/components/campaign/v3/master/PlayerControl
 import { MasterQuickActions } from '@/components/campaign/v3/master/MasterQuickActions';
 import { CombatTracker } from '@/components/campaign/v3/master/CombatTracker';
 import { BulkDamageModal } from '@/components/campaign/v3/master/BulkDamageModal';
+import { applyDamagePerCharacter } from '@/lib/campaign-bulk-damage';
 import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 import type { CampaignCombatController } from '@/hooks/campaign/useCampaignCombat';
 
@@ -48,7 +49,6 @@ interface MasterMapPanelProps {
   onRestFull?: (characterId: string) => Promise<boolean>;
   onGroupRest?: () => Promise<void>;
   onClearAllConditions?: () => Promise<void>;
-  onBulkDamage?: (characterIds: string[], damage: number) => Promise<void>;
   onSendMessage?: (content: string, type?: string, metadata?: Record<string, unknown>) => void;
   isUpdating?: boolean;
 }
@@ -97,7 +97,6 @@ export const MasterMapPanel = memo(function MasterMapPanel({
   onRestFull,
   onGroupRest,
   onClearAllConditions,
-  onBulkDamage,
   onSendMessage,
   isUpdating,
 }: MasterMapPanelProps) {
@@ -107,16 +106,9 @@ export const MasterMapPanel = memo(function MasterMapPanel({
   // Filtra jogadores com personagem vinculado
   const playersWithCharacter = members.filter(m => m.characters && m.role !== 'master');
 
-  // Handler para dano em área (fallback para ajuste individual)
-  const handleBulkDamage = useCallback(async (characterIds: string[], damage: number) => {
-    if (onBulkDamage) {
-      await onBulkDamage(characterIds, damage);
-    } else if (onModifyHP) {
-      for (const charId of characterIds) {
-        await onModifyHP(charId, -damage);
-      }
-    }
-  }, [onBulkDamage, onModifyHP]);
+  // Ajustes independentes preservam o resultado de cada ficha em falhas parciais.
+  const handleBulkDamage = useCallback((characterIds: string[], damage: number) =>
+    applyDamagePerCharacter(characterIds, damage, onModifyHP), [onModifyHP]);
 
   return (
     <>
@@ -240,6 +232,8 @@ export const MasterMapPanel = memo(function MasterMapPanel({
         onOpenChange={setBulkDamageOpen}
         members={members}
         onApplyDamage={handleBulkDamage}
+        canApply={!!onModifyHP}
+        serverCampaignId={combat ? campaignId : undefined}
         isUpdating={isUpdating}
       />
     </>

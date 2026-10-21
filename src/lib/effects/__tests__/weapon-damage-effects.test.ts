@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getTrackEffects, getTrackCombatBonuses } from '../track-effects-adapter';
 import { getOriginEffects } from '../origin-effects-adapter';
 import { consolidateEffects } from '@/lib/unified-effects-engine';
-import { getWeaponDamageEffects } from '../weapon-damage-effects';
+import { getWeaponDamageEffects, withoutHandledCombatEffects } from '../weapon-damage-effects';
 
 const attributes = { agility: 2, strength: 2, vigor: 2, intellect: 3, presence: 2 };
 const effects = consolidateEffects([
@@ -45,5 +45,25 @@ describe('contexto de dano da arma', () => {
   it('não concede Intelecto a arma sem munição comprovada ou corpo a corpo', () => {
     expect(getWeaponDamageEffects(effects, { type: 'Disparo' })!.damage.ranged).toBe(0);
     expect(getWeaponDamageEffects(effects, { type: 'Corpo a Corpo', ammoType: 'balas_longas' })!.damage.ranged).toBe(0);
+  });
+
+  it('retira Máquina de Matar das fontes duplicadas do modal sem perder outros dados', () => {
+    const source = consolidateEffects(getTrackEffects('aniquilador', 99, attributes), {
+      attributes, nex: 99, hpCurrent: 20, hpMax: 20, peCurrent: 20, peMax: 20,
+      inCombat: true, isFirstRound: false, currentRound: 2, hasShield: false,
+      activeConditions: [], activatedEffects: [],
+    });
+    expect(source.damage.extraDice).toContain('1W');
+    expect(source.critical.marginBonus).toBeGreaterThanOrEqual(2);
+    const scoped = withoutHandledCombatEffects(source, ['track-maquina-de-matar'])!;
+    expect(scoped.damage.extraDice).not.toContain('1W');
+    expect(scoped.critical.marginBonus).toBe(source.critical.marginBonus - 2);
+    expect(source.damage.extraDice).toContain('1W');
+    const track = getTrackCombatBonuses('aniquilador', 99, attributes, 'ranged', [], {
+      representedEffectIds: [], isLongFirearm: false,
+      handledEffectIds: ['track-maquina-de-matar'],
+    });
+    expect(track.extraDamageDice).not.toContain('1W');
+    expect(track.criticalMarginBonus).toBe(0);
   });
 });

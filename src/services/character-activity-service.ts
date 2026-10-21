@@ -94,6 +94,7 @@ export async function awaitActivityResponse<T>(request: PromiseLike<T>, timeoutM
 export function activityFailure(context: string, error: { code?: string }): Error {
   const detail = error.code === '55003' ? 'Requisitos do Grimório ou de Lâmina Maldita não confirmados. Nenhum PE ou SAN foi consumido. Feche e reabra a conjuração para conferir a fonte, o item e a aprovação do mestre.'
     : error.code === '55002' ? 'O limite de PE deste turno foi excedido. Nenhum PE ou SAN foi consumido. Confira o orçamento do turno.'
+    : error.code === '55004' ? 'Esta ação exige o seu turno e uma ação disponível. Nenhum PE ou PV foi gasto; confira as ações do turno com a mesa.'
     : error.code === '55001' ? 'A concentração falhou. Os PE foram consumidos e o ritual não pode aplicar efeitos.'
     : error.code === '40001' ? 'O estado da ficha mudou. Recarregue antes de uma nova ação.'
     : error.code === '55000' ? 'A cena da conjuração foi encerrada. O efeito continua pendente para conferência do mestre; PE não foi estornado.'

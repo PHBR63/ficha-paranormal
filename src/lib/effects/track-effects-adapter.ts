@@ -1724,7 +1724,7 @@ export function getTrackCombatBonuses(
   attributes: Record<AttributeType, number>,
   attackType: 'melee' | 'ranged',
   activatedEffects: string[] = [],
-  damageContext?: { representedEffectIds: string[]; isLongFirearm: boolean },
+  damageContext?: { representedEffectIds: string[]; isLongFirearm: boolean; handledEffectIds?: string[] },
 ): {
   attackBonus: number;
   damageBonus: number;
@@ -1772,12 +1772,15 @@ export function getTrackCombatBonuses(
       }
     }
 
-    // Crítico
-    result.criticalMarginBonus += m.criticalMarginBonus || 0;
-    result.criticalMultiplierBonus += m.criticalMultiplierBonus || 0;
+    // O modal trata alguns efeitos condicionais com a arma escolhida.
+    const handledByModal = damageContext?.handledEffectIds?.includes(effect.id) ?? false;
+    if (!handledByModal) {
+      result.criticalMarginBonus += m.criticalMarginBonus || 0;
+      result.criticalMultiplierBonus += m.criticalMultiplierBonus || 0;
+    }
 
     // Dados extras
-    if (m.extraDamageDice) {
+    if (m.extraDamageDice && !handledByModal) {
       result.extraDamageDice.push(m.extraDamageDice);
     }
 

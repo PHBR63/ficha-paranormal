@@ -25,6 +25,13 @@ function describeMedicalAction(value: Json | undefined): string {
   return '';
 }
 
+/** Mostra somente a ação realmente reservada no turno pelo servidor. */
+function describeCombatAction(value: Json | undefined): string {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || value.tracked !== true) return '';
+  const label = { standard: 'padrão', movement: 'movimento', full: 'completa', reaction: 'reação' }[String(value.kind)];
+  return label ? ` · Ação ${label} registrada no turno pelo servidor` : '';
+}
+
 /** Compara instâncias por identidade; aceita strings antigas e não inventa dados ausentes. */
 function describeConditionChanges(before: Json | undefined, after: Json | undefined): string {
   if (!Array.isArray(before) || !Array.isArray(after)) return '';
@@ -57,7 +64,7 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
       : payload.consumedByAttackId ? 'preparo consumido pelo próximo ataque' : 'próximo ataque no prazo';
     const review = payload.mode === 'untracked' ? 'alvo, alcance e prazo conferidos pela mesa'
       : 'alvo e alcance conferidos pela mesa';
-    return `Mirar com ${payload.weaponName ?? 'arma equipada'} · ação de movimento registrada ${turn} · ${payload.peCost ?? 0} PE ${payload.lethalShotPrepaid === true ? 'gasto para Disparo Letal' : '(registro antigo, sem Disparo Letal pré-pago)'} · ${outcome}; ${review}`;
+    return `Mirar com ${payload.weaponName ?? 'arma equipada'} · ação de movimento registrada ${turn} · ${payload.peCost ?? 0} PE ${payload.lethalShotPrepaid === true ? 'gasto para Disparo Letal' : '(registro antigo, sem Disparo Letal pré-pago)'} · ${outcome}; ${review}${describeCombatAction(payload.combatAction)}`;
   }
   if (payload.kind === 'post_attack_stealth') {
     const result = payload.result;
@@ -134,7 +141,7 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
     }
     const inspiration = payload.kind === 'inspirar_confianca_reroll'
       ? `Nova rolagem por Inspirar Confiança de ${payload.sourceName} · resultado anterior ${payload.originalTotal} → ${result.total}${payload.requiresReview === true ? ' · Acerto, camuflagem e efeitos dependem de revisão da mesa; dano e custos não repetidos' : ''} · ` : '';
-    return `${inspiration}${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}${burstDetails}${concealmentDetails}${sneakDetails}${mirarDetails}`;
+    return `${inspiration}${label}${total}${dice.length ? ` · dados [${dice.join(', ')}]` : ''}${breakdown}${attackCost}${itemDetails}${burstDetails}${concealmentDetails}${sneakDetails}${mirarDetails}${describeCombatAction(payload.combatAction)}`;
   }
   if (event.category === 'ritual') {
     const preparation = payload.grimoirePreparation;
@@ -148,7 +155,7 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
       ? concentration.tests : [];
     const details = tests.map(test => test && typeof test === 'object' && !Array.isArray(test)
       ? `Vontade (${test.trigger}) · dados [${Array.isArray(test.dice) ? test.dice.join(', ') : 'conferir'}] · ${test.kept} + bônus ${test.bonus} = ${test.total} vs DT ${test.dt} · ${test.success ? 'sucesso' : 'falha'}${Array.isArray(test.bonuses) ? ` · Fontes: ${test.bonuses.map(source => source && typeof source === 'object' && !Array.isArray(source) ? `${source.name}: ${source.value}` : 'conferir').join('; ')}` : ''}` : 'Teste antigo: conferir').join('; ');
-    return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}${temporaryPE}${situationalDetails}${details ? ` · ${details}` : ''}${payload.castingOutcome === 'failed_concentration' ? ' · Concentração falhou; efeitos bloqueados, sem estorno de PE' : ''}${costDetails}${peBudgetDetails}`;
+    return `${label}${typeof payload.peCost === 'number' ? ` · ${payload.peCost} PE` : ''}${typeof payload.peBefore === 'number' && typeof payload.peAfter === 'number' ? ` (${payload.peBefore} → ${payload.peAfter})` : ''}${temporaryPE}${situationalDetails}${details ? ` · ${details}` : ''}${payload.castingOutcome === 'failed_concentration' ? ' · Concentração falhou; efeitos bloqueados, sem estorno de PE' : ''}${costDetails}${peBudgetDetails}${describeCombatAction(payload.combatAction)}`;
   }
   if (payload.kind === 'ritual_knowledge') return `Conferência histórica do mestre · ${typeof payload.ritualId === 'string' ? getRitualById(payload.ritualId)?.name ?? 'Ritual legado' : 'Ritual'} · Fonte: ${payload.source === 'grimoire' ? 'Grimório Ritualístico' : 'memorizado'} · Conhecimento anterior à Lâmina Maldita: ${payload.knownBeforeBlade === true ? 'confirmado' : 'não confirmado'} · ${payload.note} · Sem gasto de PE ou SAN`;
   if (payload.kind === 'item_action') return `${payload.itemName} · ${payload.action === 'draw' ? 'Saque confirmado: arma equipada' : 'Guardar confirmado: arma desequipada'} · Ação ${payload.actionCost} · Requisitos declarados pela mesa · Sem gasto de PE`;
@@ -167,6 +174,9 @@ export function describeCharacterActivity(event: CharacterActivityEvent): string
   if (payload.kind === 'reanimacao_death_received') return `Morte confirmada pelo mestre na cena ${payload.sceneNumber} · ${payload.cause === 'massive_damage' ? 'Dano massivo' : 'Sem dano massivo'} · 0 PE`;
   if (payload.kind === 'reanimacao') return `Reanimação em ${payload.targetName} · Cena ${payload.sceneNumber} · PV ${payload.hpBefore} → 1 (regra desta mesa) · Ação completa declarada · ${payload.peCost} PE (${payload.peBefore} → ${payload.peAfter})${temporaryPE}${peBudgetDetails}`;
   if (payload.kind === 'reanimacao_received') return `Reanimação de ${payload.sourceName} · PV ${payload.hpBefore} → 1 (regra desta mesa) · Condições derivadas de zero PV encerradas · Confirmado no servidor`;
+  if (payload.kind === 'campaign_bulk_damage') return `Dano em área de ${payload.source ?? 'origem declarada'} · ${payload.grossDamage} de ${payload.damageType} · resistência declarada ${payload.declaredResistedDamage} · RD declarada ${payload.declaredDamageReduction} · imunidade ${payload.immuneDamage === true ? 'confirmada' : 'não declarada'} · dano após reduções ${payload.finalDamage} · PV temporários usados ${payload.temporaryHPUsed} · PV ${payload.hpBefore} → ${payload.hpAfter}${describeConditionChanges(payload.conditionsBefore, payload.conditionsAfter)} · confirmado pelo mestre no servidor`;
+  if (payload.kind === 'special_defense') return `${{ bloqueio: 'Bloqueio', esquiva: 'Esquiva', contra_ataque: 'Contra-ataque' }[String(payload.defenseType)] ?? 'Defesa especial'} · registrada pelo mestre na rodada ${payload.round} · limite de uma defesa especial conferido no servidor · ${!payload.resolution || payload.resolution === 'mesa_pendente' ? 'aplicação no ataque pendente de resolução da mesa' : payload.timingVerifiedByServer === true ? 'defesa declarada antes da rolagem e vinculada ao ataque no servidor' : 'resultado revisado retrospectivamente pelo mestre; momento da declaração não verificado pelo servidor'}`;
+  if (payload.kind === 'attack_target_received' || payload.kind === 'attack_target_resolved') return `${payload.kind === 'attack_target_received' ? 'Ataque recebido' : 'Ataque contra alvo resolvido'} · teste ${payload.attackTotal} / Defesa ${payload.defenseTotal}${payload.concealmentFailed === true ? ' · falha por camuflagem' : ''} · ${payload.hit === true ? 'acerto' : 'erro'} · dano ${payload.grossDamage} de ${payload.damageType} · resistência declarada ${payload.declaredResistedDamage} · RD declarada ${payload.declaredDamageReduction} · imunidade ${payload.immuneDamage === true ? 'confirmada' : 'não declarada'} · dano final ${payload.finalDamage} · PV temporários usados ${payload.temporaryHPUsed} · PV ${payload.hpBefore} → ${payload.hpAfter}${describeConditionChanges(payload.conditionsBefore, payload.conditionsAfter)} · resultado confirmado pelo mestre${payload.specialDefenseEventId ? payload.timingVerifiedByServer === true ? ' · defesa especial declarada antes da rolagem e vinculada no servidor' : ' · defesa especial revisada retrospectivamente, sem comprovação do momento da declaração' : ''}${payload.counterattackPending === true ? ' · contra-ataque pendente de resolução' : ''}`;
   if (payload.kind === 'resgate_movement') return `Resgate até ${payload.targetName} · Ação livre, alcance curto e deslocamento declarados · ${payload.mode === 'combat' ? 'Uso registrado na rodada' : payload.mode === 'manual' ? 'Turno manual registrado; rodada conferida pela mesa' : 'Rodada conferida pela mesa'}`;
   if (payload.kind === 'resgate_defense_review') return 'Resgate · mestre atribuiu uma cura ou remoção já confirmada ao médico · +5 Defesa para médico e aliado até o próximo turno do médico · Sem novo gasto de PE';
   if (payload.kind === 'resgate_defense_received') return 'Resgate · +5 Defesa recebido após cura ou remoção confirmada pelo mestre · Até o próximo turno do médico · Sem nova alteração de PV ou condição';

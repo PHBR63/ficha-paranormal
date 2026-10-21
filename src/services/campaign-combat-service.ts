@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { campaignCombatSchema, emptyCampaignCombat, type CampaignCombatState } from '@/lib/campaign-combat';
 
-type CombatRow = { campaign_id: string; revision: number; state: Json; updated_at: string; scene_number: number; last_scene_ended_at: string | null };
+type CombatRow = { campaign_id: string; revision: number; state: Json; updated_at: string; scene_number: number; last_scene_ended_at: string | null; turn_instance_id: string };
 export type SceneEndReceipt = { operation_id: string; campaign_id: string; scene_number: number; ended_combat: boolean; created_at: string; expired_effects_count?: number | null };
 
 // Contrato isolado da migration nova; evita alterar tipos gerados de outras tabelas.
@@ -20,11 +20,11 @@ type CombatDatabase = { public: {
 } };
 
 const combatClient = supabase as unknown as SupabaseClient<CombatDatabase>;
-export interface CombatSnapshot { revision: number; state: CampaignCombatState; sceneNumber?: number; lastSceneEndedAt?: string | null }
+export interface CombatSnapshot { revision: number; state: CampaignCombatState; sceneNumber?: number; lastSceneEndedAt?: string | null; turnInstanceId?: string }
 
 /** Normaliza o contrato do servidor; não deriva a cena da rodada do combate. */
 function snapshotFromRow(row: CombatRow): CombatSnapshot {
-  return { revision: row.revision, state: campaignCombatSchema.parse(row.state), sceneNumber: row.scene_number, lastSceneEndedAt: row.last_scene_ended_at };
+  return { revision: row.revision, state: campaignCombatSchema.parse(row.state), sceneNumber: row.scene_number, lastSceneEndedAt: row.last_scene_ended_at, turnInstanceId: row.turn_instance_id };
 }
 
 /** Consulta estado autorizado pelas políticas; registro ausente significa combate vazio. */

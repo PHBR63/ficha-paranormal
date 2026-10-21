@@ -31,6 +31,13 @@ export function CampaignCombatTab({
 }: CampaignCombatTabProps) {
   return (
     <div className="flex-1 flex flex-col min-h-0 gap-8 w-full overflow-y-auto">
+      <aside aria-label="Controle manual do combate" className="rounded-lg border border-primary/40 bg-primary/10 p-4 text-sm text-foreground">
+        <p className="font-semibold">Combate manual da campanha antiga</p>
+        <p className="mt-1 text-muted-foreground">
+          Iniciativa, turnos e PV deste painel ficam apenas nesta aba e se perdem ao recarregar.
+          Para registrar mudanças definitivas, use a ficha do personagem. Campanhas da versão atual têm combate sincronizado.
+        </p>
+      </aside>
       {/* CombatTracker principal */}
       <CombatTracker
         campaignId={campaignId}

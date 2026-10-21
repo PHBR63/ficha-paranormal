@@ -8,6 +8,63 @@ const event = (payload: CharacterActivityEvent['payload']): CharacterActivityEve
 });
 
 describe('Histórico de alterações de condições', () => {
+  it('distingue ação de combate reservada e dano em área aplicado pelo mestre', () => {
+    const attack = describeCharacterActivity({ ...event({ kind: 'combat_attack',
+      entry: { label: 'Ataque', total: 18, results: [13] },
+      combatAction: { tracked: true, kind: 'standard' } }), category: 'roll' });
+    expect(attack).toContain('Ação padrão registrada no turno pelo servidor');
+    const damage = describeCharacterActivity(event({ kind: 'campaign_bulk_damage', source: 'Granada',
+      grossDamage: 20, damageType: 'fogo', declaredResistedDamage: 10,
+      declaredDamageReduction: 2, immuneDamage: false, finalDamage: 8,
+      temporaryHPUsed: 3, hpBefore: 15, hpAfter: 10 }));
+    expect(damage).toContain('dano após reduções 8');
+    expect(damage).toContain('PV 15 → 10');
+  });
+  it('explica as condições derivadas pelo dano sem inventar alterações em registros antigos', () => {
+    const damaged = describeCharacterActivity(event({ kind: 'campaign_bulk_damage', source: 'Granada',
+      grossDamage: 12, damageType: 'impacto', declaredResistedDamage: 0,
+      declaredDamageReduction: 0, immuneDamage: false, finalDamage: 12,
+      temporaryHPUsed: 0, hpBefore: 12, hpAfter: 0,
+      conditionsBefore: [], conditionsAfter: [{ id: 'inconsciente', name: 'Inconsciente' }] }));
+    expect(damaged).toContain('Condições: +Inconsciente');
+    const legacy = describeCharacterActivity(event({ kind: 'campaign_bulk_damage', source: 'Granada',
+      grossDamage: 12, damageType: 'impacto', declaredResistedDamage: 0,
+      declaredDamageReduction: 0, immuneDamage: false, finalDamage: 12,
+      temporaryHPUsed: 0, hpBefore: 12, hpAfter: 0 }));
+    expect(legacy).not.toContain('Condições:');
+  });
+  it('mostra defesa especial como pendente de resolução pela mesa', () => {
+    const defense = describeCharacterActivity(event({ kind: 'special_defense', defenseType: 'esquiva', round: 2 }));
+    expect(defense).toContain('Esquiva');
+    expect(defense).toContain('aplicação no ataque pendente');
+  });
+  it('mostra resolução de ataque em ambas as fichas sem atribuir timing automático à defesa', () => {
+    const payload = { kind: 'attack_target_received', attackTotal: 17, defenseTotal: 16, hit: true,
+      grossDamage: 15, damageType: 'corte', declaredResistedDamage: 2,
+      declaredDamageReduction: 3, immuneDamage: false, finalDamage: 10,
+      temporaryHPUsed: 4, hpBefore: 20, hpAfter: 14, specialDefenseEventId: 'defense' };
+    const defender = describeCharacterActivity(event(payload));
+    const attacker = describeCharacterActivity(event({ ...payload, kind: 'attack_target_resolved' }));
+    expect(defender).toContain('PV 20 → 14');
+    expect(attacker).toContain('teste 17 / Defesa 16');
+    expect(attacker).toContain('sem comprovação do momento da declaração');
+    expect(describeCharacterActivity(event({ kind: 'special_defense', defenseType: 'bloqueio', round: 2,
+      resolution: 'mestre_confirmou_resultado' }))).toContain('revisado retrospectivamente');
+  });
+  it('identifica a defesa declarada antes da rolagem quando o servidor comprova a ordem', () => {
+    const attack = describeCharacterActivity(event({ kind: 'attack_target_received',
+      attackTotal: 17, defenseTotal: 16, hit: true, grossDamage: 15, damageType: 'corte',
+      declaredResistedDamage: 0, declaredDamageReduction: 0, immuneDamage: false,
+      finalDamage: 15, temporaryHPUsed: 0, hpBefore: 20, hpAfter: 5,
+      specialDefenseEventId: 'defense', timingVerifiedByServer: true }));
+    expect(attack).toContain('declarada antes da rolagem');
+    expect(attack).not.toContain('retrospectivamente');
+
+    const defense = describeCharacterActivity(event({ kind: 'special_defense',
+      defenseType: 'esquiva', round: 2, resolution: 'mestre_confirmou_resultado',
+      timingVerifiedByServer: true }));
+    expect(defense).toContain('declarada antes da rolagem');
+  });
   it('explica Mirar pago conforme o modo, sem atribuir prazo manual ao combate', () => {
     const untracked = describeCharacterActivity(event({ kind: 'mirar', mode: 'untracked',
       weaponName: 'Fuzil', peCost: 1, lethalShotPrepaid: true, consumedByAttackId: 'attack' }));

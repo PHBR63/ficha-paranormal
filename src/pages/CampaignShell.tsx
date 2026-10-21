@@ -24,6 +24,7 @@ import { useMasterActions } from '@/hooks/campaign/useMasterActions';
 import { useCampaignAudio } from '@/hooks/campaign/useCampaignAudio';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 import {
   CampaignHeader,
   CampaignNavigation,
@@ -322,13 +323,18 @@ export default function CampaignShell() {
               const charName = member?.characters?.name || 'Personagem';
               const success = await masterActions.adjustHP(charId, delta);
               if (success) {
-                await sendMessage(
-                  delta < 0
-                    ? `💀 **${charName}** recebeu **${Math.abs(delta)}** de dano`
-                    : `💚 **${charName}** recuperou **${delta}** PV`,
-                  delta < 0 ? 'event_damage' : 'event_heal',
-                  { amount: Math.abs(delta), targetName: charName, characterId: charId }
-                );
+                try {
+                  const announced = await sendMessage(
+                    delta < 0
+                      ? `💀 **${charName}** recebeu **${Math.abs(delta)}** de dano`
+                      : `💚 **${charName}** recuperou **${delta}** PV`,
+                    delta < 0 ? 'event_damage' : 'event_heal',
+                    { amount: Math.abs(delta), targetName: charName, characterId: charId }
+                  );
+                  if (!announced) throw new Error('Anúncio não confirmado');
+                } catch {
+                  toast({ title: 'PV atualizado', description: 'O anúncio no chat falhou. O ajuste de PV já foi confirmado; não repita o dano.' });
+                }
               }
               return success;
             }}

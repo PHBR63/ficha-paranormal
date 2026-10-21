@@ -21,6 +21,8 @@ export interface DiceGroup {
   count: number;
   sides: number;
   element?: string;  // Elemento para dano elemental
+  /** Somente dados que aumentam o dano da arma participam do crítico. */
+  criticalAsWeapon?: boolean;
 }
 
 /**
@@ -280,8 +282,9 @@ export function rollDamageFromFormula(
   
   // 2. Rolar dados extras (buffs, poderes)
   const extraDiceResults = extraDice.map(group => {
-    // Dados extras também são multiplicados em crítico
-    const actualCount = isCritical ? group.count * criticalMultiplier : group.count;
+    // Dano adicional (ritual, poder ou elemento) não é dado da arma.
+    const actualCount = isCritical && group.criticalAsWeapon
+      ? group.count * criticalMultiplier : group.count;
     
     const rolls = maximizeDice
       ? Array(actualCount).fill(group.sides)

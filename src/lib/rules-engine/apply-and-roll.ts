@@ -284,6 +284,7 @@ export function rollDamageWithContext(context: DamageRollContext): DetailedDamag
         extraDice.push({
           count,
           sides: primaryWeaponDie,
+          criticalAsWeapon: true,
         });
       } else {
         // Parse normal para dados explícitos (ex: "1d6", "2d8")

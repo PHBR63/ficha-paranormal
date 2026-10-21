@@ -27,6 +27,9 @@ import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 import type { CampaignCombatController } from '@/hooks/campaign/useCampaignCombat';
 import { advanceCombatTurn, removeCombatant, sortCombatants, type CombatantEntry } from '@/lib/campaign-combat';
 import { MedicalExtraActionGrant } from './MedicalExtraActionGrant';
+import { AttackDefenseChoicePanel } from './AttackDefenseChoicePanel';
+import { AttackTargetResolutionPanel } from './AttackTargetResolutionPanel';
+import { PreparedActionPanel } from './PreparedActionPanel';
 
 interface CombatTrackerProps {
   campaignId: string;
@@ -182,12 +185,25 @@ export const CombatTracker = memo(function CombatTracker({
           campaignId={campaignId} characterId={combatants[currentTurnIndex].id}
           characterName={combatants[currentTurnIndex].name} />}
 
+      <AttackDefenseChoicePanel key={`defense-choice:${campaignId}:${combat.sceneNumber}:${round}`}
+        campaignId={campaignId} scene={combat.sceneNumber} round={round} members={members} />
+      <AttackTargetResolutionPanel key={`target-resolution:${campaignId}:${combat.sceneNumber}:${round}`}
+        campaignId={campaignId} scene={combat.sceneNumber} round={round} members={members} />
+      <PreparedActionPanel key={`prepared-actions:${campaignId}:${combat.sceneNumber}:${round}`}
+        campaignId={campaignId} members={members} onCombatChanged={combat.reload} />
+
       {/* Lista de combatentes */}
       <ScrollArea className="max-h-[400px]">
         <div className="space-y-1.5">
           <AnimatePresence>
             {combatants.map((combatant, index) => {
               const isCurrent = index === currentTurnIndex;
+              // O estado do combate guarda uma foto inicial; a ficha vinculada é a fonte atual dos PV.
+              const linkedCharacter = combatant.isNPC
+                ? null
+                : members.find(member => member.characters?.id === combatant.id)?.characters;
+              const hpCurrent = combatant.isNPC ? combatant.hpCurrent : linkedCharacter?.hp_current;
+              const hpMax = combatant.isNPC ? combatant.hpMax : linkedCharacter?.hp_max;
               return (
                 <motion.div
                   key={combatant.id}
@@ -226,9 +242,9 @@ export const CombatTracker = memo(function CombatTracker({
                             <span className="text-[10px] text-muted-foreground ml-1">(NPC)</span>
                           )}
                         </p>
-                        {combatant.hpCurrent !== undefined && (
+                        {hpCurrent !== undefined && (
                           <p className="text-[10px] text-muted-foreground">
-                            PV {combatant.hpCurrent}/{combatant.hpMax}
+                            PV {hpCurrent}/{hpMax}
                           </p>
                         )}
                       </div>

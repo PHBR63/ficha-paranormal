@@ -33,6 +33,86 @@ const props = {
   characterClass: 'Combatente', abilities: [], paranormalPowers: [], hasAffinity: false, nex: 5,
 };
 
+describe.each([['desktop', CombatRollModal], ['mobile', MobileCombatRollModal]] as const)(
+  'Crítico com bônus situacionais: %s', (_name, Modal) => {
+    it('preserva o tamanho de cada dado extra quando há bônus diferentes', async () => {
+      const random = vi.spyOn(Math, 'random').mockReturnValue(0.999);
+      try {
+        const attributes = props.attributes;
+        const baseEffects = consolidateEffects([], {
+          attributes, nex: 5, hpCurrent: 20, hpMax: 20, peCurrent: 10, peMax: 10,
+          inCombat: false, isFirstRound: false, currentRound: 0, hasShield: false,
+          activeConditions: [], activatedEffects: [],
+        });
+        const complete = vi.fn();
+        render(<Modal {...props} unifiedEffects={{ ...baseEffects,
+          damage: { ...baseEffects.damage, extraDice: ['1d6', '1d8'] },
+        }} onConfirmAttack={vi.fn().mockResolvedValue(true)} onPEChange={vi.fn()} onRollComplete={complete} />);
+        fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+        await waitFor(() => expect(screen.getByRole('button', { name: /rolar dano/i })).toBeEnabled(), { timeout: 5000 });
+        fireEvent.click(screen.getByRole('button', { name: /rolar dano/i }));
+        await waitFor(() => expect(complete.mock.calls.some(([event]) => event.type === 'damage')).toBe(true), { timeout: 5000 });
+        const damage = complete.mock.calls.map(([event]) => event).find(event => event.type === 'damage');
+        expect(damage.extraDice).toBe(2);
+        expect(damage.total).toBe(19); // Faca d4 + 1d6 + 1d8 + Força 1.
+      } finally {
+        random.mockRestore();
+      }
+    });
+
+    it('multiplica apenas a arma e mantém Amaldiçoar Arma em um dado', async () => {
+      vi.mocked(rollSkillTest).mockReturnValueOnce({ type: 'attack', dice: [20], keptDice: 20,
+        total: 25, skillBonus: 5, otherBonuses: 0, extraDice: 0, isCritical: true,
+        isDisadvantage: false, timestamp: new Date(), label: 'Ataque QA' });
+      const complete = vi.fn();
+      render(<Modal {...props} weapon={{ ...props.weapon, damage: '1d8', critical: '20', criticalMultiplier: 'x3' }}
+        weaponBuffs={[{ id: 'qa-buff', ritualId: 'qa-ritual', ritualName: 'Amaldiçoar Arma',
+          element: 'conhecimento', appliedAt: '', duration: 'cena', enhancements: [],
+          bonusDamage: { diceCount: 1, diceType: 6, damageType: 'conhecimento' }, attackBonus: 0 }]}
+        onConfirmAttack={vi.fn().mockResolvedValue(true)} onPEChange={vi.fn()} onRollComplete={complete} />);
+      fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+      await waitFor(() => expect(screen.getByRole('button', { name: /rolar dano/i })).toBeEnabled(), { timeout: 5000 });
+      fireEvent.click(screen.getByRole('button', { name: /rolar dano/i }));
+      await waitFor(() => expect(complete).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'damage', isCritical: true, extraDice: 1,
+      })), { timeout: 5000 });
+      const damage = complete.mock.calls.map(([event]) => event).find(event => event.type === 'damage');
+      expect(damage.dice).toHaveLength(4);
+    });
+
+    it.each([false, true])('aplica Máquina de Matar uma vez somente na arma favorita=%s', async favorite => {
+      vi.mocked(rollSkillTest).mockReturnValueOnce({ type: 'attack', dice: [20], keptDice: 20,
+        total: 25, skillBonus: 5, otherBonuses: 0, extraDice: 0, isCritical: true,
+        isDisadvantage: false, timestamp: new Date(), label: 'Ataque QA' });
+      const complete = vi.fn();
+      const attributes = props.attributes;
+      const unifiedEffects = consolidateEffects(getTrackEffects('aniquilador', 99, attributes), {
+        attributes, nex: 99, hpCurrent: 20, hpMax: 20, peCurrent: 20, peMax: 20,
+        inCombat: true, isFirstRound: false, currentRound: 2, hasShield: false,
+        activeConditions: [], activatedEffects: [],
+      });
+      render(<Modal {...props} classTrack="aniquilador" nex={99} isFavoriteWeapon={favorite}
+        unifiedEffects={unifiedEffects} weapon={{ ...props.weapon, type: 'Disparo', damage: '2d10',
+          critical: '20', criticalMultiplier: 'x3' }}
+        onConfirmAttack={vi.fn().mockResolvedValue(true)} onPEChange={vi.fn()} onRollComplete={complete} />);
+      expect(screen.getByText(/(?:Crítico|Crit): (?:18|20)\+ x3/)).toHaveTextContent(favorite ? '18+' : '20+');
+      fireEvent.click(screen.getByRole('button', { name: /rolar ataque/i }));
+      await waitFor(() => expect(screen.getByRole('button', { name: /rolar dano/i })).toBeEnabled(), { timeout: 5000 });
+      fireEvent.click(screen.getByRole('button', { name: /rolar dano/i }));
+      await waitFor(() => expect(complete.mock.calls.some(([event]) => event.type === 'damage')).toBe(true), { timeout: 5000 });
+      const damage = complete.mock.calls.map(([event]) => event).find(event => event.type === 'damage');
+      expect(damage.dice).toHaveLength(favorite ? 9 : 6);
+    });
+  },
+);
+
+it('resumo legado não entrega a margem de Máquina de Matar a outra arma', () => {
+  render(<CombatRollModal {...props} classTrack="aniquilador" nex={99} isFavoriteWeapon={false}
+    classPowerBonuses={{ attackBonus: 0, damageBonus: 0, criticalMarginBonus: 2, extraDamageDice: ['+1d'] }}
+    weapon={{ ...props.weapon, critical: '20' }} onPEChange={vi.fn()} />);
+  expect(screen.getByText('Crítico: 20+ x2')).toBeVisible();
+});
+
 describe.each([['desktop',CombatRollModal],['mobile',MobileCombatRollModal]] as const)('Camuflagem: %s', (_name,Modal) => {
   it('requer contexto confirmado e cobertura total bloqueia antes da rolagem', () => {
     render(<Modal {...props} onPEChange={vi.fn()} onConfirmAttack={vi.fn().mockResolvedValue(true)} />);
