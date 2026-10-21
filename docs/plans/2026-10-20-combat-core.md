@@ -53,4 +53,12 @@ Concluído localmente e no banco QA:
 - Em Chamas e cada fonte de veneno têm trava por ficha/turno; reenvio não repete dano. Fora de turno controlado, não se inventa turno.
 - Campanha v1 permanece manual/local e é identificada assim no painel.
 
-Pendente antes de chamar o lote de publicado: merge, aplicação ordenada das migrations no banco do projeto, deploy e teste autenticado. Contra-ataque após erro e execução dos efeitos preparados permanecem manuais. Outras condições, manobras, dano não letal/massivo, cobertura e efeitos de começo de turno devem continuar marcados parciais até terem automação e testes próprios.
+### Estado final da publicação — 21/10/2026
+
+- PR #135 integrado no `main` (merge commit `4be3a7b4`).
+- As nove migrations do lote foram aplicadas em sequência no banco do projeto e suas versões foram conferidas. Os RPCs e tabelas esperados estão presentes.
+- Deploy solicitado e confirmado no site publicado: a página `/rules` carregou a descrição atualizada de ações, ataque e dano; a página do mestre mostrou combate sincronizado, escolha de defesa pré-rolagem, resolução de alvo/dano e painel de ações preparadas.
+- Teste autenticado com as contas de QA: mestre e jogador ficaram online na campanha isolada, e o turno v2 apareceu sincronizado. A ficha do jogador QA não tem arma equipada; por isso não foi feita uma rolagem de ataque nem alteração de PV/PE para forçar o ciclo. A validação ao vivo de ataque e aplicação de dano continua pendente até equipar uma arma de teste.
+- TypeScript, build, 18 testes focados de cobertura, suíte completa (203 arquivos/3.740 testes) e nove fixtures SQL em QA passaram. O build emite avisos pré-existentes de divisão de chunks/importações dinâmicas.
+
+O lote de código foi integrado e publicado, mas essa rodada de validação ao vivo permanece parcial pelo bloqueio acima. Contra-ataque após erro e execução dos efeitos preparados permanecem manuais. Outras condições, manobras, dano não letal/massivo, cobertura e efeitos de começo de turno devem continuar marcados parciais até terem automação e testes próprios.
