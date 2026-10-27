@@ -5,13 +5,18 @@ import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 import { loadRoundAttackIntents, loadRoundDefenseChoices, type AttackIntent, type AttackDefenseChoice } from '@/services/campaign-attack-intent-service';
 import { CAMPAIGN_DAMAGE_TYPES } from '@/services/campaign-bulk-damage-service';
 import {
-  AttackTargetError, clearPendingAttackTarget, confirmAttackTarget, loadAttackEvent,
+  AttackTargetError, calculateAttackResolutionPreview, clearPendingAttackTarget, confirmAttackTarget, loadAttackEvent,
   loadResolvedAttackIds, restorePendingAttackTarget, savePendingAttackTarget,
   type AttackTargetReceipt, type AttackTargetRequest, type AttackTargetResolution,
 } from '@/services/campaign-attack-target-service';
 
 interface Props { campaignId: string; scene: number; round: number; members: CampaignMemberV2[] }
-interface RolledAttack { intent: AttackIntent; choice: AttackDefenseChoice | null; attackTotal: number }
+interface RolledAttack {
+  intent: AttackIntent;
+  choice: AttackDefenseChoice | null;
+  attackTotal: number;
+  concealmentFailed: boolean;
+}
 const initial: AttackTargetResolution = {
   defenseTotal: 10, grossDamage: 0, damageType: 'impacto', resistedDamage: 0,
   damageReduction: 0, immuneDamage: false,
@@ -48,8 +53,16 @@ export function AttackTargetResolutionPanel({ campaignId, scene, round, members 
         const payload = event.payload;
         const entry = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload.entry : null;
         const attackTotal = entry && typeof entry === 'object' && !Array.isArray(entry) ? entry.total : null;
+        const concealment = payload && typeof payload === 'object' && !Array.isArray(payload)
+          && payload.concealmentResult && typeof payload.concealmentResult === 'object'
+          && !Array.isArray(payload.concealmentResult) ? payload.concealmentResult : null;
         return typeof attackTotal === 'number' && Number.isSafeInteger(attackTotal)
-          ? { intent, choice: choices.find(choice => choice.intent_id === intent.operation_id) ?? null, attackTotal }
+          ? {
+            intent,
+            choice: choices.find(choice => choice.intent_id === intent.operation_id) ?? null,
+            attackTotal,
+            concealmentFailed: concealment?.failed === true,
+          }
           : null;
       }));
       setAttacks(next.filter((value): value is RolledAttack => value !== null));
@@ -68,6 +81,18 @@ export function AttackTargetResolutionPanel({ campaignId, scene, round, members 
   const selected = attacks.find(attack => attack.intent.attack_event_id === selectedId) ?? null;
   const target = members.find(member => member.characters?.id === selected?.intent.target_id)?.characters;
   const specialDefenseEventId = selected?.choice?.defense_type !== 'none' ? selected?.choice?.operation_id : undefined;
+  const preview = selected
+    ? calculateAttackResolutionPreview(selected.attackTotal, selected.concealmentFailed, values)
+    : null;
+  const validationError = values.defenseTotal < 0 || values.grossDamage < 0
+    || values.resistedDamage < 0 || values.damageReduction < 0
+    ? 'Defesa, dano e reduções não podem ser negativos.'
+    : values.resistedDamage > values.grossDamage
+      ? 'A redução por resistência não pode superar o dano rolado.'
+      : ((!!specialDefenseEventId || values.resistedDamage > 0 || values.damageReduction > 0 || values.immuneDamage)
+        && !values.reviewNote?.trim())
+        ? 'Explique a origem da defesa, resistência, RD ou imunidade.'
+        : '';
   const setNumber = (field: 'defenseTotal' | 'grossDamage' | 'resistedDamage' | 'damageReduction', raw: string) => {
     const number = Number(raw);
     if (raw === '' || Number.isSafeInteger(number)) setValues(previous => ({ ...previous, [field]: raw === '' ? 0 : number }));
@@ -130,12 +155,23 @@ export function AttackTargetResolutionPanel({ campaignId, scene, round, members 
           </label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={values.immuneDamage}
             onChange={event => setValues(previous => ({ ...previous, immuneDamage: event.target.checked }))} /> Alvo imune a este dano</label>
+          {preview && <p aria-label="Prévia do cálculo de dano" className="rounded-md border border-border bg-background/60 p-2 text-xs">
+            {selected.concealmentFailed
+              ? 'Falha por camuflagem confirmada: dano final 0.'
+              : !preview.hit
+                ? `Ataque ${selected.attackTotal} abaixo da Defesa ${values.defenseTotal}: erro, dano final 0.`
+                : values.immuneDamage
+                  ? `Acerto contra Defesa ${values.defenseTotal}. Imunidade declarada: dano final 0.`
+                  : `Acerto. Dano ${values.grossDamage} − resistência ${values.resistedDamage} − RD ${values.damageReduction} = ${preview.finalDamage}.`}
+            {' '}Crítico e demais dados adicionais já devem estar incluídos no dano rolado.
+          </p>}
           <label className="block space-y-1">Justificativa da defesa, resistência, RD ou imunidade
             <Input maxLength={500} value={values.reviewNote ?? ''} onChange={event => setValues(previous => ({ ...previous, reviewNote: event.target.value }))} />
           </label>
         </div>}
       </>}
-    <Button type="button" size="sm" disabled={busy || !!storageError || (!pending && (!selected || !target || !selected.choice))}
+    {validationError && !pending && <p role="alert" className="text-destructive">{validationError}</p>}
+    <Button type="button" size="sm" disabled={busy || !!storageError || !!validationError || (!pending && (!selected || !target || !selected.choice))}
       onClick={() => { void confirm(); }}>{pending ? 'Recuperar confirmação' : 'Confirmar resultado e aplicar PV'}</Button>
     <Button type="button" size="sm" variant="outline" onClick={() => { void refresh(); }}>Atualizar ataques</Button>
     {receipt && <p role="status" className="text-emerald-300">Servidor confirmou: {receipt.hit ? 'acerto' : 'erro'}, dano final {receipt.finalDamage}, PV {receipt.hpBefore} → {receipt.hpAfter}{receipt.conditionsAfter ? `, condições: ${receipt.conditionsAfter.join(', ') || 'nenhuma'}` : ''}. {receipt.timingVerifiedByServer ? 'Defesa prévia comprovada.' : 'Sem defesa especial prévia.'}</p>}
