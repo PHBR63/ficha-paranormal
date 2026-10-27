@@ -4,6 +4,7 @@ import type { CampaignMemberV2 } from '@/hooks/campaign/useCampaignData';
 import { AttackTargetResolutionPanel } from '../v3/master/AttackTargetResolutionPanel';
 
 const fake = vi.hoisted(() => ({ intents: vi.fn(), choices: vi.fn(), resolved: vi.fn(), event: vi.fn(), confirm: vi.fn() }));
+const counterattack = vi.hoisted(() => ({ declare: vi.fn() }));
 vi.mock('@/services/campaign-attack-intent-service', async importOriginal => ({
   ...await importOriginal<typeof import('@/services/campaign-attack-intent-service')>(),
   loadRoundAttackIntents: fake.intents, loadRoundDefenseChoices: fake.choices,
@@ -12,6 +13,7 @@ vi.mock('@/services/campaign-attack-target-service', async importOriginal => ({
   ...await importOriginal<typeof import('@/services/campaign-attack-target-service')>(),
   loadResolvedAttackIds: fake.resolved, loadAttackEvent: fake.event, confirmAttackTarget: fake.confirm,
 }));
+vi.mock('@/services/campaign-counterattack-service', () => ({ declareCounterattackReaction: counterattack.declare }));
 
 const campaignId = '00000000-0000-4000-8000-000000000001';
 const attackerId = '00000000-0000-4000-8000-000000000002';
@@ -97,5 +99,48 @@ describe('resolução do ataque contra alvo v2', () => {
     expect(screen.getByLabelText('Prévia do cálculo de dano')).toHaveTextContent('Falha por camuflagem confirmada: dano final 0');
     fireEvent.click(screen.getByRole('checkbox', { name: 'Alvo imune a este dano' }));
     expect(screen.getByLabelText('Prévia do cálculo de dano')).toHaveTextContent('Falha por camuflagem confirmada: dano final 0');
+  });
+
+  it('dobra o dano após a resistência e antes da RD quando o alvo é vulnerável', async () => {
+    fake.intents.mockResolvedValue([intents[0]]);
+    fake.choices.mockResolvedValue([{ intent_id: intents[0].operation_id, defense_type: 'none' }]);
+    fake.resolved.mockResolvedValue([]);
+    fake.event.mockResolvedValue({ payload: { entry: { total: 18 }, concealmentResult: { failed: false } } });
+    render(<AttackTargetResolutionPanel campaignId={campaignId} scene={1} round={2} members={members} />);
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Ataque para resolver' }), { target: { value: attackA } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Defesa final' }), { target: { value: '15' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Dano rolado' }), { target: { value: '12' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Dano resistido' }), { target: { value: '3' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'RD' }), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Alvo vulnerável a este tipo de dano' }));
+    expect(screen.getByLabelText('Prévia do cálculo de dano')).toHaveTextContent('(12 − resistência 3) × 2 por vulnerabilidade − RD 2 = 16');
+    expect(screen.getByRole('button', { name: 'Confirmar resultado e aplicar PV' })).toBeDisabled();
+    fireEvent.change(screen.getByRole('textbox', { name: /Justificativa/ }), { target: { value: 'Vulnerabilidade confirmada na ficha.' } });
+    expect(screen.getByRole('button', { name: 'Confirmar resultado e aplicar PV' })).toBeEnabled();
+  });
+
+  it('oferece contra-ataque somente após erro corpo a corpo confirmado', async () => {
+    fake.intents.mockResolvedValue([intents[0]]);
+    fake.choices.mockResolvedValue([{ intent_id: intents[0].operation_id, defense_type: 'none' }]);
+    fake.resolved.mockResolvedValue([]);
+    fake.event.mockResolvedValue({ payload: { entry: { total: 8 }, concealmentResult: { failed: false } } });
+    fake.confirm.mockResolvedValue({
+      operationId: '00000000-0000-4000-8000-000000000020', campaignId, attackEventId: attackA,
+      targetId: targetA, attackTotal: 8, defenseTotal: 15, concealmentFailed: false, hit: false,
+      grossDamage: 0, damageType: 'impacto', declaredResistedDamage: 0, declaredDamageReduction: 0,
+      immuneDamage: false, vulnerableDamage: false, damageAfterVulnerability: 0, finalDamage: 0,
+      temporaryHPUsed: 0, hpBefore: 20, hpAfter: 20,
+      targetEventId: '00000000-0000-4000-8000-000000000021',
+      attackerEventId: '00000000-0000-4000-8000-000000000022', timingVerifiedByServer: true,
+    });
+    counterattack.declare.mockResolvedValue(undefined);
+    render(<AttackTargetResolutionPanel campaignId={campaignId} scene={1} round={2} members={members} />);
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Ataque para resolver' }), { target: { value: attackA } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Defesa final' }), { target: { value: '15' } });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Confirmar resultado e aplicar PV' })); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Registrar Contra-ataque após o erro' })); });
+    expect(counterattack.declare).toHaveBeenCalledWith(expect.objectContaining({
+      campaignId, characterId: targetA, attackEventId: attackA, scene: 1, round: 2,
+    }));
   });
 });

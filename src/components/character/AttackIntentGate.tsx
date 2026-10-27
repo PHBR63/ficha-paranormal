@@ -10,7 +10,7 @@ import {
 export type AttackGateSelection =
   | { mode: 'waiting' }
   | { mode: 'manual'; weaponId: string }
-  | { mode: 'targeted'; weaponId: string; targetCharacterId: string; attackIntentId: string };
+  | { mode: 'targeted'; weaponId: string; targetCharacterId: string; attackIntentId: string; counterattackDefenseEventId?: string };
 
 interface Props {
   campaignId: string;
@@ -63,13 +63,17 @@ export function AttackIntentGate({ campaignId, attackerId, weaponId, enabled, on
     return () => { window.clearInterval(timer); window.removeEventListener('online', onResume); document.removeEventListener('visibilitychange', onResume); };
   }, [enabled, refresh, onSelectionChange]);
 
+  const isCounterattack = !!intent?.reaction_source_id;
   const ready = !!intent && intent.weapon_id === weaponId && !!choice
     && intent.status === 'pending' && !!context?.active
     && intent.scene_number === context.scene && intent.round_number === context.round
-    && intent.turn_instance_id === context.turnInstanceId && context.currentActorId === attackerId;
+    && intent.turn_instance_id === context.turnInstanceId
+    && (isCounterattack || context.currentActorId === attackerId);
   useEffect(() => {
     onSelectionChange(ready ? { mode: 'targeted', weaponId, targetCharacterId: intent!.target_id,
-      attackIntentId: intent!.operation_id } : manual && !intent && context?.active
+      attackIntentId: intent!.operation_id,
+      ...(intent!.reaction_source_id ? { counterattackDefenseEventId: intent!.reaction_source_id } : {}),
+    } : manual && !intent && context?.active
       && context.currentActorId === attackerId ? { mode: 'manual', weaponId } : { mode: 'waiting' });
   }, [ready, manual, intent, context, attackerId, weaponId, onSelectionChange]);
 
@@ -112,10 +116,11 @@ export function AttackIntentGate({ campaignId, attackerId, weaponId, enabled, on
     <p className="font-semibold">Ataque da campanha · antes da rolagem</p>
     <p className="text-xs text-muted-foreground">Declare alvo e arma equipada. O mestre confirma a defesa antes de liberar os dados. Ataques sem alvo vinculado exigem resolução manual.</p>
     {loading && <p role="status">Conferindo turno e alvos...</p>}
-    {!loading && context && (!context.active || context.currentActorId !== attackerId) && <p role="alert" className="text-destructive">Aguarde seu turno no combate sincronizado.</p>}
-    {!loading && context?.active && context.currentActorId === attackerId && <>
+    {!loading && context && (!context.active || (context.currentActorId !== attackerId && !isCounterattack)) && <p role="alert" className="text-destructive">Aguarde seu turno no combate sincronizado.</p>}
+    {!loading && context?.active && (context.currentActorId === attackerId || isCounterattack) && <>
       {intent ? <div className="space-y-1">
         <p>Alvo: <strong>{targets.find(target => target.id === intent.target_id)?.name ?? 'Ficha vinculada'}</strong>. Arma: <strong>{intent.weapon_id === weaponId ? 'arma selecionada' : 'outra arma equipada'}</strong>.</p>
+        {isCounterattack && <p className="text-amber-300">Contra-ataque confirmado pelo mestre: esta rolagem usa uma reação e não consome ação padrão.</p>}
         {choice ? <p role="status" className="text-emerald-300">Defesa confirmada antes dos dados: {choice.defense_type === 'none' ? 'nenhuma defesa especial' : choice.defense_type}. {ready ? 'Rolagem liberada.' : 'Confira arma e turno.'}</p>
           : <p role="status" className="text-amber-300">Aguardando o mestre escolher a defesa antes da rolagem.</p>}
         <Button size="sm" type="button" variant="outline" disabled={busy} onClick={() => { void cancel(); }}>Cancelar declaração</Button>

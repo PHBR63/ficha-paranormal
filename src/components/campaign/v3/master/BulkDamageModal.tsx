@@ -235,10 +235,11 @@ type TargetDraft = {
   resistedDamage: string;
   damageReduction: string;
   immuneDamage: boolean;
+  vulnerableDamage: boolean;
 };
 
 const emptyTarget = (): TargetDraft => ({
-  damage: '', damageType: '', resistedDamage: '0', damageReduction: '0', immuneDamage: false,
+  damage: '', damageType: '', resistedDamage: '0', damageReduction: '0', immuneDamage: false, vulnerableDamage: false,
 });
 
 /** Confirma uma operação atômica v2; em resposta incerta repete o mesmo UUID e payload. */
@@ -322,7 +323,7 @@ function ServerBulkDamageModal({ open, onOpenChange, campaignId, members }: {
         return {
           characterId: id, damage: Number(draft.damage), damageType: draft.damageType as CampaignDamageType,
           resistedDamage: Number(draft.resistedDamage), damageReduction: Number(draft.damageReduction),
-          immuneDamage: draft.immuneDamage, expectedHp: character.hp_current,
+          immuneDamage: draft.immuneDamage, vulnerableDamage: draft.vulnerableDamage, expectedHp: character.hp_current,
         };
       });
       request = { operationId: crypto.randomUUID(), campaignId, source: source.trim(), targets };
@@ -406,7 +407,9 @@ function ServerBulkDamageModal({ open, onOpenChange, campaignId, members }: {
                 const gross = Number(draft.damage);
                 const resisted = Number(draft.resistedDamage);
                 const rd = Number(draft.damageReduction);
-                const final = draft.immuneDamage ? 0 : Math.max(0, gross - resisted - rd);
+                const afterResistance = Math.max(0, gross - resisted);
+                const afterVulnerability = draft.vulnerableDamage ? afterResistance * 2 : afterResistance;
+                const final = draft.immuneDamage ? 0 : Math.max(0, afterVulnerability - rd);
                 return <div key={character.id} className="rounded-lg border border-border p-3 space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium">
                     <Checkbox checked={selected} onCheckedChange={() => toggleTarget(character.id)}
@@ -440,11 +443,21 @@ function ServerBulkDamageModal({ open, onOpenChange, campaignId, members }: {
                     </div>
                     <label className="col-span-2 flex items-center gap-2 text-sm">
                       <Checkbox checked={draft.immuneDamage}
-                        onCheckedChange={checked => updateDraft(character.id, { immuneDamage: checked === true })} />
+                        onCheckedChange={checked => updateDraft(character.id, {
+                          immuneDamage: checked === true, ...(checked === true ? { vulnerableDamage: false } : {}),
+                        })} />
                       Imune ao dano
                     </label>
+                    <label className="col-span-2 flex items-center gap-2 text-sm">
+                      <Checkbox checked={draft.vulnerableDamage}
+                        onCheckedChange={checked => updateDraft(character.id, {
+                          vulnerableDamage: checked === true, ...(checked === true ? { immuneDamage: false } : {}),
+                        })} />
+                      Vulnerável ao tipo de dano
+                    </label>
                     <p className="col-span-2 self-center text-sm text-muted-foreground">
-                      Dano após declarações: {Number.isFinite(final) ? final : '—'}
+                      {draft.vulnerableDamage ? `Após resistência: ${afterResistance}; vulnerabilidade ×2; ` : ''}
+                      Dano final após RD: {Number.isFinite(final) ? final : '—'}
                     </p>
                   </div>}
                 </div>;
