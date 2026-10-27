@@ -29,6 +29,8 @@ import { advanceCombatTurn, removeCombatant, sortCombatants, type CombatantEntry
 import { MedicalExtraActionGrant } from './MedicalExtraActionGrant';
 import { AttackDefenseChoicePanel } from './AttackDefenseChoicePanel';
 import { AttackTargetResolutionPanel } from './AttackTargetResolutionPanel';
+import { MassiveDamagePanel } from './MassiveDamagePanel';
+import { CounterattackPanel } from './CounterattackPanel';
 import { PreparedActionPanel } from './PreparedActionPanel';
 
 interface CombatTrackerProps {
@@ -187,8 +189,10 @@ export const CombatTracker = memo(function CombatTracker({
 
       <AttackDefenseChoicePanel key={`defense-choice:${campaignId}:${combat.sceneNumber}:${round}`}
         campaignId={campaignId} scene={combat.sceneNumber} round={round} members={members} />
+      <CounterattackPanel campaignId={campaignId} />
       <AttackTargetResolutionPanel key={`target-resolution:${campaignId}:${combat.sceneNumber}:${round}`}
         campaignId={campaignId} scene={combat.sceneNumber} round={round} members={members} />
+      <MassiveDamagePanel campaignId={campaignId} />
       <PreparedActionPanel key={`prepared-actions:${campaignId}:${combat.sceneNumber}:${round}`}
         campaignId={campaignId} members={members} onCombatChanged={combat.reload} />
 

@@ -16,6 +16,7 @@ export interface AttackIntent {
   melee: boolean;
   status: 'pending' | 'rolled' | 'cancelled' | 'expired';
   attack_event_id: string | null;
+  reaction_source_id?: string | null;
   created_at: string;
 }
 export interface AttackDefenseChoice {

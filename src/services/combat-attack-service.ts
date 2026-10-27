@@ -9,6 +9,7 @@ export interface CombatCostSelection {
   weaponId: string;
   targetCharacterId?: string;
   attackIntentId?: string;
+  counterattackDefenseEventId?: string;
   burst?: boolean;
   concealment?: ConcealmentLevel;
   concealmentConfirmed?: boolean;
@@ -42,7 +43,10 @@ export async function confirmCombatAttack(characterId: string, request: CombatAt
   // O d10 retornado não entra no pedido de recuperação: seu hash conserva a intenção original.
   const entry = diceHistoryEntry(request.result);
   delete entry.concealmentResult; delete entry.sneakAttackResult; delete entry.success; delete entry.targetDT;
-  const { data, error } = await awaitActivityResponse(activityClient.rpc('confirm_character_combat_attack', {
+  const rpcName = request.selection.counterattackDefenseEventId
+    ? 'confirm_character_counterattack_roll_v2' as const
+    : 'confirm_character_combat_attack' as const;
+  const { data, error } = await awaitActivityResponse(activityClient.rpc(rpcName, {
     p_operation_id: request.operationId, p_character_id: characterId,
     p_expected_pe: request.expectedPE, p_expected_cost: request.expectedCost,
     p_expected_turn_key: expectedTurnKey, p_selection: activityJson(request.selection),

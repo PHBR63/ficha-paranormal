@@ -9,6 +9,7 @@ import {
   loadResolvedAttackIds, restorePendingAttackTarget, savePendingAttackTarget,
   type AttackTargetReceipt, type AttackTargetRequest, type AttackTargetResolution,
 } from '@/services/campaign-attack-target-service';
+import { declareCounterattackReaction } from '@/services/campaign-counterattack-service';
 
 interface Props { campaignId: string; scene: number; round: number; members: CampaignMemberV2[] }
 interface RolledAttack {
@@ -19,7 +20,7 @@ interface RolledAttack {
 }
 const initial: AttackTargetResolution = {
   defenseTotal: 10, grossDamage: 0, damageType: 'impacto', resistedDamage: 0,
-  damageReduction: 0, immuneDamage: false,
+  damageReduction: 0, immuneDamage: false, vulnerableDamage: false,
 };
 
 /** Mestre declara a Defesa e o dano de um ataque já rolado contra alvo vinculado. */
@@ -37,6 +38,9 @@ export function AttackTargetResolutionPanel({ campaignId, scene, round, members 
   const [receipt, setReceipt] = useState<AttackTargetReceipt | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [counterattackCandidate, setCounterattackCandidate] = useState<{
+    characterId: string; attackEventId: string;
+  } | null>(null);
   const nameFor = useCallback((id: string) => members.find(member => member.characters?.id === id)?.characters?.name ?? 'Ficha vinculada', [members]);
 
   const refresh = useCallback(async () => {
@@ -89,7 +93,10 @@ export function AttackTargetResolutionPanel({ campaignId, scene, round, members 
     ? 'Defesa, dano e reduções não podem ser negativos.'
     : values.resistedDamage > values.grossDamage
       ? 'A redução por resistência não pode superar o dano rolado.'
-      : ((!!specialDefenseEventId || values.resistedDamage > 0 || values.damageReduction > 0 || values.immuneDamage)
+      : values.immuneDamage && values.vulnerableDamage
+        ? 'Imunidade e vulnerabilidade não podem ser aplicadas juntas.'
+      : ((!!specialDefenseEventId || values.resistedDamage > 0 || values.damageReduction > 0
+        || values.immuneDamage || values.vulnerableDamage)
         && !values.reviewNote?.trim())
         ? 'Explique a origem da defesa, resistência, RD ou imunidade.'
         : '';
@@ -115,7 +122,11 @@ export function AttackTargetResolutionPanel({ campaignId, scene, round, members 
     setBusy(true); setError('');
     try {
       const saved = await confirmAttackTarget(request);
-      clearPendingAttackTarget(campaignId); setPending(null); setReceipt(saved); setSelectedId('');
+      clearPendingAttackTarget(campaignId); setPending(null); setReceipt(saved);
+      setCounterattackCandidate(!saved.hit && selected?.intent.melee ? {
+        characterId: request.targetCharacterId, attackEventId: request.attackEventId,
+      } : null);
+      setSelectedId('');
       await refresh();
     } catch (cause) {
       if (cause instanceof AttackTargetError && cause.confirmedRejected) {
@@ -123,6 +134,19 @@ export function AttackTargetResolutionPanel({ campaignId, scene, round, members 
       }
       setError(cause instanceof Error ? cause.message : 'Resposta incerta. Recupere a mesma resolução.');
     } finally { setBusy(false); }
+  };
+  const declareCounterattack = async () => {
+    if (!counterattackCandidate || busy) return;
+    setBusy(true); setError('');
+    try {
+      await declareCounterattackReaction({
+        operationId: crypto.randomUUID(), campaignId,
+        characterId: counterattackCandidate.characterId,
+        attackEventId: counterattackCandidate.attackEventId, scene, round,
+      });
+      setCounterattackCandidate(null);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Reação não confirmada.'); }
+    finally { setBusy(false); }
   };
 
   return <section className="rounded-lg border border-border bg-card p-3 space-y-3 text-sm" aria-label="Resolver ataque contra alvo">
@@ -154,7 +178,9 @@ export function AttackTargetResolutionPanel({ campaignId, scene, round, members 
             </select>
           </label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={values.immuneDamage}
-            onChange={event => setValues(previous => ({ ...previous, immuneDamage: event.target.checked }))} /> Alvo imune a este dano</label>
+            onChange={event => setValues(previous => ({ ...previous, immuneDamage: event.target.checked, vulnerableDamage: event.target.checked ? false : previous.vulnerableDamage }))} /> Alvo imune a este dano</label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={values.vulnerableDamage}
+            onChange={event => setValues(previous => ({ ...previous, vulnerableDamage: event.target.checked, immuneDamage: event.target.checked ? false : previous.immuneDamage }))} /> Alvo vulnerável a este tipo de dano</label>
           {preview && <p aria-label="Prévia do cálculo de dano" className="rounded-md border border-border bg-background/60 p-2 text-xs">
             {selected.concealmentFailed
               ? 'Falha por camuflagem confirmada: dano final 0.'
@@ -162,10 +188,12 @@ export function AttackTargetResolutionPanel({ campaignId, scene, round, members 
                 ? `Ataque ${selected.attackTotal} abaixo da Defesa ${values.defenseTotal}: erro, dano final 0.`
                 : values.immuneDamage
                   ? `Acerto contra Defesa ${values.defenseTotal}. Imunidade declarada: dano final 0.`
-                  : `Acerto. Dano ${values.grossDamage} − resistência ${values.resistedDamage} − RD ${values.damageReduction} = ${preview.finalDamage}.`}
+                  : values.vulnerableDamage
+                    ? `Acerto. (${values.grossDamage} − resistência ${values.resistedDamage}) × 2 por vulnerabilidade − RD ${values.damageReduction} = ${preview.finalDamage}.`
+                    : `Acerto. Dano ${values.grossDamage} − resistência ${values.resistedDamage} − RD ${values.damageReduction} = ${preview.finalDamage}.`}
             {' '}Crítico e demais dados adicionais já devem estar incluídos no dano rolado.
           </p>}
-          <label className="block space-y-1">Justificativa da defesa, resistência, RD ou imunidade
+          <label className="block space-y-1">Justificativa da defesa, resistência, vulnerabilidade, RD ou imunidade
             <Input maxLength={500} value={values.reviewNote ?? ''} onChange={event => setValues(previous => ({ ...previous, reviewNote: event.target.value }))} />
           </label>
         </div>}
@@ -175,6 +203,8 @@ export function AttackTargetResolutionPanel({ campaignId, scene, round, members 
       onClick={() => { void confirm(); }}>{pending ? 'Recuperar confirmação' : 'Confirmar resultado e aplicar PV'}</Button>
     <Button type="button" size="sm" variant="outline" onClick={() => { void refresh(); }}>Atualizar ataques</Button>
     {receipt && <p role="status" className="text-emerald-300">Servidor confirmou: {receipt.hit ? 'acerto' : 'erro'}, dano final {receipt.finalDamage}, PV {receipt.hpBefore} → {receipt.hpAfter}{receipt.conditionsAfter ? `, condições: ${receipt.conditionsAfter.join(', ') || 'nenhuma'}` : ''}. {receipt.timingVerifiedByServer ? 'Defesa prévia comprovada.' : 'Sem defesa especial prévia.'}</p>}
+    {counterattackCandidate && <Button type="button" size="sm" variant="outline" disabled={busy}
+      onClick={() => { void declareCounterattack(); }}>Registrar Contra-ataque após o erro</Button>}
     {(error || storageError) && <p role="alert" className="text-destructive">{error || storageError}</p>}
   </section>;
 }

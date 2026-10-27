@@ -14,6 +14,19 @@ const receipt = { id: operation, operation_id: operation, character_id: characte
 beforeEach(() => vi.resetAllMocks());
 
 describe('ataque confirmado pelo servidor', () => {
+  it('envia contra-ataque pelo fluxo de reação sem trocar o recibo de rolagem', async () => {
+    const attack = request();
+    attack.expectedCost = 0;
+    attack.selection = {
+      ...attack.selection, specialAttackIncrements: 0,
+      counterattackDefenseEventId: '00000000-0000-4000-8000-000000000003',
+    };
+    fake.rpc.mockResolvedValue({ data: { ...receipt, payload: { ...receipt.payload, peCost: 0 } }, error: null });
+    await expect(confirmCombatAttack(character, attack, 'combat:turno')).resolves.toBe(true);
+    expect(fake.rpc).toHaveBeenCalledWith('confirm_character_counterattack_roll_v2', expect.objectContaining({
+      p_expected_cost: 0, p_expected_turn_key: 'combat:turno',
+    }));
+  });
   it('explica o limite de Ataque Furtivo sem expor outras mensagens do banco', async () => {
     fake.rpc.mockResolvedValueOnce({ data: null, error: { code: '22023', message: 'Ataque Furtivo já aplicado nesta rodada ou turno.' } });
     await expect(confirmCombatAttack(character, request(), 'manual:1')).rejects.toThrow('já foi usado nesta rodada ou turno');

@@ -20,7 +20,7 @@ const request: AttackTargetRequest = {
   expectedHp: 20, expectedScene: 1, expectedRound: 2,
   resolution: {
     defenseTotal: 15, grossDamage: 12, damageType: 'corte',
-    resistedDamage: 3, damageReduction: 2, immuneDamage: false,
+    resistedDamage: 3, damageReduction: 2, immuneDamage: false, vulnerableDamage: false,
     reviewNote: 'Resistência e RD conferidas pela mesa.',
   },
 };
@@ -28,7 +28,8 @@ const receipt: AttackTargetReceipt = {
   operationId, campaignId, attackEventId, targetId: targetCharacterId,
   attackTotal: 18, defenseTotal: 15, concealmentFailed: false, hit: true,
   grossDamage: 12, damageType: 'corte', declaredResistedDamage: 3,
-  declaredDamageReduction: 2, immuneDamage: false, finalDamage: 7,
+  declaredDamageReduction: 2, immuneDamage: false, vulnerableDamage: false,
+  damageAfterVulnerability: 9, finalDamage: 7,
   temporaryHPUsed: 2, hpBefore: 20, hpAfter: 15,
   targetEventId, attackerEventId, timingVerifiedByServer: true,
 };
@@ -38,7 +39,7 @@ beforeEach(() => { vi.clearAllMocks(); fake.rpc.mockResolvedValue({ data: receip
 describe('resolução confirmada de ataque contra alvo', () => {
   it('aceita somente o recibo que repete a declaração e o cálculo do mestre', async () => {
     await expect(confirmAttackTarget(request)).resolves.toEqual(receipt);
-    expect(fake.rpc).toHaveBeenCalledExactlyOnceWith('confirm_campaign_attack_target_v2', {
+    expect(fake.rpc).toHaveBeenCalledExactlyOnceWith('confirm_campaign_attack_target_v3', {
       p_operation_id: operationId, p_campaign_id: campaignId,
       p_attack_event_id: attackEventId, p_target_character_id: targetCharacterId,
       p_expected_hp: 20, p_expected_scene: 1, p_expected_round: 2,
@@ -51,6 +52,8 @@ describe('resolução confirmada de ataque contra alvo', () => {
     ['resistência', { declaredResistedDamage: 4 }],
     ['RD', { declaredDamageReduction: 3 }],
     ['imunidade', { immuneDamage: true }],
+    ['vulnerabilidade', { vulnerableDamage: true }],
+    ['dano após vulnerabilidade', { damageAfterVulnerability: 18 }],
     ['dano final', { finalDamage: 8, hpAfter: 14 }],
   ])('não confirma recibo divergente em %s', async (_label, change) => {
     fake.rpc.mockResolvedValue({ data: { ...receipt, ...change }, error: null });
@@ -73,5 +76,7 @@ describe('resolução confirmada de ataque contra alvo', () => {
     expect(calculateAttackResolutionPreview(18, false, { ...request.resolution, immuneDamage: true }))
       .toEqual({ hit: true, finalDamage: 0 });
     expect(calculateAttackResolutionPreview(18, true, request.resolution)).toEqual({ hit: false, finalDamage: 0 });
+    expect(calculateAttackResolutionPreview(18, false, { ...request.resolution, vulnerableDamage: true }))
+      .toEqual({ hit: true, finalDamage: 16 });
   });
 });

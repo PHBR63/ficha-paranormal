@@ -32,7 +32,9 @@ describe('dano em área sincronizado', () => {
     fake.confirm.mockImplementationOnce(async request => ({
       operationId: request.operationId, campaignId, source: 'Explosão', targets: [{
         characterId, eventId: '00000000-0000-4000-8000-000000000003',
-        grossDamage: 12, finalDamage: 4, temporaryHPUsed: 0, hpBefore: 20, hpAfter: 16,
+        grossDamage: 12, declaredResistedDamage: 6, declaredDamageReduction: 2,
+        immuneDamage: false, vulnerableDamage: false, damageAfterVulnerability: 6,
+        finalDamage: 4, temporaryHPUsed: 0, hpBefore: 20, hpAfter: 16,
       }],
     }));
     const modal = render(<BulkDamageModal open onOpenChange={vi.fn()} members={members}
@@ -62,7 +64,7 @@ describe('dano em área sincronizado', () => {
     expect(fake.confirm.mock.calls[0][0]).toEqual({
       operationId: expect.any(String), campaignId, source: 'Explosão', targets: [{
         characterId, damage: 12, damageType: 'fogo', resistedDamage: 6,
-        damageReduction: 2, immuneDamage: false, expectedHp: 20,
+        damageReduction: 2, immuneDamage: false, vulnerableDamage: false, expectedHp: 20,
       }],
     });
     expect(screen.getByRole('status')).toHaveTextContent('Dano confirmado em 1 ficha(s)');
@@ -83,5 +85,19 @@ describe('dano em área sincronizado', () => {
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeEnabled();
     expect(screen.getByRole('spinbutton', { name: 'Dano bruto' })).toBeEnabled();
     expect(sessionStorage.getItem(`ordem-roll:bulk-damage:${campaignId}`)).toBeNull();
+  });
+
+  it('mostra a ordem oficial de vulnerabilidade e desmarca imunidade', async () => {
+    render(<BulkDamageModal open onOpenChange={vi.fn()} members={members}
+      onApplyDamage={vi.fn()} canApply={false} serverCampaignId={campaignId} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Agente QA/ }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Dano bruto' }), { target: { value: '12' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Tipo' }), { target: { value: 'fogo' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Dano resistido' }), { target: { value: '6' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'RD' }), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Imune ao dano' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Vulnerável ao tipo de dano' }));
+    expect(screen.getByRole('checkbox', { name: 'Imune ao dano' })).not.toBeChecked();
+    expect(screen.getByText(/Após resistência: 6; vulnerabilidade ×2; Dano final após RD: 10/)).toBeInTheDocument();
   });
 });

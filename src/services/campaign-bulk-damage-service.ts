@@ -16,6 +16,7 @@ export interface CampaignBulkDamageTarget {
   resistedDamage: number;
   damageReduction: number;
   immuneDamage: boolean;
+  vulnerableDamage: boolean;
   expectedHp: number;
 }
 
@@ -34,6 +35,11 @@ export interface CampaignBulkDamageReceipt {
     characterId: string;
     eventId: string;
     grossDamage: number;
+    declaredResistedDamage: number;
+    declaredDamageReduction: number;
+    immuneDamage: boolean;
+    vulnerableDamage: boolean;
+    damageAfterVulnerability: number;
     finalDamage: number;
     temporaryHPUsed: number;
     hpBefore: number;
@@ -52,7 +58,7 @@ type DamageDatabase = { public: {
   Enums: Record<string, never>;
   CompositeTypes: Record<string, never>;
   Functions: {
-    confirm_campaign_bulk_damage: { Args: {
+    confirm_campaign_bulk_damage_v2: { Args: {
       p_operation_id: string; p_campaign_id: string; p_source: string; p_targets: Json;
     }; Returns: Json };
   };
@@ -73,7 +79,8 @@ function validateRequest(request: CampaignBulkDamageRequest): void {
       || !Number.isSafeInteger(target.resistedDamage) || target.resistedDamage < 0 || target.resistedDamage > target.damage
       || !Number.isSafeInteger(target.damageReduction) || target.damageReduction < 0 || target.damageReduction > 1_000_000
       || !Number.isSafeInteger(target.expectedHp) || target.expectedHp < 0 || target.expectedHp > 1_000_000
-      || typeof target.immuneDamage !== 'boolean')) {
+      || typeof target.immuneDamage !== 'boolean' || typeof target.vulnerableDamage !== 'boolean'
+      || (target.immuneDamage && target.vulnerableDamage))) {
     throw new CampaignBulkDamageError('Confira a origem, o tipo de dano, os valores e os alvos vinculados.', true);
   }
 }
@@ -110,9 +117,9 @@ export function clearPendingCampaignBulkDamage(campaignId: string): void {
 /** Envia uma operação atômica de dano v2 e valida o recibo antes de informar sucesso. */
 export async function confirmCampaignBulkDamage(request: CampaignBulkDamageRequest): Promise<CampaignBulkDamageReceipt> {
   validateRequest(request);
-  let response: Awaited<ReturnType<typeof damageClient.rpc<'confirm_campaign_bulk_damage'>>>;
+  let response: Awaited<ReturnType<typeof damageClient.rpc<'confirm_campaign_bulk_damage_v2'>>>;
   try {
-    response = await awaitActivityResponse(damageClient.rpc('confirm_campaign_bulk_damage', {
+    response = await awaitActivityResponse(damageClient.rpc('confirm_campaign_bulk_damage_v2', {
       p_operation_id: request.operationId,
       p_campaign_id: request.campaignId,
       p_source: request.source.trim(),
@@ -135,6 +142,13 @@ export async function confirmCampaignBulkDamage(request: CampaignBulkDamageReque
     || !Array.isArray(receipt.targets) || receipt.targets.length !== request.targets.length
     || request.targets.some(target => !receipt.targets.some(saved => saved.characterId === target.characterId
       && UUID.test(saved.eventId) && saved.grossDamage === target.damage
+      && saved.declaredResistedDamage === target.resistedDamage
+      && saved.declaredDamageReduction === target.damageReduction
+      && saved.immuneDamage === target.immuneDamage
+      && saved.vulnerableDamage === target.vulnerableDamage
+      && saved.damageAfterVulnerability === (target.vulnerableDamage
+        ? Math.max(0, target.damage - target.resistedDamage) * 2
+        : Math.max(0, target.damage - target.resistedDamage))
       && saved.hpBefore === target.expectedHp
       && Number.isSafeInteger(saved.finalDamage) && saved.finalDamage >= 0
       && Number.isSafeInteger(saved.temporaryHPUsed) && saved.temporaryHPUsed >= 0

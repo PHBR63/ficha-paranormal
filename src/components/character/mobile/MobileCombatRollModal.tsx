@@ -1204,7 +1204,8 @@ export function MobileCombatRollModal({
     const selection: CombatCostSelection = {
       weaponId: weapon.id,
       ...(gateSelection.mode === 'targeted' && gateSelection.weaponId === weapon.id
-        ? { targetCharacterId: gateSelection.targetCharacterId, attackIntentId: gateSelection.attackIntentId } : {}),
+        ? { targetCharacterId: gateSelection.targetCharacterId, attackIntentId: gateSelection.attackIntentId,
+          ...(gateSelection.counterattackDefenseEventId ? { counterattackDefenseEventId: gateSelection.counterattackDefenseEventId } : {}) } : {}),
       concealment: visibility.level, concealmentConfirmed: visibility.confirmed || (visibility.level === 'none' && !attackerBlind),
       totalCover: visibility.totalCover, attackerBlind, targetDefense,
       burst: burst.enabled,
