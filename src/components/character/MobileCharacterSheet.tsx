@@ -6,6 +6,7 @@ import { ItemSituationalActionsPanel } from '@/components/inventory/ItemSituatio
 import { ExplosivesPanel } from '@/components/inventory/ExplosivesPanel';
 import { AccessoryApprovalPanel } from '@/components/inventory/AccessoryApprovalPanel';
 import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
+import { resolveAttackCampaignId } from '@/services/pe-turn-budget-service';
 import { DEFAULT_CASTING_CONCENTRATION, getCastingWillConfig, rollCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
 import { rollParanormalCost } from '@/lib/rituals/paranormal-cost';
 import { getConcentrationFailureMessage } from '@/lib/rituals/casting-concentration-result';
@@ -2580,7 +2581,7 @@ export function MobileCharacterSheet({
           characterId={character.id}
           combatControlled={peBudget.data?.mode === 'combat'}
           expectedTurnKey={peBudget.data?.key ?? null}
-          campaignId={ritualCampaignVersion === 'v2' ? ritualCampaignId : null}
+          campaignId={resolveAttackCampaignId(peBudget.data, ritualCampaignId, ritualCampaignVersion)}
           ammunition={character.inventory.filter(item => item.itemType === 'consumable') as any}
           open={combatModalOpen}
           onClose={(pending = false) => {

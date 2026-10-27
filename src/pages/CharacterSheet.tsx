@@ -6,6 +6,7 @@ import { confirmCombatAttack } from '@/services/combat-attack-service';
 import { isAniquiladorFavoriteWeapon } from '@/lib/category-reduction';
 import { PETurnBudgetPanel } from '@/components/character/PETurnBudgetPanel';
 import { usePETurnBudget } from '@/hooks/character/usePETurnBudget';
+import { resolveAttackCampaignId } from '@/services/pe-turn-budget-service';
 import { DEFAULT_CASTING_CONCENTRATION, getCastingWillConfig, rollCastingConcentration, type CastingConcentrationContext } from '@/lib/rituals/casting-concentration';
 import { rollParanormalCost } from '@/lib/rituals/paranormal-cost';
 import { TemporaryResourcesPanel } from '@/components/character/TemporaryResourcesPanel';
@@ -3523,7 +3524,7 @@ export default function CharacterSheet() {
                 characterId={character.id}
                 combatControlled={peBudget.data?.mode === 'combat'}
                 expectedTurnKey={peBudget.data?.key ?? null}
-                campaignId={ritualCampaignVersion === 'v2' ? ritualCampaignId : null}
+                campaignId={resolveAttackCampaignId(peBudget.data, ritualCampaignId, ritualCampaignVersion)}
                 ammunition={character.inventory.filter(item => item.itemType === 'consumable') as any}
                 activeConditions={activeConditionsForSUE}
                 weapons={equippedWeapons}
