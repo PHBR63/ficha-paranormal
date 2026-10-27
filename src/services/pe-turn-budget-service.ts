@@ -2,8 +2,24 @@ import { activityClient, activityFailure, awaitActivityResponse, confirmActivity
 
 export interface PETurnBudget {
   mode: 'manual' | 'combat' | 'untracked'; tracked: boolean; key: string | null;
-  number?: number; round?: number; actorId?: string; spent: number; limit: number; ritualLimit: number;
+  number?: number; campaignId?: string; scene?: number; round?: number; actorId?: string;
+  turnInstanceId?: string; spent: number; limit: number; ritualLimit: number;
   remaining: number; ritualRemaining: number;
+}
+
+/**
+ * Resolve a campanha usada pelo ataque.
+ * Em combate, o orçamento do servidor é a fonte canônica porque uma ficha pode
+ * participar de várias campanhas; o vínculo genérico de rituais não define qual
+ * delas possui o turno ativo.
+ */
+export function resolveAttackCampaignId(
+  budget: PETurnBudget | null | undefined,
+  fallbackCampaignId: string | null,
+  fallbackVersion: 'v1' | 'v2' | null,
+): string | null {
+  if (budget?.mode === 'combat') return budget.campaignId ?? null;
+  return fallbackVersion === 'v2' ? fallbackCampaignId : null;
 }
 
 /** Consulta o orçamento confirmado, sem estimar gasto por navegador. */
@@ -16,7 +32,10 @@ export async function getPETurnBudget(characterId: string): Promise<PETurnBudget
     || (data.tracked ? typeof data.key !== 'string' : data.key !== null)
     || data.tracked !== (data.mode !== 'untracked')
     || (data.mode === 'manual' && (!Number.isSafeInteger(data.number) || Number(data.number) < 1))
-    || (data.mode === 'combat' && (!Number.isSafeInteger(data.round) || Number(data.round) < 1))
+    || (data.mode === 'combat' && (typeof data.campaignId !== 'string'
+      || typeof data.turnInstanceId !== 'string'
+      || !Number.isSafeInteger(data.scene) || Number(data.scene) < 1
+      || !Number.isSafeInteger(data.round) || Number(data.round) < 1))
     || ['spent', 'limit', 'ritualLimit', 'remaining', 'ritualRemaining'].some(key => !Number.isSafeInteger(data[key]) || Number(data[key]) < 0)) {
     throw new Error('O servidor não confirmou o orçamento de PE.');
   }
