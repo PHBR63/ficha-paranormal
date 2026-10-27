@@ -26,7 +26,9 @@ export interface AttackTargetRequest {
 }
 export interface AttackTargetReceipt {
   operationId: string; campaignId: string; attackEventId: string; targetId: string;
-  attackTotal: number; defenseTotal: number; hit: boolean; grossDamage: number;
+  attackTotal: number; defenseTotal: number; concealmentFailed: boolean; hit: boolean;
+  grossDamage: number; damageType: CampaignDamageType; declaredResistedDamage: number;
+  declaredDamageReduction: number; immuneDamage: boolean;
   finalDamage: number; temporaryHPUsed: number; hpBefore: number; hpAfter: number;
   targetEventId: string; attackerEventId: string; timingVerifiedByServer: boolean;
   conditionsBefore?: string[]; conditionsAfter?: string[];
@@ -43,6 +45,23 @@ const rpc = supabase as unknown as SupabaseClient<RpcDb>;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const key = (campaignId: string) => `ordem-roll:attack-target:${campaignId}`;
 const validNumber = (value: number) => Number.isSafeInteger(value) && value >= 0 && value <= 1_000_000;
+const validSignedNumber = (value: number) => Number.isSafeInteger(value) && value >= -1_000_000 && value <= 1_000_000;
+
+/**
+ * Calcula somente a prévia exibida ao mestre. O servidor repete o cálculo e
+ * continua sendo a fonte autoritativa para acerto, dano e alteração de PV.
+ */
+export function calculateAttackResolutionPreview(
+  attackTotal: number,
+  concealmentFailed: boolean,
+  resolution: AttackTargetResolution,
+): { hit: boolean; finalDamage: number } {
+  const hit = !concealmentFailed && attackTotal >= resolution.defenseTotal;
+  const finalDamage = hit && !resolution.immuneDamage
+    ? Math.max(0, resolution.grossDamage - resolution.resistedDamage - resolution.damageReduction)
+    : 0;
+  return { hit, finalDamage };
+}
 
 /** Lê a rolagem confirmada para mostrar o total ao mestre; a RPC valida de novo. */
 export async function loadAttackEvent(attackEventId: string): Promise<CharacterActivityEvent> {
@@ -116,12 +135,25 @@ export async function confirmAttackTarget(request: AttackTargetRequest): Promise
     throw new AttackTargetError('Resposta incerta. Recupere a mesma resolução antes de tentar outra.', false);
   }
   const receipt = response.data;
+  const expected = calculateAttackResolutionPreview(
+    receipt?.attackTotal ?? Number.NaN,
+    receipt?.concealmentFailed ?? false,
+    request.resolution,
+  );
   if (!receipt || receipt.operationId !== request.operationId || receipt.campaignId !== request.campaignId
     || receipt.attackEventId !== request.attackEventId || receipt.targetId !== request.targetCharacterId
     || receipt.defenseTotal !== request.resolution.defenseTotal || receipt.grossDamage !== request.resolution.grossDamage
-    || receipt.hpBefore !== request.expectedHp || typeof receipt.hit !== 'boolean'
+    || receipt.damageType !== request.resolution.damageType
+    || receipt.declaredResistedDamage !== request.resolution.resistedDamage
+    || receipt.declaredDamageReduction !== request.resolution.damageReduction
+    || receipt.immuneDamage !== request.resolution.immuneDamage
+    || receipt.hpBefore !== request.expectedHp || typeof receipt.concealmentFailed !== 'boolean'
+    || receipt.hit !== expected.hit || receipt.finalDamage !== expected.finalDamage
+    || receipt.temporaryHPUsed > receipt.finalDamage
+    || receipt.hpAfter !== Math.max(0, receipt.hpBefore - receipt.finalDamage + receipt.temporaryHPUsed)
     || !UUID.test(receipt.targetEventId) || !UUID.test(receipt.attackerEventId)
-    || ![receipt.attackTotal, receipt.finalDamage, receipt.temporaryHPUsed, receipt.hpAfter].every(validNumber))
+    || !validSignedNumber(receipt.attackTotal)
+    || ![receipt.finalDamage, receipt.temporaryHPUsed, receipt.hpAfter].every(validNumber))
     throw new AttackTargetError('Recibo incompleto. Recupere a mesma resolução.', false);
   return receipt;
 }

@@ -50,6 +50,7 @@ describe('resolução do ataque contra alvo v2', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: 'RD' }), { target: { value: '4' } });
     fireEvent.change(screen.getByRole('combobox', { name: 'Tipo de dano' }), { target: { value: 'fogo' } });
     fireEvent.change(screen.getByRole('textbox', { name: /Justificativa/ }), { target: { value: 'Armadura' } });
+    expect(screen.getByLabelText('Prévia do cálculo de dano')).toHaveTextContent('Ataque 17 abaixo da Defesa 19: erro, dano final 0');
     fireEvent.change(attackSelect, { target: { value: attackB } });
     expect(screen.getByRole('spinbutton', { name: 'Defesa final' })).toHaveValue(10);
     expect(screen.getByRole('spinbutton', { name: 'Dano rolado' })).toHaveValue(0);
@@ -61,5 +62,40 @@ describe('resolução do ataque contra alvo v2', () => {
       targetCharacterId: targetB, attackEventId: attackB,
       resolution: expect.objectContaining({ defenseTotal: 10, grossDamage: 0, damageReduction: 0, damageType: 'impacto' }),
     }));
+  });
+
+  it('explica a ordem do cálculo e bloqueia redução sem justificativa', async () => {
+    fake.intents.mockResolvedValue([intents[0]]);
+    fake.choices.mockResolvedValue([{ intent_id: intents[0].operation_id, defense_type: 'none' }]);
+    fake.resolved.mockResolvedValue([]);
+    fake.event.mockResolvedValue({ payload: { entry: { total: 18 }, concealmentResult: { failed: false } } });
+    render(<AttackTargetResolutionPanel campaignId={campaignId} scene={1} round={2} members={members} />);
+    const attackSelect = await screen.findByRole('combobox', { name: 'Ataque para resolver' });
+    await screen.findByRole('option', { name: /Alvo A/ });
+    fireEvent.change(attackSelect, { target: { value: attackA } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Defesa final' }), { target: { value: '15' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Dano rolado' }), { target: { value: '12' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Dano resistido' }), { target: { value: '3' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'RD' }), { target: { value: '2' } });
+    expect(screen.getByLabelText('Prévia do cálculo de dano')).toHaveTextContent('12 − resistência 3 − RD 2 = 7');
+    expect(screen.getByRole('button', { name: 'Confirmar resultado e aplicar PV' })).toBeDisabled();
+    expect(screen.getByRole('alert')).toHaveTextContent('Explique a origem');
+    fireEvent.change(screen.getByRole('textbox', { name: /Justificativa/ }), { target: { value: 'Teste e proteção conferidos.' } });
+    expect(screen.getByRole('button', { name: 'Confirmar resultado e aplicar PV' })).toBeEnabled();
+  });
+
+  it('mostra imunidade e falha por camuflagem como dano final zero', async () => {
+    fake.intents.mockResolvedValue([intents[0]]);
+    fake.choices.mockResolvedValue([{ intent_id: intents[0].operation_id, defense_type: 'none' }]);
+    fake.resolved.mockResolvedValue([]);
+    fake.event.mockResolvedValue({ payload: { entry: { total: 18 }, concealmentResult: { failed: true } } });
+    render(<AttackTargetResolutionPanel campaignId={campaignId} scene={1} round={2} members={members} />);
+    const attackSelect = await screen.findByRole('combobox', { name: 'Ataque para resolver' });
+    await screen.findByRole('option', { name: /Alvo A/ });
+    fireEvent.change(attackSelect, { target: { value: attackA } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Dano rolado' }), { target: { value: '12' } });
+    expect(screen.getByLabelText('Prévia do cálculo de dano')).toHaveTextContent('Falha por camuflagem confirmada: dano final 0');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Alvo imune a este dano' }));
+    expect(screen.getByLabelText('Prévia do cálculo de dano')).toHaveTextContent('Falha por camuflagem confirmada: dano final 0');
   });
 });
