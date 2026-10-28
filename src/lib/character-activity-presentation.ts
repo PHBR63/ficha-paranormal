@@ -57,6 +57,24 @@ function describeConditionChanges(before: Json | undefined, after: Json | undefi
 export function describeCharacterActivity(event: CharacterActivityEvent): string {
   const payload = event.payload;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return 'Registro sem detalhes';
+  if (payload.kind === 'combat_maneuver_resolved' || payload.kind === 'combat_maneuver_received') {
+    const label = { grapple: 'Agarrar', trip: 'Derrubar', disarm: 'Desarmar', push: 'Empurrar', break: 'Quebrar' }[String(payload.maneuverType)] ?? 'Manobra';
+    const attempts = Array.isArray(payload.attempts) ? payload.attempts.filter(attempt => attempt && typeof attempt === 'object' && !Array.isArray(attempt)) : [];
+    const last = attempts.at(-1) as { actor?: { total?: number }; target?: { total?: number } } | undefined;
+    const totals = typeof last?.actor?.total === 'number' && typeof last.target?.total === 'number'
+      ? `${last.actor.total} × ${last.target.total}` : 'totais indisponíveis';
+    const ties = Math.max(0, attempts.length - 1);
+    const outcome = payload.attackerWon === true ? 'atacante venceu' : 'atacante perdeu';
+    const effect = payload.automaticEffect === 'grappled' ? 'vínculo Agarrado criado'
+      : payload.automaticEffect === 'prone' ? 'condição Caído aplicada'
+      : payload.automaticEffect === 'disarmed' ? 'item desequipado'
+      : payload.automaticEffect === 'movement_pending' ? `deslocamento de ${payload.distanceMeters} m pendente do mestre`
+      : payload.automaticEffect === 'object_damage_pending' ? 'dano do objeto pendente do mestre'
+      : 'nenhum efeito aplicado';
+    const targetItem = typeof payload.targetItemName === 'string' && payload.targetItemName.trim()
+      ? ` · item confirmado: ${payload.targetItemName.trim()}` : '';
+    return `${payload.kind === 'combat_maneuver_received' ? 'Manobra recebida' : 'Manobra resolvida'} · ${label} · Luta oposta ${totals}${ties ? ` · ${ties} desempate${ties > 1 ? 's' : ''}` : ''} · ${outcome}, margem ${payload.margin} · ${effect}${targetItem}${payload.actionConsumed === true ? ' · ação padrão consumida uma vez' : ''}${payload.manualPending === true ? ' · resolução física permanece com o mestre' : ''}`;
+  }
   if (payload.kind === 'mirar') {
     const turn = payload.mode === 'manual' ? `no turno manual ${payload.turnNumber}`
       : payload.mode === 'untracked' ? 'sem controle de turnos' : `na rodada ${payload.round}`;

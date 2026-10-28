@@ -276,3 +276,36 @@ describe('Histórico de ocultação e saque', () => {
     expect(describeCharacterActivity(event({ kind: 'item_action', itemName: 'Arma', action: 'stow', actionCost: 'movimento' }))).toContain('Guardar confirmado: arma desequipada · Ação movimento');
   });
 });
+
+describe('Histórico de manobras v2', () => {
+  it('mostra oposição, desempates, ação e pendência espacial sem IDs internos', () => {
+    const text = describeCharacterActivity(event({ kind: 'combat_maneuver_resolved', maneuverType: 'push',
+      attempts: [{ actor: { total: 17 }, target: { total: 17 } }, { actor: { total: 22 }, target: { total: 14 } }],
+      attackerWon: true, margin: 8, distanceMeters: 3, actionConsumed: true,
+      automaticEffect: 'movement_pending', manualPending: true }));
+    expect(text).toContain('Empurrar');
+    expect(text).toContain('22 × 14');
+    expect(text).toContain('1 desempate');
+    expect(text).toContain('ação padrão');
+    expect(text).toContain('3 m');
+    expect(text).not.toContain('operation');
+  });
+
+  it('distingue manobra perdida de efeito aplicado', () => {
+    const text = describeCharacterActivity(event({ kind: 'combat_maneuver_received', maneuverType: 'trip',
+      attempts: [{ actor: { total: 12 }, target: { total: 19 } }], attackerWon: false,
+      margin: 7, actionConsumed: true, automaticEffect: 'none', manualPending: false }));
+    expect(text).toContain('Derrubar');
+    expect(text).toContain('atacante perdeu');
+    expect(text).toContain('nenhum efeito aplicado');
+  });
+
+  it('identifica pelo nome o item confirmado em Desarmar ou Quebrar', () => {
+    const text = describeCharacterActivity(event({ kind: 'combat_maneuver_resolved', maneuverType: 'disarm',
+      attempts: [{ actor: { total: 21 }, target: { total: 14 } }], attackerWon: true,
+      margin: 7, actionConsumed: true, automaticEffect: 'disarmed', manualPending: true,
+      targetItemName: 'Faca ritualística' }));
+    expect(text).toContain('Faca ritualística');
+    expect(text).not.toContain('targetItem');
+  });
+});

@@ -2,6 +2,7 @@ import { preserveInventoryModifications } from '@/lib/inventory-modifications';
 import { confirmCombatAttack } from '@/services/combat-attack-service';
 import { useRitualSituationalContext } from '@/hooks/character/useRitualSituationalContext';
 import { PETurnBudgetPanel } from './PETurnBudgetPanel';
+import { CombatManeuverAction } from './CombatManeuverAction';
 import { ItemSituationalActionsPanel } from '@/components/inventory/ItemSituationalActionsPanel';
 import { ExplosivesPanel } from '@/components/inventory/ExplosivesPanel';
 import { AccessoryApprovalPanel } from '@/components/inventory/AccessoryApprovalPanel';
@@ -1925,6 +1926,15 @@ export function MobileCharacterSheet({
               <SustainedRitualControl key={character.id} characterId={character.id}
                 state={sustainedState} peCurrent={character.pe_current} onRefetch={onRefetch} mobile />
               <PETurnBudgetPanel characterId={character.id} />
+              {peBudget.data?.mode === 'combat' && resolveAttackCampaignId(peBudget.data, ritualCampaignId, ritualCampaignVersion) && (
+                <CombatManeuverAction
+                  campaignId={resolveAttackCampaignId(peBudget.data, ritualCampaignId, ritualCampaignVersion)!}
+                  actorId={character.id}
+                  inventory={character.inventory}
+                  traits={[character.abilities, character.powers, character.class_power_choices, character.general_powers]}
+                  mobile
+                />
+              )}
               <AccessoryApprovalPanel state={bonusSummary.accessories} />
               <ExplosivesPanel key={`explosives-${character.id}`} characterId={character.id} inventory={character.inventory} conditions={activityJson(character.conditions || [])} onRefetch={onRefetch} />
               <ItemSituationalActionsPanel key={character.id} characterId={character.id} inventory={character.inventory}
