@@ -32,6 +32,7 @@ import { AttackTargetResolutionPanel } from './AttackTargetResolutionPanel';
 import { MassiveDamagePanel } from './MassiveDamagePanel';
 import { CounterattackPanel } from './CounterattackPanel';
 import { PreparedActionPanel } from './PreparedActionPanel';
+import { CombatManeuverPanel } from './CombatManeuverPanel';
 
 interface CombatTrackerProps {
   campaignId: string;
@@ -195,6 +196,8 @@ export const CombatTracker = memo(function CombatTracker({
       <MassiveDamagePanel campaignId={campaignId} />
       <PreparedActionPanel key={`prepared-actions:${campaignId}:${combat.sceneNumber}:${round}`}
         campaignId={campaignId} members={members} onCombatChanged={combat.reload} />
+      <CombatManeuverPanel key={`maneuvers:${campaignId}:${combat.sceneNumber}:${round}`}
+        campaignId={campaignId} scene={combat.sceneNumber} round={round} members={members} />
 
       {/* Lista de combatentes */}
       <ScrollArea className="max-h-[400px]">

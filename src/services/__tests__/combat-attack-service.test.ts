@@ -14,6 +14,21 @@ const receipt = { id: operation, operation_id: operation, character_id: characte
 beforeEach(() => vi.resetAllMocks());
 
 describe('ataque confirmado pelo servidor', () => {
+  it('envia o modo de dano e exige o mesmo modo no recibo do servidor', async () => {
+    const attack = request();
+    attack.selection.damageMode = 'nonlethal';
+    attack.selection.damageModePenalty = -5;
+    attack.result.otherBonuses = -5;
+    fake.rpc.mockResolvedValue({ data: { ...receipt, payload: { ...receipt.payload,
+      damageMode: 'nonlethal', damageModePenalty: -5 } }, error: null });
+    await expect(confirmCombatAttack(character, attack, 'combat:turno')).resolves.toBe(true);
+    expect(fake.rpc).toHaveBeenCalledWith('confirm_character_combat_attack', expect.objectContaining({
+      p_selection: expect.objectContaining({ damageMode: 'nonlethal', damageModePenalty: -5 }),
+      p_payload: expect.objectContaining({ damageModeSnapshot: {
+        mode: 'nonlethal', penalty: -5, baseOtherBonuses: 0, finalOtherBonuses: -5,
+      } }),
+    }));
+  });
   it('envia contra-ataque pelo fluxo de reação sem trocar o recibo de rolagem', async () => {
     const attack = request();
     attack.expectedCost = 0;

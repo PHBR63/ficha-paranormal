@@ -3088,6 +3088,7 @@ export type Database = {
           movement: number
           name: string
           nex: number
+          nonlethal_damage: number
           notes: string | null
           origin: string
           paranormal_powers: Json | null
@@ -3142,6 +3143,7 @@ export type Database = {
           movement?: number
           name: string
           nex?: number
+          nonlethal_damage?: number
           notes?: string | null
           origin: string
           paranormal_powers?: Json | null
@@ -3196,6 +3198,7 @@ export type Database = {
           movement?: number
           name?: string
           nex?: number
+          nonlethal_damage?: number
           notes?: string | null
           origin?: string
           paranormal_powers?: Json | null

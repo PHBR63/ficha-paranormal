@@ -51,6 +51,17 @@ describe('Histórico de alterações de condições', () => {
     expect(describeCharacterActivity(event({ kind: 'special_defense', defenseType: 'bloqueio', round: 2,
       resolution: 'mestre_confirmou_resultado' }))).toContain('revisado retrospectivamente');
   });
+  it('distingue dano não letal, seu acumulado e a ausência de dano massivo', () => {
+    const described = describeCharacterActivity(event({ kind: 'attack_target_received',
+      attackTotal: 17, defenseTotal: 16, hit: true, grossDamage: 9, damageType: 'impacto',
+      declaredResistedDamage: 0, declaredDamageReduction: 2, immuneDamage: false,
+      finalDamage: 7, temporaryHPUsed: 2, hpBefore: 20, hpAfter: 20,
+      damageMode: 'nonlethal', nonlethalBefore: 1, nonlethalApplied: 5,
+      nonlethalAfter: 6, massiveDamageRequired: false }));
+    expect(described).toContain('dano não letal 1 → 6');
+    expect(described).toContain('5 aplicado');
+    expect(described).not.toContain('dano massivo:');
+  });
   it('identifica a defesa declarada antes da rolagem quando o servidor comprova a ordem', () => {
     const attack = describeCharacterActivity(event({ kind: 'attack_target_received',
       attackTotal: 17, defenseTotal: 16, hit: true, grossDamage: 15, damageType: 'corte',
@@ -100,13 +111,16 @@ describe('Histórico de alterações de condições', () => {
   it('mostra dados, bônus, PV e PE nas duas fichas após Paramédico', () => {
     const source = describeCharacterActivity(event({ kind: 'paramedico', targetName: 'Aliado', diceCount: 3,
       dice: [4, 7, 2], originBonus: 2, totalHealing: 15, effectiveHealing: 9,
-      hpBefore: 11, hpAfter: 20, adjacencyConfirmed: true, peCost: 3, peBefore: 8, peAfter: 5 }));
+      hpBefore: 11, hpAfter: 16, nonlethalHealed: 4,
+      adjacencyConfirmed: true, peCost: 3, peBefore: 8, peAfter: 5 }));
     expect(source).toContain('3d10 [4 + 7 + 2] + 2 de Agente de Saúde = 15 PV');
-    expect(source).toContain('Cura efetiva 9 PV (11 → 20)');
+    expect(source).toContain('Cura efetiva 9 (11 → 16 PV)');
+    expect(source).toContain('4 de dano não letal removidos');
     expect(source).toContain('3 PE (8 → 5)');
     const target = describeCharacterActivity(event({ kind: 'paramedico_healing_received', sourceName: 'Médica',
-      healed: 9, hpBefore: 11, hpAfter: 20 }));
-    expect(target).toContain('Paramédico de Médica · +9 PV (11 → 20)');
+      healed: 9, hpBefore: 11, hpAfter: 16, nonlethalHealed: 4 }));
+    expect(target).toContain('Paramédico de Médica · Cura efetiva 9 (11 → 16 PV)');
+    expect(target).toContain('4 de dano não letal removidos');
   });
   it('explica chance, d10 e benefício a partir do recibo confirmado', () => {
     const text=describeCharacterActivity({...event({kind:'combat_attack',entry:{label:'Ataque',total:20,results:[20]},concealmentResult:{level:'total',attackerBlind:false,heatVisionApplied:false,chance:50,die:4,failed:true,targetDefense:10}}),category:'roll'});
@@ -260,5 +274,38 @@ describe('Histórico de ocultação e saque', () => {
   it('explica saque/guardar e custos sem inventar gasto de PE', () => {
     expect(describeCharacterActivity(event({ kind: 'item_action', itemName: 'Arma', action: 'draw', actionCost: 'livre' }))).toContain('Saque confirmado: arma equipada · Ação livre');
     expect(describeCharacterActivity(event({ kind: 'item_action', itemName: 'Arma', action: 'stow', actionCost: 'movimento' }))).toContain('Guardar confirmado: arma desequipada · Ação movimento');
+  });
+});
+
+describe('Histórico de manobras v2', () => {
+  it('mostra oposição, desempates, ação e pendência espacial sem IDs internos', () => {
+    const text = describeCharacterActivity(event({ kind: 'combat_maneuver_resolved', maneuverType: 'push',
+      attempts: [{ actor: { total: 17 }, target: { total: 17 } }, { actor: { total: 22 }, target: { total: 14 } }],
+      attackerWon: true, margin: 8, distanceMeters: 3, actionConsumed: true,
+      automaticEffect: 'movement_pending', manualPending: true }));
+    expect(text).toContain('Empurrar');
+    expect(text).toContain('22 × 14');
+    expect(text).toContain('1 desempate');
+    expect(text).toContain('ação padrão');
+    expect(text).toContain('3 m');
+    expect(text).not.toContain('operation');
+  });
+
+  it('distingue manobra perdida de efeito aplicado', () => {
+    const text = describeCharacterActivity(event({ kind: 'combat_maneuver_received', maneuverType: 'trip',
+      attempts: [{ actor: { total: 12 }, target: { total: 19 } }], attackerWon: false,
+      margin: 7, actionConsumed: true, automaticEffect: 'none', manualPending: false }));
+    expect(text).toContain('Derrubar');
+    expect(text).toContain('atacante perdeu');
+    expect(text).toContain('nenhum efeito aplicado');
+  });
+
+  it('identifica pelo nome o item confirmado em Desarmar ou Quebrar', () => {
+    const text = describeCharacterActivity(event({ kind: 'combat_maneuver_resolved', maneuverType: 'disarm',
+      attempts: [{ actor: { total: 21 }, target: { total: 14 } }], attackerWon: true,
+      margin: 7, actionConsumed: true, automaticEffect: 'disarmed', manualPending: true,
+      targetItemName: 'Faca ritualística' }));
+    expect(text).toContain('Faca ritualística');
+    expect(text).not.toContain('targetItem');
   });
 });

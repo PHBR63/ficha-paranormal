@@ -9,6 +9,8 @@ import { CombatAmmunitionSelector } from './CombatAmmunitionSelector';
 import { WeaponModificationNotes } from './WeaponModificationNotes';
 import type { ConfirmCombatAttack, CombatCostSelection } from '@/services/combat-attack-service';
 import { AttackIntentGate, type AttackGateSelection } from './AttackIntentGate';
+import { DamageModeSelector } from './DamageModeSelector';
+import { resolveDamageMode, type DamageMode } from '@/lib/nonlethal-damage';
 /**
  * CombatRollModal - Modal de combate com rolagem de ataque e dano
  * Permite selecionar bônus de classe, poderes paranormais e rituais
@@ -1325,6 +1327,18 @@ export function CombatRollModal({
 
   // === FEEDBACK SONORO E HÁPTICO ===
   const combatFeedback = useCombatFeedback();
+  const [damageMode, setDamageMode] = useState<DamageMode>('lethal');
+  const lethalUnarmedAllowed = weapon?.type === 'Briga'
+    && weapon.special?.split(',').some(value => value.trim().toLowerCase() === 'letal') === true;
+  const damageModeResolution = useMemo(() => resolveDamageMode({
+    weaponType: weapon?.type ?? '',
+    naturallyNonlethal: weapon?.type === 'Briga',
+    allowsLethalWithoutPenalty: lethalUnarmedAllowed,
+  }, damageMode), [weapon?.type, damageMode, lethalUnarmedAllowed]);
+
+  useEffect(() => {
+    if (weapon) setDamageMode(weapon.type === 'Briga' ? 'nonlethal' : 'lethal');
+  }, [weapon?.id, weapon?.type]);
 
   // === HANDLERS DE ROLAGEM ===
 
@@ -1344,7 +1358,7 @@ export function CombatRollModal({
       attributeValue: attackAttribute,
       dicePenalty: attackDicePenalty,
       skillBonus: attackSkill.bonus,
-      otherBonuses: totalAttackBonus - attackSkill.bonus,
+      otherBonuses: totalAttackBonus - attackSkill.bonus + damageModeResolution.penalty,
       label: `Ataque: ${weapon.name}`,
       criticalThreshold: effectiveCritical,
     });
@@ -1354,6 +1368,8 @@ export function CombatRollModal({
     if (burst.enabled) result.label += ' — Rajada';
     const selection: CombatCostSelection = {
       weaponId: weapon.id,
+      damageMode,
+      damageModePenalty: damageModeResolution.penalty,
       ...(gateSelection.mode === 'targeted' && gateSelection.weaponId === weapon.id
         ? { targetCharacterId: gateSelection.targetCharacterId, attackIntentId: gateSelection.attackIntentId,
           ...(gateSelection.counterattackDefenseEventId ? { counterattackDefenseEventId: gateSelection.counterattackDefenseEventId } : {}) } : {}),
@@ -2483,6 +2499,9 @@ export function CombatRollModal({
                 )}
 
 </div>
+                {weapon && <DamageModeSelector weaponType={weapon.type}
+                  naturallyNonlethal={weapon.type === 'Briga'}
+                  allowsLethalWithoutPenalty={lethalUnarmedAllowed} value={damageMode} onChange={setDamageMode} />}
                 {temporaryPE > 0 && <p className="text-sm text-muted-foreground">PE disponíveis: {currentPE} normais + {temporaryPE} temporários. Temporários são consumidos primeiro.</p>}
         {intentRequired && campaignId && characterId && weapon && phase === 'setup' &&
           <AttackIntentGate key={`${campaignId}:${characterId}:${weapon.id}`} campaignId={campaignId}

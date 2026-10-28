@@ -192,6 +192,7 @@ import { AttributeGridNew } from '@/components/character/AttributeGridNew';
 import { SkillsByAttribute } from '@/components/character/SkillsByAttribute';
 import { PersonalDataAccordion } from '@/components/character/PersonalDataAccordion';
 import { CombatWeaponsTable } from '@/components/character/CombatWeaponsTable';
+import { CombatManeuverAction } from '@/components/character/CombatManeuverAction';
 import { SheetAccordionSection, SheetAccordionItem } from '@/components/character/SheetAccordionSection';
 import { RitualCard } from '@/components/character/RitualCard';
 import { RitualCastModal } from '@/components/character/RitualCastModal';
@@ -290,6 +291,7 @@ interface Character {
   vigor: number;
   hp_current: number;
   hp_max: number;
+  nonlethal_damage: number;
   pe_current: number;
   pe_max: number;
   san_current: number;
@@ -2801,6 +2803,7 @@ export default function CharacterSheet() {
                 patent={character.patent}
                 hpCurrent={hpCurrent}
                 hpMax={character.hp_max}
+                nonlethalDamage={character.nonlethal_damage}
                 peCurrent={peCurrent}
                 peMax={character.pe_max}
                 sanCurrent={sanCurrent}
@@ -3573,6 +3576,14 @@ export default function CharacterSheet() {
                 hadAutoCorrections={weaponBuffsHadCorrections}
                 onDismissCorrectionsNotice={clearWeaponBuffsCorrectionsFlag}
               />
+              {peBudget.data?.mode === 'combat' && resolveAttackCampaignId(peBudget.data, ritualCampaignId, ritualCampaignVersion) && (
+                <CombatManeuverAction
+                  campaignId={resolveAttackCampaignId(peBudget.data, ritualCampaignId, ritualCampaignVersion)!}
+                  actorId={character.id}
+                  inventory={character.inventory}
+                  traits={[character.abilities, character.powers, character.class_power_choices, character.general_powers]}
+                />
+              )}
 
               {/* Perícias por Atributo (acordeão colapsado) */}
               <SheetAccordionSection
