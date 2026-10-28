@@ -290,6 +290,7 @@ interface Character {
   vigor: number;
   hp_current: number;
   hp_max: number;
+  nonlethal_damage: number;
   pe_current: number;
   pe_max: number;
   san_current: number;
@@ -2801,6 +2802,7 @@ export default function CharacterSheet() {
                 patent={character.patent}
                 hpCurrent={hpCurrent}
                 hpMax={character.hp_max}
+                nonlethalDamage={character.nonlethal_damage}
                 peCurrent={peCurrent}
                 peMax={character.pe_max}
                 sanCurrent={sanCurrent}

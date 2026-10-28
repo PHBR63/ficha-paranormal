@@ -60,6 +60,7 @@ interface MobileOverviewTabProps {
     photo_url?: string | null;
     hp_current: number;
     hp_max: number;
+    nonlethal_damage?: number;
     pe_current: number;
     pe_max: number;
     san_current: number;
@@ -369,6 +370,7 @@ export const MobileOverviewTab = memo(function MobileOverviewTab({
       {/* Barras de recursos */}
       <div className="ordo-panel p-3 space-y-2">
         <CombatStatsCard hpCurrent={character.hp_current} hpMax={character.hp_max}
+          nonlethalDamage={character.nonlethal_damage}
           peCurrent={character.pe_current} peMax={character.pe_max}
           sanCurrent={character.san_current} sanMax={character.san_max}
           onStatsChange={onResourcesChange} className="border-0 p-0 shadow-none" />

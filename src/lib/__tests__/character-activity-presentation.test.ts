@@ -51,6 +51,17 @@ describe('Histórico de alterações de condições', () => {
     expect(describeCharacterActivity(event({ kind: 'special_defense', defenseType: 'bloqueio', round: 2,
       resolution: 'mestre_confirmou_resultado' }))).toContain('revisado retrospectivamente');
   });
+  it('distingue dano não letal, seu acumulado e a ausência de dano massivo', () => {
+    const described = describeCharacterActivity(event({ kind: 'attack_target_received',
+      attackTotal: 17, defenseTotal: 16, hit: true, grossDamage: 9, damageType: 'impacto',
+      declaredResistedDamage: 0, declaredDamageReduction: 2, immuneDamage: false,
+      finalDamage: 7, temporaryHPUsed: 2, hpBefore: 20, hpAfter: 20,
+      damageMode: 'nonlethal', nonlethalBefore: 1, nonlethalApplied: 5,
+      nonlethalAfter: 6, massiveDamageRequired: false }));
+    expect(described).toContain('dano não letal 1 → 6');
+    expect(described).toContain('5 aplicado');
+    expect(described).not.toContain('dano massivo:');
+  });
   it('identifica a defesa declarada antes da rolagem quando o servidor comprova a ordem', () => {
     const attack = describeCharacterActivity(event({ kind: 'attack_target_received',
       attackTotal: 17, defenseTotal: 16, hit: true, grossDamage: 15, damageType: 'corte',
@@ -100,13 +111,16 @@ describe('Histórico de alterações de condições', () => {
   it('mostra dados, bônus, PV e PE nas duas fichas após Paramédico', () => {
     const source = describeCharacterActivity(event({ kind: 'paramedico', targetName: 'Aliado', diceCount: 3,
       dice: [4, 7, 2], originBonus: 2, totalHealing: 15, effectiveHealing: 9,
-      hpBefore: 11, hpAfter: 20, adjacencyConfirmed: true, peCost: 3, peBefore: 8, peAfter: 5 }));
+      hpBefore: 11, hpAfter: 16, nonlethalHealed: 4,
+      adjacencyConfirmed: true, peCost: 3, peBefore: 8, peAfter: 5 }));
     expect(source).toContain('3d10 [4 + 7 + 2] + 2 de Agente de Saúde = 15 PV');
-    expect(source).toContain('Cura efetiva 9 PV (11 → 20)');
+    expect(source).toContain('Cura efetiva 9 (11 → 16 PV)');
+    expect(source).toContain('4 de dano não letal removidos');
     expect(source).toContain('3 PE (8 → 5)');
     const target = describeCharacterActivity(event({ kind: 'paramedico_healing_received', sourceName: 'Médica',
-      healed: 9, hpBefore: 11, hpAfter: 20 }));
-    expect(target).toContain('Paramédico de Médica · +9 PV (11 → 20)');
+      healed: 9, hpBefore: 11, hpAfter: 16, nonlethalHealed: 4 }));
+    expect(target).toContain('Paramédico de Médica · Cura efetiva 9 (11 → 16 PV)');
+    expect(target).toContain('4 de dano não letal removidos');
   });
   it('explica chance, d10 e benefício a partir do recibo confirmado', () => {
     const text=describeCharacterActivity({...event({kind:'combat_attack',entry:{label:'Ataque',total:20,results:[20]},concealmentResult:{level:'total',attackerBlind:false,heatVisionApplied:false,chance:50,die:4,failed:true,targetDefense:10}}),category:'roll'});

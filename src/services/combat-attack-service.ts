@@ -2,11 +2,14 @@ import type { DiceRollResult } from '@/lib/dice-roller';
 import { attackCanRollDamage, parseConcealmentResult, type ConcealmentLevel } from '@/lib/attack-concealment';
 import { diceHistoryEntry } from '@/lib/roll-history-adapter';
 import { parseSneakAttackResult, type SneakAttackDeclaration } from '@/lib/sneak-attack-context';
+import type { DamageMode } from '@/lib/nonlethal-damage';
 import { activityClient, activityFailure, activityJson, awaitActivityResponse, confirmActivity, validateActivityId } from './character-activity-service';
 
 /** Configuração escolhida; o servidor calcula os custos e valida classe, NEX e arma. */
 export interface CombatCostSelection {
   weaponId: string;
+  damageMode?: DamageMode;
+  damageModePenalty?: 0 | -5;
   targetCharacterId?: string;
   attackIntentId?: string;
   counterattackDefenseEventId?: string;
@@ -50,7 +53,14 @@ export async function confirmCombatAttack(characterId: string, request: CombatAt
     p_operation_id: request.operationId, p_character_id: characterId,
     p_expected_pe: request.expectedPE, p_expected_cost: request.expectedCost,
     p_expected_turn_key: expectedTurnKey, p_selection: activityJson(request.selection),
-    p_payload: activityJson({ entry: { ...entry, type: 'attack' }, label: request.result.label, type: 'attack', weaponBurst: request.result.weaponBurst, attackContext: request.result.attackContext }),
+    p_payload: activityJson({ entry: { ...entry, type: 'attack' }, label: request.result.label, type: 'attack',
+      weaponBurst: request.result.weaponBurst, attackContext: request.result.attackContext,
+      ...(request.selection.damageMode ? { damageModeSnapshot: {
+        mode: request.selection.damageMode,
+        penalty: request.selection.damageModePenalty ?? 0,
+        baseOtherBonuses: request.result.otherBonuses - (request.selection.damageModePenalty ?? 0),
+        finalOtherBonuses: request.result.otherBonuses,
+      } } : {}) }),
   }));
   if (error) {
     // Traduz somente esta recusa conhecida; outras mensagens do banco permanecem ocultas.
@@ -66,6 +76,10 @@ export async function confirmCombatAttack(characterId: string, request: CombatAt
   const payload = receipt.payload;
   if (receipt.category !== 'roll' || receipt.status !== 'confirmed' || !payload || typeof payload !== 'object' || Array.isArray(payload) || payload.kind !== 'combat_attack') {
     throw new Error('O servidor não confirmou o histórico e o custo do ataque.');
+  }
+  if (request.selection.damageMode && (payload.damageMode !== request.selection.damageMode
+    || payload.damageModePenalty !== request.selection.damageModePenalty)) {
+    throw new Error('O servidor não confirmou o modo de dano e sua penalidade.');
   }
   // Evita um segundo registro pelo callback legado de apresentação.
   if (request.selection.concealment !== undefined) request.result.concealmentResult = parseConcealmentResult(payload.concealmentResult);

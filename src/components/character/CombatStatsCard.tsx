@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 interface CombatStatsCardProps {
   hpCurrent: number;
   hpMax: number;
+  nonlethalDamage?: number;
   peCurrent: number;
   peMax: number;
   sanCurrent: number;
@@ -26,6 +27,7 @@ interface CombatStatsCardProps {
 export function CombatStatsCard({
   hpCurrent,
   hpMax,
+  nonlethalDamage = 0,
   peCurrent,
   peMax,
   sanCurrent,
@@ -225,6 +227,11 @@ export function CombatStatsCard({
           size="md" 
           glow={isHpLow} 
         />
+        {nonlethalDamage > 0 && (
+          <p className="text-xs text-amber-300" role="status">
+            Dano não letal {nonlethalDamage} · combinado {Math.max(0, hpMax - hpCurrent) + nonlethalDamage}/{hpMax}
+          </p>
+        )}
       </div>
 
       {/* PE - Pontos de Esforço */}

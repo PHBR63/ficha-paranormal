@@ -9,6 +9,8 @@ import { CombatAmmunitionSelector } from '../CombatAmmunitionSelector';
 import { WeaponModificationNotes } from '../WeaponModificationNotes';
 import type { ConfirmCombatAttack, CombatCostSelection } from '@/services/combat-attack-service';
 import { AttackIntentGate, type AttackGateSelection } from '../AttackIntentGate';
+import { DamageModeSelector } from '../DamageModeSelector';
+import { resolveDamageMode, type DamageMode } from '@/lib/nonlethal-damage';
 /**
  * MobileCombatRollModal - Modal de combate completo para mobile
  * Interface step-by-step: Setup → Ataque → Dano
@@ -1176,6 +1178,18 @@ export function MobileCombatRollModal({
 
   // === FEEDBACK SONORO E HÁPTICO ===
   const combatFeedback = useCombatFeedback();
+  const [damageMode, setDamageMode] = useState<DamageMode>('lethal');
+  const lethalUnarmedAllowed = weapon?.type === 'Briga'
+    && weapon.special?.split(',').some(value => value.trim().toLowerCase() === 'letal') === true;
+  const damageModeResolution = useMemo(() => resolveDamageMode({
+    weaponType: weapon?.type ?? '',
+    naturallyNonlethal: weapon?.type === 'Briga',
+    allowsLethalWithoutPenalty: lethalUnarmedAllowed,
+  }, damageMode), [weapon?.type, damageMode, lethalUnarmedAllowed]);
+
+  useEffect(() => {
+    if (weapon) setDamageMode(weapon.type === 'Briga' ? 'nonlethal' : 'lethal');
+  }, [weapon?.id, weapon?.type]);
 
   // Rolar ataque
   const rollAttack = useCallback(() => {
@@ -1193,7 +1207,7 @@ export function MobileCombatRollModal({
       attributeValue: attackAttribute,
       dicePenalty: attackDicePenalty,
       skillBonus: attackSkill.bonus,
-      otherBonuses: totalAttackBonus - attackSkill.bonus,
+      otherBonuses: totalAttackBonus - attackSkill.bonus + damageModeResolution.penalty,
       criticalThreshold: criticalMargin,
       label: `Ataque com ${weapon.name}`,
     });
@@ -1203,6 +1217,8 @@ export function MobileCombatRollModal({
     if (burst.enabled) result.label += ' — Rajada';
     const selection: CombatCostSelection = {
       weaponId: weapon.id,
+      damageMode,
+      damageModePenalty: damageModeResolution.penalty,
       ...(gateSelection.mode === 'targeted' && gateSelection.weaponId === weapon.id
         ? { targetCharacterId: gateSelection.targetCharacterId, attackIntentId: gateSelection.attackIntentId,
           ...(gateSelection.counterattackDefenseEventId ? { counterattackDefenseEventId: gateSelection.counterattackDefenseEventId } : {}) } : {}),
@@ -1273,7 +1289,7 @@ export function MobileCombatRollModal({
       },
 
     }).finally(() => { preparingAttack.current = false; setIsRolling(false); });
-  }, [visibility, attackerBlind, visibilityUnavailable, burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, sneakAttackError, isAtiradorElite, disparoLetalConfig, disparoLetalResult.enabled, resetDisparoLetal, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback, combatControlled, mirar, intentRequired, gateSelection]);
+  }, [visibility, attackerBlind, visibilityUnavailable, burst, attackBaseDicePenalty, ammunitionUnavailable, confirmationUnavailable, onConfirmAttack, specialAttackConfig, isInfiltrador, sneakAttackConfig, sneakAttackError, isAtiradorElite, disparoLetalConfig, disparoLetalResult.enabled, resetDisparoLetal, activeTechniqueEffects, selectedBonuses, availableBonuses, attackConfirmation, attackDicePenalty, weapon, attackAttribute, totalAttackBonus, attackSkill.bonus, criticalMargin, totalPECost, canAffordPE, currentPE, onPEChange, onRollComplete, targetDefense, combatFeedback, combatControlled, mirar, intentRequired, gateSelection, damageMode, damageModeResolution.penalty]);
 
   // Rolar dano - ATUALIZADO com advancedBonuses e buffDiceResult
   const rollDamageAction = useCallback(() => {
@@ -2326,6 +2342,15 @@ export function MobileCombatRollModal({
               </motion.div>
             )}
           </AnimatePresence>
+          {weapon && phase === 'setup' && (
+            <DamageModeSelector
+              weaponType={weapon.type}
+              naturallyNonlethal={weapon.type === 'Briga'}
+              allowsLethalWithoutPenalty={lethalUnarmedAllowed}
+              value={damageMode}
+              onChange={setDamageMode}
+            />
+          )}
           {intentRequired && campaignId && characterId && weapon && phase === 'setup' &&
             <AttackIntentGate key={`${campaignId}:${characterId}:${weapon.id}`} campaignId={campaignId}
               attackerId={characterId} weaponId={weapon.id} enabled={open}

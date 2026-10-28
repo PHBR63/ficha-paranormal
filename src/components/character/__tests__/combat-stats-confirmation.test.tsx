@@ -11,6 +11,13 @@ function DesktopResourceEditor(props: ComponentProps<typeof CombatStatsCard>) {
     nex={5} patent="Recruta" defense={11} movement={9} />;
 }
 
+it('mostra dano não letal e o dano combinado junto dos PV', () => {
+  render(<CharacterSheetHeader {...resources} nonlethalDamage={6} name="Agente"
+    characterClass="Combatente" origin="Militar" nex={20} patent="Operador"
+    defense={15} movement={9} />);
+  expect(screen.getByText('Dano não letal 6 · combinado 14/20')).toBeInTheDocument();
+});
+
 describe.each([
   ['card mobile', CombatStatsCard, 'Editar recursos', 'Salvar recursos'],
   ['header desktop', DesktopResourceEditor, 'Editar recursos da ficha', 'Salvar recursos da ficha'],

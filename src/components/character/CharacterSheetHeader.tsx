@@ -94,6 +94,7 @@ interface CharacterSheetHeaderProps {
   patent: string;
   hpCurrent: number;
   hpMax: number;
+  nonlethalDamage?: number;
   peCurrent: number;
   peMax: number;
   sanCurrent: number;
@@ -153,6 +154,7 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
   patent,
   hpCurrent,
   hpMax,
+  nonlethalDamage = 0,
   peCurrent,
   peMax,
   sanCurrent,
@@ -467,6 +469,11 @@ export const CharacterSheetHeader = memo(function CharacterSheetHeader({
             )}
           </div>
           <AnimatedProgress value={editMode ? tempHp : hpCurrent} max={totalHpMax} variant="hp" size="sm" />
+          {nonlethalDamage > 0 && (
+            <p className="text-[10px] text-amber-300" role="status">
+              Dano não letal {nonlethalDamage} · combinado {Math.max(0, totalHpMax - hpCurrent) + nonlethalDamage}/{totalHpMax}
+            </p>
+          )}
         </div>
 
         {/* PE */}

@@ -37,9 +37,27 @@ const receipt: AttackTargetReceipt = {
 beforeEach(() => { vi.clearAllMocks(); fake.rpc.mockResolvedValue({ data: receipt, error: null }); });
 
 describe('resolução confirmada de ataque contra alvo', () => {
+  it('confirma dano não letal no reservatório separado sem reduzir PV', async () => {
+    const nonlethalReceipt = {
+      ...receipt,
+      damageMode: 'nonlethal' as const,
+      finalDamage: 7,
+      temporaryHPUsed: 2,
+      hpAfter: 20,
+      nonlethalBefore: 1,
+      nonlethalApplied: 5,
+      nonlethalAfter: 6,
+      massiveDamageRequired: false,
+    };
+    fake.rpc.mockResolvedValue({ data: nonlethalReceipt, error: null });
+
+    await expect(confirmAttackTarget(request)).resolves.toEqual(nonlethalReceipt);
+    expect(fake.rpc).toHaveBeenCalledWith('confirm_campaign_attack_target_v4', expect.any(Object));
+  });
+
   it('aceita somente o recibo que repete a declaração e o cálculo do mestre', async () => {
     await expect(confirmAttackTarget(request)).resolves.toEqual(receipt);
-    expect(fake.rpc).toHaveBeenCalledExactlyOnceWith('confirm_campaign_attack_target_v3', {
+    expect(fake.rpc).toHaveBeenCalledExactlyOnceWith('confirm_campaign_attack_target_v4', {
       p_operation_id: operationId, p_campaign_id: campaignId,
       p_attack_event_id: attackEventId, p_target_character_id: targetCharacterId,
       p_expected_hp: 20, p_expected_scene: 1, p_expected_round: 2,

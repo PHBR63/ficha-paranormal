@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { awaitActivityResponse } from '@/services/character-activity-service';
 import { CAMPAIGN_DAMAGE_TYPES, type CampaignDamageType } from '@/services/campaign-bulk-damage-service';
 import type { CharacterActivityEvent } from '@/types/character-activity';
+import type { DamageMode } from '@/lib/nonlethal-damage';
 
 export interface AttackTargetResolution {
   defenseTotal: number;
@@ -32,6 +33,9 @@ export interface AttackTargetReceipt {
   declaredDamageReduction: number; immuneDamage: boolean;
   vulnerableDamage: boolean; damageAfterVulnerability: number;
   finalDamage: number; temporaryHPUsed: number; hpBefore: number; hpAfter: number;
+  damageMode?: DamageMode;
+  nonlethalBefore?: number; nonlethalApplied?: number; nonlethalAfter?: number;
+  massiveDamageRequired?: boolean;
   targetEventId: string; attackerEventId: string; timingVerifiedByServer: boolean;
   conditionsBefore?: string[]; conditionsAfter?: string[];
 }
@@ -41,7 +45,7 @@ export class AttackTargetError extends Error {
 
 type EventRow = { [Key in keyof CharacterActivityEvent]: CharacterActivityEvent[Key] };
 type QueryDb = { public: { Tables: { character_activity_events: { Row: EventRow; Insert: never; Update: never; Relationships: [] } }; Views: Record<string, never>; Enums: Record<string, never>; CompositeTypes: Record<string, never>; Functions: Record<string, never> } };
-type RpcDb = { public: { Tables: Record<string, never>; Views: Record<string, never>; Enums: Record<string, never>; CompositeTypes: Record<string, never>; Functions: { confirm_campaign_attack_target_v3: { Args: { p_operation_id: string; p_campaign_id: string; p_attack_event_id: string; p_target_character_id: string; p_expected_hp: number; p_expected_scene: number; p_expected_round: number; p_resolution: AttackTargetResolution }; Returns: AttackTargetReceipt } } } };
+type RpcDb = { public: { Tables: Record<string, never>; Views: Record<string, never>; Enums: Record<string, never>; CompositeTypes: Record<string, never>; Functions: { confirm_campaign_attack_target_v4: { Args: { p_operation_id: string; p_campaign_id: string; p_attack_event_id: string; p_target_character_id: string; p_expected_hp: number; p_expected_scene: number; p_expected_round: number; p_resolution: AttackTargetResolution }; Returns: AttackTargetReceipt } } } };
 const query = supabase as unknown as SupabaseClient<QueryDb>;
 const rpc = supabase as unknown as SupabaseClient<RpcDb>;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -125,8 +129,8 @@ export function clearPendingAttackTarget(campaignId: string): void { sessionStor
 /** Só devolve sucesso quando o recibo do servidor corresponde à resolução enviada. */
 export async function confirmAttackTarget(request: AttackTargetRequest): Promise<AttackTargetReceipt> {
   validate(request);
-  let response: Awaited<ReturnType<typeof rpc.rpc<'confirm_campaign_attack_target_v3'>>>;
-  try { response = await awaitActivityResponse(rpc.rpc('confirm_campaign_attack_target_v3', {
+  let response: Awaited<ReturnType<typeof rpc.rpc<'confirm_campaign_attack_target_v4'>>>;
+  try { response = await awaitActivityResponse(rpc.rpc('confirm_campaign_attack_target_v4', {
     p_operation_id: request.operationId, p_campaign_id: request.campaignId,
     p_attack_event_id: request.attackEventId, p_target_character_id: request.targetCharacterId,
     p_expected_hp: request.expectedHp, p_expected_scene: request.expectedScene,
@@ -141,6 +145,7 @@ export async function confirmAttackTarget(request: AttackTargetRequest): Promise
     throw new AttackTargetError('Resposta incerta. Recupere a mesma resolução antes de tentar outra.', false);
   }
   const receipt = response.data;
+  const nonlethal = receipt?.damageMode === 'nonlethal';
   const expected = calculateAttackResolutionPreview(
     receipt?.attackTotal ?? Number.NaN,
     receipt?.concealmentFailed ?? false,
@@ -160,7 +165,13 @@ export async function confirmAttackTarget(request: AttackTargetRequest): Promise
     || receipt.hpBefore !== request.expectedHp || typeof receipt.concealmentFailed !== 'boolean'
     || receipt.hit !== expected.hit || receipt.finalDamage !== expected.finalDamage
     || receipt.temporaryHPUsed > receipt.finalDamage
-    || receipt.hpAfter !== Math.max(0, receipt.hpBefore - receipt.finalDamage + receipt.temporaryHPUsed)
+    || (nonlethal
+      ? receipt.hpAfter !== receipt.hpBefore
+        || ![receipt.nonlethalBefore, receipt.nonlethalApplied, receipt.nonlethalAfter].every(value => typeof value === 'number' && validNumber(value))
+        || receipt.nonlethalApplied !== receipt.finalDamage - receipt.temporaryHPUsed
+        || receipt.nonlethalAfter !== receipt.nonlethalBefore + receipt.nonlethalApplied
+        || receipt.massiveDamageRequired !== false
+      : receipt.hpAfter !== Math.max(0, receipt.hpBefore - receipt.finalDamage + receipt.temporaryHPUsed))
     || !UUID.test(receipt.targetEventId) || !UUID.test(receipt.attackerEventId)
     || !validSignedNumber(receipt.attackTotal)
     || ![receipt.finalDamage, receipt.temporaryHPUsed, receipt.hpAfter].every(validNumber))

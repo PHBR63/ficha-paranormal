@@ -187,6 +187,7 @@ interface MobileCharacterSheetProps {
     photo_url?: string | null;
     hp_current: number;
     hp_max: number;
+    nonlethal_damage?: number;
     pe_current: number;
     pe_max: number;
     san_current: number;
