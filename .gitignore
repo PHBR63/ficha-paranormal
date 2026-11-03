@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Variáveis de ambiente (nunca versionar)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Artefatos de build do PWA
+dev-dist/

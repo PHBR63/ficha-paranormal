@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
       manifest: {
         name: "Let's Roll - VTT Ordem Paranormal",
         short_name: "Let's Roll",
-        description: "Mesa Virtual para Ordem Paranormal RPG v1.3 - Sistema oficial da Ordo Realitas",
+        description: "Mesa Virtual para Ordem Paranormal RPG v1.3 - Projeto de fã não oficial",
         theme_color: "#0a0514",
         background_color: "#0a0514",
         display: "standalone",

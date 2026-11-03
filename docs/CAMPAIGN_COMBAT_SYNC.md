@@ -73,7 +73,7 @@ A autorização e validação precedem esse trecho na RPC completa. O diff do PR
 
 A migration foi validada em PostgreSQL 18.4 local e descartável, com tabelas/funções de autorização existentes do repositório, papéis `authenticated`/`anon` e `auth.uid` simulado pelas claims da sessão SQL. Isso confirma o comportamento SQL exercitado, mas não autenticação Supabase, entrega real de Realtime nem duas contas no projeto remoto.
 
-O backend é Supabase gerenciado pelo Lovable Cloud, identificado por `rctbxgpjtgkinwzdymbt`, no projeto Lovable `166ab2c8-39e3-4384-851c-154cbc88eece` (Ordem Roll). O acesso foi confirmado pelo conector Lovable; esse identificador não exige conectar um projeto Supabase externo.
+O backend é o banco de dados gerenciado pelo Lovable Cloud vinculado a este projeto. O acesso foi confirmado pelo conector Lovable; esse backend não exige conectar um projeto externo.
 
 Após autorização explícita do usuário, a migration foi aplicada em 05/10/2026 ao banco atual. Tabela, RPC, política de leitura, permissões e publicação Realtime foram criadas numa transação junto do registro `20261005183000` em `supabase_migrations.schema_migrations`. Foi solicitado recarregamento do schema do PostgREST. A conferência posterior confirmou o corpo da RPC e o SQL registrado iguais ao arquivo revisado, RLS ativo, escrita direta bloqueada, execução da RPC permitida a authenticated e negada a anon.
 
