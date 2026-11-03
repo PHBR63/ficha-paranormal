@@ -210,6 +210,7 @@ export type Database = {
           created_at: string
           melee: boolean
           operation_id: string
+          reaction_source_id: string | null
           request_hash: string
           round_number: number
           scene_number: number
@@ -226,6 +227,7 @@ export type Database = {
           created_at?: string
           melee: boolean
           operation_id: string
+          reaction_source_id?: string | null
           request_hash: string
           round_number: number
           scene_number: number
@@ -242,6 +244,7 @@ export type Database = {
           created_at?: string
           melee?: boolean
           operation_id?: string
+          reaction_source_id?: string | null
           request_hash?: string
           round_number?: number
           scene_number?: number
@@ -270,6 +273,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_attack_intents_v2_reaction_source_id_fkey"
+            columns: ["reaction_source_id"]
+            isOneToOne: true
+            referencedRelation: "character_activity_events"
             referencedColumns: ["id"]
           },
           {
@@ -472,6 +482,94 @@ export type Database = {
           },
         ]
       }
+      campaign_combat_maneuvers_v2: {
+        Row: {
+          actor_id: string
+          attribute: string
+          author_id: string
+          campaign_id: string
+          created_at: string
+          maneuver_type: string
+          operation_id: string
+          request_hash: string
+          resolution_author_id: string | null
+          resolution_hash: string | null
+          resolution_operation_id: string | null
+          resolved_at: string | null
+          result: Json | null
+          round_number: number
+          scene_number: number
+          status: string
+          target_id: string
+          turn_instance_id: string
+          weapon_id: string | null
+        }
+        Insert: {
+          actor_id: string
+          attribute: string
+          author_id: string
+          campaign_id: string
+          created_at?: string
+          maneuver_type: string
+          operation_id: string
+          request_hash: string
+          resolution_author_id?: string | null
+          resolution_hash?: string | null
+          resolution_operation_id?: string | null
+          resolved_at?: string | null
+          result?: Json | null
+          round_number: number
+          scene_number: number
+          status?: string
+          target_id: string
+          turn_instance_id: string
+          weapon_id?: string | null
+        }
+        Update: {
+          actor_id?: string
+          attribute?: string
+          author_id?: string
+          campaign_id?: string
+          created_at?: string
+          maneuver_type?: string
+          operation_id?: string
+          request_hash?: string
+          resolution_author_id?: string | null
+          resolution_hash?: string | null
+          resolution_operation_id?: string | null
+          resolved_at?: string | null
+          result?: Json | null
+          round_number?: number
+          scene_number?: number
+          status?: string
+          target_id?: string
+          turn_instance_id?: string
+          weapon_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_combat_maneuvers_v2_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_combat_maneuvers_v2_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_combat_maneuvers_v2_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_combat_state_v2: {
         Row: {
           campaign_id: string
@@ -506,6 +604,68 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: true
             referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_grapples_v2: {
+        Row: {
+          active: boolean
+          actor_id: string
+          campaign_id: string
+          ended_at: string | null
+          ended_by: string | null
+          maneuver_operation_id: string
+          started_at: string
+          target_id: string
+        }
+        Insert: {
+          active?: boolean
+          actor_id: string
+          campaign_id: string
+          ended_at?: string | null
+          ended_by?: string | null
+          maneuver_operation_id: string
+          started_at?: string
+          target_id: string
+        }
+        Update: {
+          active?: boolean
+          actor_id?: string
+          campaign_id?: string
+          ended_at?: string | null
+          ended_by?: string | null
+          maneuver_operation_id?: string
+          started_at?: string
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_grapples_v2_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_grapples_v2_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_grapples_v2_maneuver_operation_id_fkey"
+            columns: ["maneuver_operation_id"]
+            isOneToOne: true
+            referencedRelation: "campaign_combat_maneuvers_v2"
+            referencedColumns: ["operation_id"]
+          },
+          {
+            foreignKeyName: "campaign_grapples_v2_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
             referencedColumns: ["id"]
           },
         ]
@@ -765,6 +925,61 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_massive_damage_resolutions_v2: {
+        Row: {
+          author_id: string
+          campaign_id: string
+          character_id: string
+          created_at: string
+          operation_id: string
+          request_hash: string
+          result: Json
+          source_event_id: string
+        }
+        Insert: {
+          author_id: string
+          campaign_id: string
+          character_id: string
+          created_at?: string
+          operation_id: string
+          request_hash: string
+          result: Json
+          source_event_id: string
+        }
+        Update: {
+          author_id?: string
+          campaign_id?: string
+          character_id?: string
+          created_at?: string
+          operation_id?: string
+          request_hash?: string
+          result?: Json
+          source_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_massive_damage_resolutions_v2_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_massive_damage_resolutions_v2_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_massive_damage_resolutions_v2_source_event_id_fkey"
+            columns: ["source_event_id"]
+            isOneToOne: true
+            referencedRelation: "character_activity_events"
             referencedColumns: ["id"]
           },
         ]
@@ -3930,6 +4145,15 @@ export type Database = {
         Args: { p_max: number; p_min: number; p_value: Json }
         Returns: boolean
       }
+      append_unique_maneuver_condition_v2: {
+        Args: {
+          p_conditions: Json
+          p_id: string
+          p_name: string
+          p_operation_id: string
+        }
+        Returns: Json
+      }
       apply_character_effect: {
         Args: {
           p_campaign_id?: string
@@ -4116,6 +4340,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_character_healing_priority: {
+        Args: {
+          p_character_id: string
+          p_expected_hp: number
+          p_expected_nonlethal?: number
+          p_requested: number
+          p_source_operation_id?: string
+        }
+        Returns: Json
+      }
       assert_explosive_actor_turn: {
         Args: { p_budget: Json; p_character_id: string }
         Returns: undefined
@@ -4190,6 +4424,7 @@ export type Database = {
           created_at: string
           melee: boolean
           operation_id: string
+          reaction_source_id: string | null
           request_hash: string
           round_number: number
           scene_number: number
@@ -4201,6 +4436,36 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "campaign_attack_intents_v2"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cancel_campaign_combat_maneuver_v2: {
+        Args: { p_operation_id: string }
+        Returns: {
+          actor_id: string
+          attribute: string
+          author_id: string
+          campaign_id: string
+          created_at: string
+          maneuver_type: string
+          operation_id: string
+          request_hash: string
+          resolution_author_id: string | null
+          resolution_hash: string | null
+          resolution_operation_id: string | null
+          resolved_at: string | null
+          result: Json | null
+          round_number: number
+          scene_number: number
+          status: string
+          target_id: string
+          turn_instance_id: string
+          weapon_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "campaign_combat_maneuvers_v2"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -4445,6 +4710,36 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      change_character_resource_nonlethal_legacy: {
+        Args: {
+          p_character_id: string
+          p_expected_current: number
+          p_expected_max: number
+          p_mode: string
+          p_operation_id: string
+          p_resource: string
+          p_value: number
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       change_character_resources: {
         Args: {
           p_character_id: string
@@ -4473,14 +4768,57 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      change_character_resources_nonlethal_legacy: {
+        Args: {
+          p_character_id: string
+          p_conditions: Json
+          p_expected: Json
+          p_operation_id: string
+          p_values: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       character_creation_catalog: { Args: never; Returns: Json }
+      character_has_martial_artist_v2: {
+        Args: { p_character: Database["public"]["Tables"]["characters"]["Row"] }
+        Returns: boolean
+      }
       character_has_medical_kit: {
         Args: { p_inventory: Json }
+        Returns: boolean
+      }
+      character_maneuver_agility_allowed_v2: {
+        Args: {
+          p_character: Database["public"]["Tables"]["characters"]["Row"]
+          p_weapon_id?: string
+        }
         Returns: boolean
       }
       character_resgate_control_key: {
         Args: { p_budget: Json }
         Returns: string
+      }
+      combat_maneuver_effect_v2: {
+        Args: { p_actor_total: number; p_target_total: number; p_type: string }
+        Returns: Json
       }
       confirm_campaign_attack_defense_choice_v2: {
         Args: {
@@ -4544,6 +4882,32 @@ export type Database = {
         }
         Returns: Json
       }
+      confirm_campaign_attack_target_v3: {
+        Args: {
+          p_attack_event_id: string
+          p_campaign_id: string
+          p_expected_hp: number
+          p_expected_round: number
+          p_expected_scene: number
+          p_operation_id: string
+          p_resolution: Json
+          p_target_character_id: string
+        }
+        Returns: Json
+      }
+      confirm_campaign_attack_target_v4: {
+        Args: {
+          p_attack_event_id: string
+          p_campaign_id: string
+          p_expected_hp: number
+          p_expected_round: number
+          p_expected_scene: number
+          p_operation_id: string
+          p_resolution: Json
+          p_target_character_id: string
+        }
+        Returns: Json
+      }
       confirm_campaign_bulk_damage: {
         Args: {
           p_campaign_id: string
@@ -4559,6 +4923,24 @@ export type Database = {
           p_operation_id: string
           p_source: string
           p_targets: Json
+        }
+        Returns: Json
+      }
+      confirm_campaign_bulk_damage_v2: {
+        Args: {
+          p_campaign_id: string
+          p_operation_id: string
+          p_source: string
+          p_targets: Json
+        }
+        Returns: Json
+      }
+      confirm_campaign_massive_damage_v2: {
+        Args: {
+          p_campaign_id: string
+          p_expected_hp: number
+          p_operation_id: string
+          p_source_event_id: string
         }
         Returns: Json
       }
@@ -4605,6 +4987,36 @@ export type Database = {
         }
       }
       confirm_character_combat_attack_action_core: {
+        Args: {
+          p_character_id: string
+          p_expected_cost: number
+          p_expected_pe: number
+          p_expected_turn_key: string
+          p_operation_id: string
+          p_payload: Json
+          p_selection: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      confirm_character_combat_attack_damage_mode_core: {
         Args: {
           p_character_id: string
           p_expected_cost: number
@@ -4761,6 +5173,66 @@ export type Database = {
           p_operation_id: string
           p_resolution: Json
           p_values: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      confirm_character_counterattack_damage_mode_core_v2: {
+        Args: {
+          p_character_id: string
+          p_expected_cost: number
+          p_expected_pe: number
+          p_expected_turn_key: string
+          p_operation_id: string
+          p_payload: Json
+          p_selection: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      confirm_character_counterattack_roll_v2: {
+        Args: {
+          p_character_id: string
+          p_expected_cost: number
+          p_expected_pe: number
+          p_expected_turn_key: string
+          p_operation_id: string
+          p_payload: Json
+          p_selection: Json
         }
         Returns: {
           author_id: string
@@ -5306,6 +5778,32 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      confirm_character_paramedico_nonlethal_legacy_core: {
+        Args: {
+          p_character_id: string
+          p_operation_id: string
+          p_request: Json
+        }
+        Returns: {
+          author_id: string
+          campaign_id: string | null
+          campaign_version: string | null
+          category: string
+          character_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_hash: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "character_activity_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       confirm_character_post_attack_stealth: {
         Args: {
           p_character_id: string
@@ -5780,6 +6278,39 @@ export type Database = {
         }
         Returns: number
       }
+      create_campaign_counterattack_intent_v2: {
+        Args: {
+          p_campaign_id: string
+          p_defense_event_id: string
+          p_expected_round: number
+          p_expected_scene: number
+          p_operation_id: string
+          p_weapon_id: string
+        }
+        Returns: {
+          attack_event_id: string | null
+          attacker_id: string
+          author_id: string
+          campaign_id: string
+          created_at: string
+          melee: boolean
+          operation_id: string
+          reaction_source_id: string | null
+          request_hash: string
+          round_number: number
+          scene_number: number
+          status: string
+          target_id: string
+          turn_instance_id: string
+          weapon_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "campaign_attack_intents_v2"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_campaign_invite_v2: {
         Args: {
           p_campaign_id: string
@@ -5835,6 +6366,7 @@ export type Database = {
           created_at: string
           melee: boolean
           operation_id: string
+          reaction_source_id: string | null
           request_hash: string
           round_number: number
           scene_number: number
@@ -5846,6 +6378,47 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "campaign_attack_intents_v2"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      declare_campaign_combat_maneuver_v2: {
+        Args: {
+          p_actor_id: string
+          p_attribute: string
+          p_campaign_id: string
+          p_expected_round: number
+          p_expected_scene: number
+          p_expected_turn_instance_id: string
+          p_maneuver_type: string
+          p_operation_id: string
+          p_target_id: string
+          p_weapon_id: string
+        }
+        Returns: {
+          actor_id: string
+          attribute: string
+          author_id: string
+          campaign_id: string
+          created_at: string
+          maneuver_type: string
+          operation_id: string
+          request_hash: string
+          resolution_author_id: string | null
+          resolution_hash: string | null
+          resolution_operation_id: string | null
+          resolved_at: string | null
+          result: Json | null
+          round_number: number
+          scene_number: number
+          status: string
+          target_id: string
+          turn_instance_id: string
+          weapon_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "campaign_combat_maneuvers_v2"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -6060,6 +6633,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_unique_equipped_maneuver_item_v2: {
+        Args: { p_inventory: Json; p_item_id: string }
+        Returns: Json
+      }
       grant_character_resgate_defense: {
         Args: {
           p_budget: Json
@@ -6123,6 +6700,14 @@ export type Database = {
           campaign_name: string
           campaign_version: string
         }[]
+      }
+      list_campaign_counterattacks_pending_v2: {
+        Args: { p_campaign_id: string }
+        Returns: Json
+      }
+      list_campaign_massive_damage_pending_v2: {
+        Args: { p_campaign_id: string }
+        Returns: Json
       }
       list_character_activity: {
         Args: {
@@ -6223,6 +6808,7 @@ export type Database = {
         Args: { p_character_id: string }
         Returns: undefined
       }
+      maneuver_item_is_agile_v2: { Args: { p_item: Json }; Returns: boolean }
       pause_character_manual_turn: {
         Args: {
           p_character_id: string
@@ -6284,6 +6870,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      reconcile_nonlethal_conditions: {
+        Args: {
+          p_conditions: Json
+          p_hp: number
+          p_hp_max: number
+          p_nonlethal: number
+          p_source_operation_id?: string
+        }
+        Returns: Json
       }
       reconcile_resource_conditions: {
         Args: {
@@ -6404,6 +7000,25 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      release_campaign_grapple_v2: {
+        Args: { p_maneuver_id: string }
+        Returns: {
+          active: boolean
+          actor_id: string
+          campaign_id: string
+          ended_at: string | null
+          ended_by: string | null
+          maneuver_operation_id: string
+          started_at: string
+          target_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "campaign_grapples_v2"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       remove_explosive_conditions: {
         Args: { p_all_fire?: boolean; p_original: Json; p_source: string }
         Returns: Json
@@ -6447,6 +7062,40 @@ export type Database = {
       resolve_activity_skill_test: {
         Args: { p_dt: number; p_test: Json }
         Returns: Json
+      }
+      resolve_campaign_combat_maneuver_v2: {
+        Args: {
+          p_maneuver_id: string
+          p_operation_id: string
+          p_resolution: Json
+        }
+        Returns: {
+          actor_id: string
+          attribute: string
+          author_id: string
+          campaign_id: string
+          created_at: string
+          maneuver_type: string
+          operation_id: string
+          request_hash: string
+          resolution_author_id: string | null
+          resolution_hash: string | null
+          resolution_operation_id: string | null
+          resolved_at: string | null
+          result: Json | null
+          round_number: number
+          scene_number: number
+          status: string
+          target_id: string
+          turn_instance_id: string
+          weapon_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "campaign_combat_maneuvers_v2"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       resolve_character_condition_turn: {
         Args: {
@@ -6514,6 +7163,14 @@ export type Database = {
         }
       }
       ritual_execution_catalog: { Args: never; Returns: Json }
+      roll_maneuver_luta_v2: {
+        Args: {
+          p_attribute: string
+          p_character: Database["public"]["Tables"]["characters"]["Row"]
+          p_modifier: number
+        }
+        Returns: Json
+      }
       save_campaign_combat_state_core_v2: {
         Args: {
           p_campaign_id: string
@@ -6631,6 +7288,10 @@ export type Database = {
         Returns: undefined
       }
       validate_character_creation: { Args: { p: Json }; Returns: Json }
+      validate_combat_damage_mode: {
+        Args: { p_character_id: string; p_payload: Json; p_selection: Json }
+        Returns: Json
+      }
       weapon_burst_capabilities: { Args: { weapon: Json }; Returns: Json }
     }
     Enums: {
