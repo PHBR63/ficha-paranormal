@@ -6,6 +6,13 @@
  */
 
 import '@testing-library/jest-dom';
+
+// No Node recente, o localStorage global pode existir sem armazenamento.
+// Em testes de navegador, use sempre a implementação isolada do jsdom.
+declare const jsdom: { window: Window & typeof globalThis };
+Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: jsdom.window.localStorage });
+Object.defineProperty(globalThis, 'Storage', { configurable: true, value: jsdom.window.Storage });
+
 // Mock do matchMedia para testes de componentes responsivos
 Object.defineProperty(window, "matchMedia", {
   writable: true,

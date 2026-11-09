@@ -79,7 +79,7 @@ const Index = () => {
             <LogoBox size="md" />
             <div>
               <h1 className="font-display text-xl sm:text-2xl tracking-wide text-[#F5F5F5]">LET'S ROLL — Ordem Paranormal VTT</h1>
-              <p className="text-[8px] sm:text-[10px] text-[#8B0000] tracking-[0.2em] sm:tracking-[0.3em] uppercase hidden sm:block">Mesa Virtual oficial fan-made</p>
+              <p className="text-[8px] sm:text-[10px] text-[#A0A0A0] tracking-[0.2em] sm:tracking-[0.3em] uppercase hidden sm:block">Mesa virtual de fãs · não oficial</p>
             </div>
           </div>
           
@@ -216,7 +216,7 @@ const Index = () => {
               {
                 icon: GameController,
                 title: 'Sistema de Testes',
-                description: 'Rolagem nativa com d20, vantagens, desvantagens, críticos e animações imersivas.',
+                description: 'Testes e rolagens conectados à ficha, com dados, modificadores e total em cada resultado.',
                 element: 'sangue' as const
               },
               {
@@ -294,7 +294,7 @@ const Index = () => {
                 A ORDEM <span className="text-[#B22222]">PRECISA DE VOCÊ</span>
               </h3>
               <p className="text-[#A0A0A0] text-sm sm:text-base max-w-xl mx-auto mb-8 px-4 font-serif">
-                Junte-se a centenas de agentes. Investigue o desconhecido.
+                Crie seu agente. Investigue o desconhecido.
                 Enfrente o Outro Lado. <span className="text-[#C0C0C0]">Proteja a humanidade.</span>
               </p>
               

@@ -1,7 +1,7 @@
 // Página de criação de campanha com wizard guiado
 // Permite ao mestre criar uma nova mesa de RPG passo a passo
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, ArrowRight, Check, Loader2 } from '@/components/icons/ordem-icons';
+import { confirmInitialCampaignSetup, generateInitialInviteCode, getInitialSessionTime } from '@/services/campaign-setup-service';
 
 // Steps do wizard
 import { StepCampaignInfo } from '@/components/campaign/wizard/StepCampaignInfo';
@@ -57,7 +58,7 @@ export default function CampaignCreate() {
   // Estado do wizard
   const [currentStep, setCurrentStep] = useState(0);
   const [isCreating, setIsCreating] = useState(false);
-  const [campaignId, setCampaignId] = useState<string | null>(null);
+  const creatingLock = useRef(false);
   
   // Estado do formulário
   const [formData, setFormData] = useState<CampaignFormData>({
@@ -78,16 +79,6 @@ export default function CampaignCreate() {
   // Atualiza campos do formulário
   const updateFormData = (updates: Partial<CampaignFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
-  };
-  
-  // Gera código de convite aleatório
-  const generateInviteCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
   };
   
   // Validação por step
@@ -113,7 +104,7 @@ export default function CampaignCreate() {
     if (currentStep < STEPS.length - 1 && isStepValid(currentStep)) {
       // Se estamos indo para o step de convite, gera o código
       if (currentStep === 2 && !formData.inviteCode) {
-        updateFormData({ inviteCode: generateInviteCode() });
+        updateFormData({ inviteCode: generateInitialInviteCode() });
       }
       setCurrentStep(prev => prev + 1);
     }
@@ -125,12 +116,15 @@ export default function CampaignCreate() {
     }
   };
   
-  // Criação da campanha
+  /** Grava a campanha uma vez e informa quais passos receberam confirmação do servidor. */
   const handleCreateCampaign = async () => {
-    if (!user) return;
+    if (!user || creatingLock.current) return;
+    if (!isStepValid(0) || !isStepValid(3)) return;
     
+    creatingLock.current = true;
     setIsCreating(true);
     try {
+      const scheduledAt = getInitialSessionTime(formData.firstSessionDate, formData.firstSessionTime);
       // 1. Cria a campanha
       const { data: campaign, error: campaignError } = await supabase
         .from('campaigns')
@@ -150,55 +144,46 @@ export default function CampaignCreate() {
         .select()
         .single();
         
-      if (campaignError) throw campaignError;
+      if (campaignError || !campaign?.id) throw new Error('A criação da campanha não foi confirmada. Confira a lista de campanhas antes de tentar novamente.');
       
-      setCampaignId(campaign.id);
-      
-      // 2. Cria o código de convite
-      const { error: inviteError } = await supabase
-        .from('campaign_invites')
-        .insert({
+      const { inviteConfirmed, sessionConfirmed } = await confirmInitialCampaignSetup(
+        () => supabase.from('campaign_invites').insert({
           campaign_id: campaign.id,
           invite_code: formData.inviteCode,
           created_by: user.id,
           max_uses: null, // Sem limite
-        });
-        
-      if (inviteError) throw inviteError;
+        }).select('id').single(),
+        scheduledAt ? () => supabase.from('campaign_sessions').insert({
+          campaign_id: campaign.id,
+          session_number: 1,
+          title: 'Sessão 1',
+          scheduled_at: scheduledAt,
+          status: 'scheduled',
+        }).select('id').single() : undefined,
+      );
       
-      // 3. Se tiver sessão inicial, cria
-      if (formData.firstSessionDate) {
-        const scheduledAt = new Date(formData.firstSessionDate);
-        const [hours, minutes] = formData.firstSessionTime.split(':').map(Number);
-        scheduledAt.setHours(hours, minutes, 0, 0);
-        
-        await supabase
-          .from('campaign_sessions')
-          .insert({
-            campaign_id: campaign.id,
-            session_number: 1,
-            title: 'Sessão 1',
-            scheduled_at: scheduledAt.toISOString(),
-            status: 'scheduled',
-          });
-      }
-      
+      const pending = [
+        !inviteConfirmed ? 'convite' : '',
+        sessionConfirmed === false ? 'primeira sessão' : '',
+      ].filter(Boolean);
       toast({
-        title: 'Campanha criada com sucesso!',
-        description: `"${campaign.name}" está pronta. Compartilhe o código ${formData.inviteCode} com seus jogadores.`,
+        title: pending.length ? 'Campanha criada com pendências' : 'Campanha criada com sucesso!',
+        description: pending.length
+          ? `Sem confirmação de: ${pending.join(' e ')}. Confira na campanha antes de tentar novamente.`
+          : `"${campaign.name}" está pronta. Compartilhe o código ${formData.inviteCode} com seus jogadores.`,
       });
       
       // Redireciona para a campanha
       navigate(`/campaigns/${campaign.id}`);
       
-    } catch (error: any) {
-      console.error('Erro ao criar campanha:', error);
+    } catch (error: unknown) {
       toast({
         title: 'Erro ao criar campanha',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Não foi possível confirmar a criação. Confira a lista de campanhas.',
         variant: 'destructive',
       });
     } finally {
+      creatingLock.current = false;
       setIsCreating(false);
     }
   };
