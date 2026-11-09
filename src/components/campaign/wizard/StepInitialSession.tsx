@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Clock, Timer, Info } from '@/components/icons/ordem-icons';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { CampaignFormData } from '@/pages/CampaignCreate';
 
@@ -82,7 +83,7 @@ export function StepInitialSession({ formData, updateFormData }: StepInitialSess
                 mode="single"
                 selected={formData.firstSessionDate || undefined}
                 onSelect={(date) => updateFormData({ firstSessionDate: date || null })}
-                disabled={(date) => date < new Date()}
+                disabled={(date) => date < startOfDay(new Date())}
                 initialFocus
                 locale={ptBR}
               />
@@ -134,7 +135,7 @@ export function StepInitialSession({ formData, updateFormData }: StepInitialSess
           
           {/* Resumo */}
           <div className="ordo-panel p-4 bg-primary/5 border-primary/20">
-            <p className="text-sm font-medium text-primary mb-2">Sessão 1 Agendada</p>
+            <p className="text-sm font-medium text-primary mb-2">Prévia da primeira sessão</p>
             <p className="text-sm text-muted-foreground">
               {format(formData.firstSessionDate, "EEEE, d 'de' MMMM", { locale: ptBR })} às {formData.firstSessionTime}
               <br />

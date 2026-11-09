@@ -16,6 +16,7 @@ import {
 } from '@/components/icons/ordem-icons';
 import { useToast } from '@/hooks/use-toast';
 import type { CampaignFormData } from '@/pages/CampaignCreate';
+import { generateInitialInviteCode } from '@/services/campaign-setup-service';
 
 interface StepInvitePlayersProps {
   formData: CampaignFormData;
@@ -28,12 +29,7 @@ export function StepInvitePlayers({ formData, updateFormData }: StepInvitePlayer
   
   // Gera novo código
   const regenerateCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    updateFormData({ inviteCode: code });
+    updateFormData({ inviteCode: generateInitialInviteCode() });
   };
   
   // Copia o código
@@ -85,7 +81,7 @@ export function StepInvitePlayers({ formData, updateFormData }: StepInvitePlayer
       <div className="text-center mb-8">
         <h2 className="font-display text-3xl tracking-wider mb-2">CONVITE DE JOGADORES</h2>
         <p className="text-muted-foreground">
-          Compartilhe o código de convite com seus jogadores.
+          Prepare o código. Ele só funciona depois que o servidor confirmar o convite.
         </p>
       </div>
       
